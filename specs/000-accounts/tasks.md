@@ -34,7 +34,7 @@ running.
     `clear_refresh_cookie(response)`.
   - Done: `manage.py check` passes.
 
-- [ ] **T4 Register endpoint** (AC-1 to AC-6)
+- [x] **T4 Register endpoint** (AC-1 to AC-6)
   - `POST /api/auth/register/`, `RegisterSerializer` with
     `validate_password` and case-insensitive duplicate checks.
   - Returns `{access, user}` and sets the refresh cookie.
