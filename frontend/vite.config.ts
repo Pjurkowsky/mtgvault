@@ -12,8 +12,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Forward API calls to the Django dev server
-      '/api': 'http://localhost:8000',
+      // Forward API calls to the Django dev server ("backend" service in Docker)
+      '/api': process.env.API_PROXY_TARGET ?? 'http://localhost:8000',
     },
   },
 })

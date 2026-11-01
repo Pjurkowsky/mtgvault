@@ -4,10 +4,14 @@ Django 6.1 + Django REST Framework + PostgreSQL 18, managed with [uv](https://do
 
 ## Setup
 
+The easiest way is Docker from the project root — see the [main README](../README.md).
+
+To run Django directly on your machine (Postgres from the dev compose file):
+
 ```bash
 cp .env.example .env          # then set a real SECRET_KEY
-docker compose up -d db       # start Postgres
-uv sync                       # install dependencies
+docker compose -f ../docker-compose.dev.yml up -d db
+uv sync
 uv run manage.py migrate
 uv run manage.py createsuperuser
 uv run manage.py runserver    # http://localhost:8000
