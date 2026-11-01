@@ -56,7 +56,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     prices for nonfoil, foil and etched, `None` for missing EUR etched, and
     `price_expression` agrees with `price` on every fixture printing.
 
-- [ ] **T7 Catalog endpoints** (AC-6, AC-21, AC-22, AC-31)
+- [x] **T7 Catalog endpoints** (AC-6, AC-21, AC-22, AC-31)
   - `/api/catalog/cards/`, `/api/catalog/cards/{oracle_id}/printings/`,
     `/api/catalog/sets/`, `/api/catalog/status/`.
   - Done: searching "bolt" returns Lightning Bolt once. Its printings come

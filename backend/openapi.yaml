@@ -84,6 +84,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
           description: ''
+  /api/catalog/cards/:
+    get:
+      operationId: catalog_cards_list
+      description: Card names matching `q`, one entry per card (not per printing).
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CardSearchResult'
+          description: ''
+  /api/catalog/cards/{oracle_id}/printings/:
+    get:
+      operationId: catalog_cards_printings_list
+      parameters:
+      - in: path
+        name: oracle_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Printing'
+          description: ''
+  /api/catalog/sets/:
+    get:
+      operationId: catalog_sets_list
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Set'
+          description: ''
+  /api/catalog/status/:
+    get:
+      operationId: catalog_status_retrieve
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogStatus'
+          description: ''
   /api/health/:
     get:
       operationId: health_retrieve
@@ -202,6 +283,29 @@ components:
       required:
       - access
       - user
+    CardSearchResult:
+      type: object
+      properties:
+        oracle_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        image_small:
+          type: string
+      required:
+      - image_small
+      - name
+      - oracle_id
+    CatalogStatus:
+      type: object
+      properties:
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - prices_updated_at
     CurrencyEnum:
       enum:
       - USD
@@ -212,6 +316,16 @@ components:
         * `USD` - US Dollar
         * `EUR` - Euro
         * `PLN` - Polish Złoty
+    FinishesEnum:
+      enum:
+      - nonfoil
+      - foil
+      - etched
+      type: string
+      description: |-
+        * `nonfoil` - Nonfoil
+        * `foil` - Foil
+        * `etched` - Etched
     Health:
       type: object
       properties:
@@ -279,6 +393,107 @@ components:
           type: string
           format: date-time
           readOnly: true
+    Prices:
+      type: object
+      description: Price per copy for each finish, in the viewer's currency. Null
+        = no price.
+      properties:
+        nonfoil:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        foil:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        etched:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+      - etched
+      - foil
+      - nonfoil
+    Printing:
+      type: object
+      description: A printing with prices. Needs `currency` and `rates` in the context.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Scryfall id
+        oracle_id:
+          type: string
+          format: uuid
+          description: Same for every printing of a card
+        name:
+          type: string
+          maxLength: 300
+        set_code:
+          type: string
+        set_name:
+          type: string
+        collector_number:
+          type: string
+          maxLength: 20
+        released_at:
+          type: string
+          format: date
+        rarity:
+          $ref: '#/components/schemas/RarityEnum'
+        colors:
+          type: array
+          items:
+            type: string
+            maxLength: 1
+        type_line:
+          type: string
+          maxLength: 300
+        mana_cost:
+          type: string
+          maxLength: 100
+        finishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishesEnum'
+        image_small:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        image_normal:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        image_large:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        prices:
+          allOf:
+          - $ref: '#/components/schemas/Prices'
+          readOnly: true
+      required:
+      - collector_number
+      - id
+      - name
+      - oracle_id
+      - prices
+      - rarity
+      - released_at
+      - set_code
+      - set_name
     PublicUser:
       type: object
       description: What anyone may see about a user. Never add private fields here.
@@ -292,6 +507,22 @@ components:
           format: date-time
       required:
       - username
+    RarityEnum:
+      enum:
+      - common
+      - uncommon
+      - rare
+      - mythic
+      - special
+      - bonus
+      type: string
+      description: |-
+        * `common` - Common
+        * `uncommon` - Uncommon
+        * `rare` - Rare
+        * `mythic` - Mythic
+        * `special` - Special
+        * `bonus` - Bonus
     Register:
       type: object
       properties:
@@ -313,6 +544,18 @@ components:
       - email
       - password
       - username
+    Set:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 10
+        name:
+          type: string
+          maxLength: 200
+      required:
+      - code
+      - name
   securitySchemes:
     jwtAuth:
       type: http

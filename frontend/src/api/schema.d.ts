@@ -69,6 +69,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/cards/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Card names matching `q`, one entry per card (not per printing). */
+        get: operations["catalog_cards_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/cards/{oracle_id}/printings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["catalog_cards_printings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/sets/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["catalog_sets_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["catalog_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health/": {
         parameters: {
             query?: never;
@@ -147,6 +212,16 @@ export interface components {
             access: string;
             user: components["schemas"]["Me"];
         };
+        CardSearchResult: {
+            /** Format: uuid */
+            oracle_id: string;
+            name: string;
+            image_small: string;
+        };
+        CatalogStatus: {
+            /** Format: date-time */
+            prices_updated_at: string | null;
+        };
         /**
          * @description * `USD` - US Dollar
          *     * `EUR` - Euro
@@ -154,6 +229,13 @@ export interface components {
          * @enum {string}
          */
         CurrencyEnum: "USD" | "EUR" | "PLN";
+        /**
+         * @description * `nonfoil` - Nonfoil
+         *     * `foil` - Foil
+         *     * `etched` - Etched
+         * @enum {string}
+         */
+        FinishesEnum: "nonfoil" | "foil" | "etched";
         Health: {
             status: string;
         };
@@ -184,18 +266,69 @@ export interface components {
             /** Format: date-time */
             readonly date_joined?: string;
         };
+        /** @description Price per copy for each finish, in the viewer's currency. Null = no price. */
+        Prices: {
+            /** Format: decimal */
+            nonfoil: string | null;
+            /** Format: decimal */
+            foil: string | null;
+            /** Format: decimal */
+            etched: string | null;
+        };
+        /** @description A printing with prices. Needs `currency` and `rates` in the context. */
+        Printing: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Same for every printing of a card
+             */
+            oracle_id: string;
+            name: string;
+            set_code: string;
+            set_name: string;
+            collector_number: string;
+            /** Format: date */
+            released_at: string;
+            rarity: components["schemas"]["RarityEnum"];
+            colors?: string[];
+            type_line?: string;
+            mana_cost?: string;
+            finishes?: components["schemas"]["FinishesEnum"][];
+            image_small?: string;
+            image_normal?: string;
+            image_large?: string;
+            readonly prices: components["schemas"]["Prices"];
+        };
         /** @description What anyone may see about a user. Never add private fields here. */
         PublicUser: {
             username: string;
             /** Format: date-time */
             date_joined?: string;
         };
+        /**
+         * @description * `common` - Common
+         *     * `uncommon` - Uncommon
+         *     * `rare` - Rare
+         *     * `mythic` - Mythic
+         *     * `special` - Special
+         *     * `bonus` - Bonus
+         * @enum {string}
+         */
+        RarityEnum: "common" | "uncommon" | "rare" | "mythic" | "special" | "bonus";
         Register: {
             username: string;
             /** Format: email */
             email: string;
             password: string;
             currency: components["schemas"]["CurrencyEnum"];
+        };
+        Set: {
+            code: string;
+            name: string;
         };
     };
     responses: never;
@@ -303,6 +436,88 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+        };
+    };
+    catalog_cards_list: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardSearchResult"][];
+                };
+            };
+        };
+    };
+    catalog_cards_printings_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                oracle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Printing"][];
+                };
+            };
+        };
+    };
+    catalog_sets_list: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Set"][];
+                };
+            };
+        };
+    };
+    catalog_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogStatus"];
                 };
             };
         };
