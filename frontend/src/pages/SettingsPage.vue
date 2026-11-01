@@ -4,6 +4,7 @@ import { useForm } from 'vee-validate'
 import { toast } from 'vue-sonner'
 import { z } from 'zod'
 import { fieldErrors } from '@/api/client'
+import InfoTip from '@/components/InfoTip.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -61,10 +62,13 @@ const changePassword = handleSubmit(async (body) => {
 
     <Card>
       <CardHeader>
-        <CardTitle>Currency</CardTitle>
+        <CardTitle class="flex items-center gap-2">
+          Currency
+          <InfoTip text="Prices across the app show in this currency." />
+        </CardTitle>
       </CardHeader>
       <CardContent class="grid gap-2">
-        <Label for="currency">Currency</Label>
+        <Label for="currency" class="sr-only">Currency</Label>
         <Select :model-value="auth.user.currency" @update:model-value="changeCurrency">
           <SelectTrigger id="currency" class="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>

@@ -3,6 +3,7 @@ import 'vue-sonner/style.css'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
@@ -11,8 +12,10 @@ const layout = computed(() => (route.meta.layout === 'auth' ? AuthLayout : AppLa
 </script>
 
 <template>
-  <component :is="layout" v-if="route.matched.length">
-    <RouterView />
-  </component>
+  <TooltipProvider :delay-duration="200">
+    <component :is="layout" v-if="route.matched.length">
+      <RouterView />
+    </component>
+  </TooltipProvider>
   <Toaster position="top-center" />
 </template>
