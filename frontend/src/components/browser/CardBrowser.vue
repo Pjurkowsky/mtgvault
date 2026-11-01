@@ -90,7 +90,7 @@ watch(() => filter.value.q, (q) => {
 let searchTimer: ReturnType<typeof setTimeout>
 watch(search, (q) => {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => update({ q: q.trim() || undefined }), 250)
+  searchTimer = setTimeout(() => update({ q: q.trim() || undefined }), 200)
 })
 
 // ----- clicks: open the card, or select in selection mode -----

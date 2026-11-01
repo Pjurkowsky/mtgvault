@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test'
 const API_PORT = 8100
 const WEB_PORT = 5180
 export const RATES = { EUR: 4.4, USD: 4.0 }
-const DATABASE_URL =
+export const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://mtgvault:mtgvault@localhost:5432/mtgvault_e2e'
 
 export default defineConfig({
@@ -17,7 +17,16 @@ export default defineConfig({
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /performance\.spec\.ts/ },
+    // Timing tests run alone after the rest, so parallel tests don't skew them.
+    {
+      name: 'performance',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /performance\.spec\.ts/,
+      dependencies: ['chromium'],
+    },
+  ],
   webServer: [
     {
       // Needs Postgres: docker compose -f docker-compose.dev.yml up -d db

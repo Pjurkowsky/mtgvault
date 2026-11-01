@@ -144,35 +144,35 @@ Done for T18 to T23: `pnpm e2e` passes.
 
 ## Phase 4: Card browser and bulk actions
 
-- [ ] **T24 `CardBrowser` with grid, table and infinite loading** (AC-29, AC-35, AC-37)
-- [ ] **T25 Search, filters, chips and sort** (AC-30 to AC-33)
-- [ ] **T26 URL state** (AC-34)
-- [ ] **T27 Selection and bulk actions** (AC-38 to AC-44)
-- [ ] **T28 Use the browser on All cards and location pages** (AC-13, AC-37, AC-44)
-- [ ] **T29 Tests: `browser`, `bulk`** (AC-29 to AC-35, AC-37 to AC-44)
+- [x] **T24 `CardBrowser` with grid, table and infinite loading** (AC-29, AC-35, AC-37)
+- [x] **T25 Search, filters, chips and sort** (AC-30 to AC-33)
+- [x] **T26 URL state** (AC-34)
+- [x] **T27 Selection and bulk actions** (AC-38 to AC-44)
+- [x] **T28 Use the browser on All cards and location pages** (AC-13, AC-37, AC-44)
+- [x] **T29 Tests: `browser`, `bulk`** (AC-29 to AC-35, AC-37 to AC-44)
 
 Done for T24 to T29: `pnpm e2e` passes.
 
 ## Phase 5: Import and export
 
-- [ ] **T30 Import dialog** (AC-45 to AC-50)
-- [ ] **T31 Export dialog and bulk export** (AC-41, AC-51 to AC-53)
-- [ ] **T32 Tests: `import-export`** (AC-45 to AC-49, AC-51 to AC-53)
+- [x] **T30 Import dialog** (AC-45 to AC-50)
+- [x] **T31 Export dialog and bulk export** (AC-41, AC-51 to AC-53)
+- [x] **T32 Tests: `import-export`** (AC-45 to AC-49, AC-51 to AC-53)
 
 Done for T30 to T32: `pnpm e2e` passes.
 
 ## Phase 6: Public pages
 
-- [ ] **T33 Directory page** (AC-54)
-- [ ] **T34 Profile locations and public location page** (AC-55 to AC-60)
+- [x] **T33 Directory page** (AC-54)
+- [x] **T34 Profile locations and public location page** (AC-55 to AC-60)
   - The card browser in read-only mode.
-- [ ] **T35 Tests: `public`** (AC-54 to AC-60)
+- [x] **T35 Tests: `public`** (AC-54 to AC-60)
 
 Done for T33 to T35: `pnpm e2e` passes.
 
 ## Phase 7: Wrap up
 
-- [ ] **T36 Performance tests** (AC-36, AC-50)
+- [x] **T36 Performance tests** (AC-36, AC-50)
   - `performance.spec.ts`: 20,000 seeded rows show first results within 1 s
     of changing search, filter or sort. A 5,000-line import completes.
 - [ ] **T37 Live sync check** (AC-1, AC-3)
