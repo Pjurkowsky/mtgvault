@@ -76,7 +76,7 @@ running.
 
 ## Phase 3: Frontend foundation
 
-- [ ] **T9 Dependencies and shadcn components**
+- [x] **T9 Dependencies and shadcn components**
   - Add `vue-router`, `pinia`, `openapi-fetch`, `vee-validate`,
     `@vee-validate/zod`, `zod`.
   - shadcn-vue: `form`, `input`, `label`, `select`, `card`, `sonner`,
