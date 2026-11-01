@@ -52,7 +52,7 @@ async function logout() {
     </header>
 
     <main class="mx-auto max-w-5xl px-4 py-8">
-      <RouterView />
+      <slot />
     </main>
   </div>
 </template>

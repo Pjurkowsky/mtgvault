@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import AppLayout from '@/layouts/AppLayout.vue'
-import AuthLayout from '@/layouts/AuthLayout.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
+    /** Page frame. Defaults to the app layout with the top bar. */
+    layout?: 'app' | 'auth'
     requiresAuth?: boolean
     guestOnly?: boolean
   }
@@ -20,24 +20,12 @@ export function safeNext(value: unknown): string | null {
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    {
-      path: '/',
-      component: AuthLayout,
-      children: [
-        { path: 'login', name: 'login', component: () => import('@/pages/LoginPage.vue'), meta: { guestOnly: true } },
-        { path: 'signup', name: 'signup', component: () => import('@/pages/SignupPage.vue'), meta: { guestOnly: true } },
-      ],
-    },
-    {
-      path: '/',
-      component: AppLayout,
-      children: [
-        { path: '', name: 'collection', component: () => import('@/pages/CollectionPage.vue'), meta: { requiresAuth: true } },
-        { path: 'settings', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { requiresAuth: true } },
-        { path: 'u/:username', name: 'profile', component: () => import('@/pages/ProfilePage.vue') },
-        { path: ':pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/NotFoundPage.vue') },
-      ],
-    },
+    { path: '/login', name: 'login', component: () => import('@/pages/LoginPage.vue'), meta: { layout: 'auth', guestOnly: true } },
+    { path: '/signup', name: 'signup', component: () => import('@/pages/SignupPage.vue'), meta: { layout: 'auth', guestOnly: true } },
+    { path: '/', name: 'collection', component: () => import('@/pages/CollectionPage.vue'), meta: { requiresAuth: true } },
+    { path: '/settings', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { requiresAuth: true } },
+    { path: '/u/:username', name: 'profile', component: () => import('@/pages/ProfilePage.vue') },
+    { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/NotFoundPage.vue') },
   ],
 })
 
