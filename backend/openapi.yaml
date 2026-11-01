@@ -1646,69 +1646,73 @@ components:
         id:
           type: string
           format: uuid
+          readOnly: true
           description: Scryfall id
         oracle_id:
           type: string
           format: uuid
+          readOnly: true
           description: Same for every printing of a card
         name:
           type: string
-          maxLength: 300
+          readOnly: true
         set_code:
           type: string
         set_name:
           type: string
         collector_number:
           type: string
-          maxLength: 20
+          readOnly: true
         released_at:
           type: string
           format: date
+          readOnly: true
         rarity:
-          $ref: '#/components/schemas/RarityEnum'
+          allOf:
+          - $ref: '#/components/schemas/RarityEnum'
+          readOnly: true
         colors:
           type: array
           items:
             type: string
             maxLength: 1
+          readOnly: true
         type_line:
           type: string
-          maxLength: 300
+          readOnly: true
         mana_cost:
           type: string
-          maxLength: 100
+          readOnly: true
         finishes:
           type: array
           items:
             $ref: '#/components/schemas/FinishEnum'
+          readOnly: true
         image_small:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
         image_normal:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
         image_large:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
         prices:
           allOf:
           - $ref: '#/components/schemas/Prices'
           readOnly: true
       required:
       - collector_number
+      - colors
+      - finishes
       - id
+      - image_large
+      - image_normal
+      - image_small
+      - mana_cost
       - name
       - oracle_id
       - prices
@@ -1716,70 +1720,74 @@ components:
       - released_at
       - set_code
       - set_name
+      - type_line
     PrintingBrief:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          readOnly: true
           description: Scryfall id
         oracle_id:
           type: string
           format: uuid
+          readOnly: true
           description: Same for every printing of a card
         name:
           type: string
-          maxLength: 300
+          readOnly: true
         set_code:
           type: string
         set_name:
           type: string
         collector_number:
           type: string
-          maxLength: 20
+          readOnly: true
         rarity:
-          $ref: '#/components/schemas/RarityEnum'
+          allOf:
+          - $ref: '#/components/schemas/RarityEnum'
+          readOnly: true
         colors:
           type: array
           items:
             type: string
             maxLength: 1
+          readOnly: true
         type_line:
           type: string
-          maxLength: 300
+          readOnly: true
         finishes:
           type: array
           items:
             $ref: '#/components/schemas/FinishEnum'
+          readOnly: true
         image_small:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
         image_normal:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
         image_large:
-          oneOf:
-          - type: string
-            format: uri
-            maxLength: 500
-          - type: string
-            maxLength: 0
+          type: string
+          format: uri
+          readOnly: true
       required:
       - collector_number
+      - colors
+      - finishes
       - id
+      - image_large
+      - image_normal
+      - image_small
       - name
       - oracle_id
       - rarity
       - set_code
       - set_name
+      - type_line
     PublicExportRequest:
       type: object
       properties:

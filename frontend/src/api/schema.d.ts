@@ -778,26 +778,29 @@ export interface components {
              * Format: uuid
              * @description Scryfall id
              */
-            id: string;
+            readonly id: string;
             /**
              * Format: uuid
              * @description Same for every printing of a card
              */
-            oracle_id: string;
-            name: string;
+            readonly oracle_id: string;
+            readonly name: string;
             set_code: string;
             set_name: string;
-            collector_number: string;
+            readonly collector_number: string;
             /** Format: date */
-            released_at: string;
-            rarity: components["schemas"]["RarityEnum"];
-            colors?: string[];
-            type_line?: string;
-            mana_cost?: string;
-            finishes?: components["schemas"]["FinishEnum"][];
-            image_small?: string;
-            image_normal?: string;
-            image_large?: string;
+            readonly released_at: string;
+            readonly rarity: components["schemas"]["RarityEnum"];
+            readonly colors: string[];
+            readonly type_line: string;
+            readonly mana_cost: string;
+            readonly finishes: components["schemas"]["FinishEnum"][];
+            /** Format: uri */
+            readonly image_small: string;
+            /** Format: uri */
+            readonly image_normal: string;
+            /** Format: uri */
+            readonly image_large: string;
             readonly prices: components["schemas"]["Prices"];
         };
         PrintingBrief: {
@@ -805,23 +808,26 @@ export interface components {
              * Format: uuid
              * @description Scryfall id
              */
-            id: string;
+            readonly id: string;
             /**
              * Format: uuid
              * @description Same for every printing of a card
              */
-            oracle_id: string;
-            name: string;
+            readonly oracle_id: string;
+            readonly name: string;
             set_code: string;
             set_name: string;
-            collector_number: string;
-            rarity: components["schemas"]["RarityEnum"];
-            colors?: string[];
-            type_line?: string;
-            finishes?: components["schemas"]["FinishEnum"][];
-            image_small?: string;
-            image_normal?: string;
-            image_large?: string;
+            readonly collector_number: string;
+            readonly rarity: components["schemas"]["RarityEnum"];
+            readonly colors: string[];
+            readonly type_line: string;
+            readonly finishes: components["schemas"]["FinishEnum"][];
+            /** Format: uri */
+            readonly image_small: string;
+            /** Format: uri */
+            readonly image_normal: string;
+            /** Format: uri */
+            readonly image_large: string;
         };
         PublicExportRequest: {
             filter?: components["schemas"]["ItemFilter"];

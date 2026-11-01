@@ -24,7 +24,10 @@ async function logout() {
   <div class="min-h-svh">
     <header class="border-b">
       <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <RouterLink to="/" class="font-semibold">MTG Vault</RouterLink>
+        <nav class="flex items-center gap-6">
+          <RouterLink to="/" class="font-semibold">MTG Vault</RouterLink>
+          <RouterLink :to="{ name: 'directory' }" class="text-sm text-muted-foreground hover:text-foreground" active-class="text-foreground">Users</RouterLink>
+        </nav>
 
         <DropdownMenu v-if="auth.user">
           <DropdownMenuTrigger as-child>

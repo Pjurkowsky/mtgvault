@@ -66,6 +66,6 @@ test.describe('Sign up', () => {
     const user = uniqueUser()
     await signUp(page, user)
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByRole('heading', { name: 'Collection' })).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Locations' })).toBeVisible()
   })
 })

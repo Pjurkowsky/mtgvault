@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 // Separate ports and database so e2e runs never touch your dev data.
 const API_PORT = 8100
 const WEB_PORT = 5180
+export const RATES = { EUR: 4.4, USD: 4.0 }
 const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://mtgvault:mtgvault@localhost:5432/mtgvault_e2e'
 
@@ -20,7 +21,12 @@ export default defineConfig({
   webServer: [
     {
       // Needs Postgres: docker compose -f docker-compose.dev.yml up -d db
-      command: `uv run manage.py migrate --noinput && uv run manage.py runserver 127.0.0.1:${API_PORT} --noreload`,
+      // Card fixture with fixed rates, so expected prices are exact (spec 001).
+      command: [
+        'uv run manage.py migrate --noinput',
+        `uv run manage.py sync_cards --file cards/fixtures/scryfall-sample.jsonl --eur-pln ${RATES.EUR} --usd-pln ${RATES.USD}`,
+        `uv run manage.py runserver 127.0.0.1:${API_PORT} --noreload`,
+      ].join(' && '),
       cwd: '../backend',
       url: `http://127.0.0.1:${API_PORT}/api/health/`,
       env: { DATABASE_URL, DEBUG: 'True', AUTH_COOKIE_SECURE: 'False' },

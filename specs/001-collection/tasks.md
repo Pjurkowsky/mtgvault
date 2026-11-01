@@ -125,19 +125,19 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     currency, marks PLN with ≈ and an `InfoTip`, and shows "–" for missing.
   - Done: `pnpm build` passes.
 
-- [ ] **T18 Collection page with tabs and locations** (AC-7 to AC-12)
+- [x] **T18 Collection page with tabs and locations** (AC-7 to AC-12)
   - Routes `/` and `/cards`, tabs, "Users" link in the top bar.
   - `LocationGrid`, `LocationDialog`, `DeleteLocationDialog`.
   - Update spec 000's AC-6 test for the tabs.
-- [ ] **T19 Location page** (AC-13)
+- [x] **T19 Location page** (AC-13)
   - `/locations/:id` and `/locations/unfiled` with name, kind and totals. Cards
     show in a simple grid until phase 4 replaces it with the card browser.
-- [ ] **T20 Add card dialog** (AC-21 to AC-25)
-- [ ] **T21 Card detail dialog** (AC-26 to AC-28)
-- [ ] **T22 Playwright fixture setup**
+- [x] **T20 Add card dialog** (AC-21 to AC-25)
+- [x] **T21 Card detail dialog** (AC-26 to AC-28)
+- [x] **T22 Playwright fixture setup**
   - The Django web server command runs `sync_cards` on the fixture with fixed
     rates first. Helpers for creating locations and adding cards through the API.
-- [ ] **T23 Tests: `catalog`, `locations`, `add-card`, `card-detail`**
+- [x] **T23 Tests: `catalog`, `locations`, `add-card`, `card-detail`**
   (AC-1 to AC-28)
 
 Done for T18 to T23: `pnpm e2e` passes.

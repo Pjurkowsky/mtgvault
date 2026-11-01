@@ -26,6 +26,7 @@ class PrintingSerializer(serializers.ModelSerializer):
             'released_at', 'rarity', 'colors', 'type_line', 'mana_cost', 'finishes',
             'image_small', 'image_normal', 'image_large', 'prices',
         ]
+        read_only_fields = fields  # output only; also marks them required in the schema
 
     def get_prices(self, printing) -> PricesSerializer:
         currency, rates = self.context['currency'], self.context['rates']

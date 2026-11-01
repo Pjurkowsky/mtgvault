@@ -71,6 +71,7 @@ class PrintingBriefSerializer(serializers.ModelSerializer):
             'id', 'oracle_id', 'name', 'set_code', 'set_name', 'collector_number', 'rarity',
             'colors', 'type_line', 'finishes', 'image_small', 'image_normal', 'image_large',
         ]
+        read_only_fields = fields  # output only; also marks them required in the schema
 
 
 class PublicItemSerializer(serializers.ModelSerializer):
