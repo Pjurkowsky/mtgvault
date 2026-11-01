@@ -120,7 +120,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
 
 ## Phase 3: Locations and adding cards
 
-- [ ] **T17 shadcn components and money formatting** (AC-3, AC-4)
+- [x] **T17 shadcn components and money formatting** (AC-3, AC-4)
   - Add the components listed in the plan. `useMoney` formats in the user's
     currency, marks PLN with ≈ and an `InfoTip`, and shows "–" for missing.
   - Done: `pnpm build` passes.
