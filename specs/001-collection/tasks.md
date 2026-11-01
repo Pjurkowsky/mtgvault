@@ -50,7 +50,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - Done: with the dev stack up, `celery call cards.tasks.sync_cards` (pointed
     at the fixture) finishes in the worker, and `beat` logs its schedule.
 
-- [ ] **T6 Prices** (AC-2 to AC-5)
+- [x] **T6 Prices** (AC-2 to AC-5)
   - `cards/pricing.py`: `price`, `price_expression`, `convert`.
   - Done: a shell check with fixed rates gives the expected USD, EUR and PLN
     prices for nonfoil, foil and etched, `None` for missing EUR etched, and
