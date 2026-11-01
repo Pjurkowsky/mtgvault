@@ -213,6 +213,8 @@ SPECTACULAR_SETTINGS = {
 # Celery: background jobs and the daily catalog sync.
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_BROKER_URL = REDIS_URL
+# Shared by all workers (e.g. the refresh-token rotation grace window).
+CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}}
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {

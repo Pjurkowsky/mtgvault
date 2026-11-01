@@ -1,4 +1,5 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, UntypedToken
 
 from .cookies import REFRESH_COOKIE_NAME, clear_refresh_cookie, set_refresh_cookie
 from .serializers import (
@@ -26,6 +27,23 @@ from .models import User
 # One message for every failed login, so it never reveals whether an account
 # exists (spec 000, AC-8).
 LOGIN_FAILED = 'Wrong username/email or password.'
+
+# A refresh rotates the token. If the browser leaves the page before it stores
+# the new cookie, it still holds the old one; accept that one for a short while
+# instead of logging the user out.
+ROTATION_GRACE_SECONDS = 30
+
+
+def _rotated_key(jti: str) -> str:
+    return f'auth:rotated:{jti}'
+
+
+def _payload(raw: str) -> dict | None:
+    """Signature- and expiry-checked claims, ignoring the blacklist."""
+    try:
+        return UntypedToken(raw).payload
+    except TokenError:
+        return None
 
 
 def auth_response(user, status_code=status.HTTP_200_OK):
@@ -83,18 +101,37 @@ class RefreshView(APIView):
         responses={200: AccessTokenSerializer, 401: OpenApiResponse(description='Not logged in')},
     )
     def post(self, request):
-        serializer = TokenRefreshSerializer(
-            data={'refresh': request.COOKIES.get(REFRESH_COOKIE_NAME, '')}
-        )
+        raw = request.COOKIES.get(REFRESH_COOKIE_NAME, '')
+        payload = _payload(raw) if raw else None
+        serializer = TokenRefreshSerializer(data={'refresh': raw})
         try:
             serializer.is_valid(raise_exception=True)
         except (TokenError, ValidationError, AuthenticationFailed):
-            response = Response({'detail': 'Not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
-            clear_refresh_cookie(response)
-            return response
+            return self._grace(payload) or self._logged_out()
 
+        if payload:
+            cache.set(_rotated_key(payload['jti']), True, ROTATION_GRACE_SECONDS)
         response = Response({'access': serializer.validated_data['access']})
         set_refresh_cookie(response, serializer.validated_data['refresh'])
+        return response
+
+    @staticmethod
+    def _grace(payload):
+        """A token rotated moments ago: issue a fresh pair instead of a 401."""
+        if not payload or not cache.get(_rotated_key(payload['jti'])):
+            return None
+        user = get_user_model().objects.filter(pk=payload.get('user_id'), is_active=True).first()
+        if user is None:
+            return None
+        refresh = RefreshToken.for_user(user)
+        response = Response({'access': str(refresh.access_token)})
+        set_refresh_cookie(response, refresh)
+        return response
+
+    @staticmethod
+    def _logged_out():
+        response = Response({'detail': 'Not logged in.'}, status=status.HTTP_401_UNAUTHORIZED)
+        clear_refresh_cookie(response)
         return response
 
 
@@ -106,6 +143,8 @@ class LogoutView(APIView):
     def post(self, request):
         token = request.COOKIES.get(REFRESH_COOKIE_NAME)
         if token:
+            if payload := _payload(token):
+                cache.delete(_rotated_key(payload['jti']))
             try:
                 RefreshToken(token).blacklist()
             except TokenError:
