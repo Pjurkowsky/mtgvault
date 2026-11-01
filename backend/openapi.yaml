@@ -180,6 +180,403 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/imports/commit/:
+    post:
+      operationId: imports_commit_create
+      description: Parses the text again (never trusts the preview) and saves all
+        rows at once (AC-49).
+      tags:
+      - imports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+          description: ''
+  /api/imports/preview/:
+    post:
+      operationId: imports_preview_create
+      tags:
+      - imports
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportPreview'
+          description: ''
+  /api/items/:
+    get:
+      operationId: items_list
+      parameters:
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: dir
+        schema:
+          type: string
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: limit
+        schema:
+          type: string
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: price_max
+        schema:
+          type: string
+      - in: query
+        name: price_min
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      tags:
+      - items
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemPage'
+          description: ''
+    post:
+      operationId: items_create
+      tags:
+      - items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ItemWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ItemWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemSaveResult'
+          description: ''
+  /api/items/{id}/:
+    get:
+      operationId: items_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - items
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    patch:
+      operationId: items_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedItemWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedItemWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemSaveResult'
+          description: ''
+    delete:
+      operationId: items_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - items
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/items/bulk/:
+    post:
+      operationId: items_bulk_create
+      description: Move, edit or delete many rows (AC-38 to AC-43). dry_run only counts.
+      tags:
+      - items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BulkRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BulkRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkResult'
+          description: ''
+  /api/items/export/:
+    post:
+      operationId: items_export_create
+      tags:
+      - items
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+          description: ''
+  /api/locations/:
+    get:
+      operationId: locations_list
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationList'
+          description: ''
+    post:
+      operationId: locations_create
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Location'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Location'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: ''
+  /api/locations/{id}/:
+    get:
+      operationId: locations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: ''
+    patch:
+      operationId: locations_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLocation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLocation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLocation'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+          description: ''
+  /api/locations/{id}/delete/:
+    post:
+      operationId: locations_delete_create
+      description: Delete a location, deciding what happens to its cards (AC-11).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationDelete'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LocationDelete'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LocationDelete'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/me/:
     get:
       operationId: me_retrieve
@@ -242,6 +639,28 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/users/:
+    get:
+      operationId: users_list
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DirectoryUser'
+          description: ''
   /api/users/{username}/:
     get:
       operationId: users_retrieve
@@ -262,6 +681,184 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicUser'
           description: ''
+  /api/users/{username}/locations/:
+    get:
+      operationId: users_locations_list
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicLocationList'
+          description: ''
+  /api/users/{username}/locations/{id}/:
+    get:
+      operationId: users_locations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicLocation'
+          description: ''
+  /api/users/{username}/locations/{id}/export/:
+    post:
+      operationId: users_locations_export_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicExportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicExportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicExportRequest'
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+          description: ''
+  /api/users/{username}/locations/{id}/items/:
+    get:
+      operationId: users_locations_items_retrieve
+      parameters:
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: dir
+        schema:
+          type: string
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: string
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: price_max
+        schema:
+          type: string
+      - in: query
+        name: price_min
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicItemPage'
+          description: ''
 components:
   schemas:
     AccessToken:
@@ -271,6 +868,16 @@ components:
           type: string
       required:
       - access
+    ActionEnum:
+      enum:
+      - move
+      - edit
+      - delete
+      type: string
+      description: |-
+        * `move` - move
+        * `edit` - edit
+        * `delete` - delete
     AuthResponse:
       type: object
       description: Body returned by register and login. The refresh token goes in
@@ -283,6 +890,51 @@ components:
       required:
       - access
       - user
+    BlankEnum:
+      enum:
+      - ''
+    BulkChanges:
+      type: object
+      properties:
+        condition:
+          $ref: '#/components/schemas/ConditionEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+    BulkRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        selection:
+          $ref: '#/components/schemas/Selection'
+        location:
+          type: integer
+          nullable: true
+          description: Target for move; null = Unfiled
+        changes:
+          $ref: '#/components/schemas/BulkChanges'
+        dry_run:
+          type: boolean
+          default: false
+      required:
+      - action
+      - selection
+    BulkResult:
+      type: object
+      properties:
+        rows:
+          type: integer
+        cards:
+          type: integer
+        skipped:
+          type: integer
+          description: Rows left unchanged (e.g. finish not available)
+      required:
+      - cards
+      - rows
+      - skipped
     CardSearchResult:
       type: object
       properties:
@@ -297,6 +949,16 @@ components:
       - image_small
       - name
       - oracle_id
+    CardsEnum:
+      enum:
+      - move
+      - unfile
+      - delete
+      type: string
+      description: |-
+        * `move` - move
+        * `unfile` - unfile
+        * `delete` - delete
     CatalogStatus:
       type: object
       properties:
@@ -306,6 +968,36 @@ components:
           nullable: true
       required:
       - prices_updated_at
+    ColorEnum:
+      enum:
+      - W
+      - U
+      - B
+      - R
+      - G
+      - C
+      type: string
+      description: |-
+        * `W` - W
+        * `U` - U
+        * `B` - B
+        * `R` - R
+        * `G` - G
+        * `C` - C
+    ConditionEnum:
+      enum:
+      - NM
+      - LP
+      - MP
+      - HP
+      - DMG
+      type: string
+      description: |-
+        * `NM` - Near Mint
+        * `LP` - Lightly Played
+        * `MP` - Moderately Played
+        * `HP` - Heavily Played
+        * `DMG` - Damaged
     CurrencyEnum:
       enum:
       - USD
@@ -316,7 +1008,42 @@ components:
         * `USD` - US Dollar
         * `EUR` - Euro
         * `PLN` - Polish Złoty
-    FinishesEnum:
+    DirEnum:
+      enum:
+      - asc
+      - desc
+      type: string
+      description: |-
+        * `asc` - asc
+        * `desc` - desc
+    DirectoryUser:
+      type: object
+      properties:
+        username:
+          type: string
+        public_locations:
+          type: integer
+      required:
+      - public_locations
+      - username
+    ExportRequest:
+      type: object
+      properties:
+        selection:
+          $ref: '#/components/schemas/Selection'
+      required:
+      - selection
+    ExportResult:
+      type: object
+      properties:
+        text:
+          type: string
+        rows:
+          type: integer
+      required:
+      - rows
+      - text
+    FinishEnum:
       enum:
       - nonfoil
       - foil
@@ -333,6 +1060,421 @@ components:
           type: string
       required:
       - status
+    ImportError:
+      type: object
+      properties:
+        line:
+          type: integer
+        text:
+          type: string
+        reason:
+          type: string
+      required:
+      - line
+      - reason
+      - text
+    ImportPreview:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportRow'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportError'
+        cards:
+          type: integer
+      required:
+      - cards
+      - errors
+      - rows
+    ImportRequest:
+      type: object
+      properties:
+        text:
+          type: string
+        location:
+          type: integer
+          nullable: true
+        condition:
+          allOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          default: NM
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        purchase_price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
+          nullable: true
+        purchase_currency:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - text
+    ImportResult:
+      type: object
+      properties:
+        rows:
+          type: integer
+        cards:
+          type: integer
+      required:
+      - cards
+      - rows
+    ImportRow:
+      type: object
+      properties:
+        line:
+          type: integer
+        quantity:
+          type: integer
+        finish:
+          type: string
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+      required:
+      - finish
+      - line
+      - printing
+      - quantity
+    Item:
+      type: object
+      description: Owner view of a row. Needs `currency` and `rates` in the context.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+        condition:
+          $ref: '#/components/schemas/ConditionEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        unit_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+          nullable: true
+        location:
+          type: integer
+          nullable: true
+        location_name:
+          type: string
+          nullable: true
+        purchase_price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        purchase_currency:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        purchase_price_converted:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+          description: Purchase price per copy in the viewer currency
+        added_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+          description: Market price per copy when added, viewer currency
+        added_at:
+          type: string
+          format: date-time
+      required:
+      - added_price
+      - finish
+      - id
+      - location
+      - printing
+      - purchase_price_converted
+      - quantity
+      - unit_price
+    ItemFilter:
+      type: object
+      properties:
+        q:
+          type: string
+        color:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColorEnum'
+        type:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypeEnum'
+        rarity:
+          type: array
+          items:
+            $ref: '#/components/schemas/RarityEnum'
+        set:
+          type: array
+          items:
+            type: string
+            maxLength: 10
+        finish:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishEnum'
+        condition:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConditionEnum'
+        price_min:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: 0
+          exclusiveMaximum: true
+        price_max:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: 0
+          exclusiveMaximum: true
+        location:
+          type: string
+          description: Location id or "unfiled"
+        sort:
+          allOf:
+          - $ref: '#/components/schemas/SortEnum'
+          default: name
+        dir:
+          allOf:
+          - $ref: '#/components/schemas/DirEnum'
+          default: asc
+    ItemPage:
+      type: object
+      properties:
+        currency:
+          type: string
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        count:
+          type: integer
+          description: Matching rows
+        total_quantity:
+          type: integer
+          description: Cards in matching rows
+        total_value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+      required:
+      - count
+      - currency
+      - prices_updated_at
+      - results
+      - total_quantity
+      - total_value
+    ItemSaveResult:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/Item'
+        merged:
+          type: boolean
+          description: True when the row merged into an existing one
+      required:
+      - item
+      - merged
+    ItemWrite:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+        condition:
+          allOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          default: NM
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        purchase_price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
+          nullable: true
+        purchase_currency:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        location:
+          type: integer
+          nullable: true
+          description: Location id; null = Unfiled
+      required:
+      - finish
+      - printing
+    LanguageEnum:
+      enum:
+      - en
+      - es
+      - fr
+      - de
+      - it
+      - pt
+      - ja
+      - ko
+      - ru
+      - zhs
+      - zht
+      - he
+      - la
+      - grc
+      - ar
+      - sa
+      - ph
+      - qya
+      type: string
+      description: |-
+        * `en` - English
+        * `es` - Spanish
+        * `fr` - French
+        * `de` - German
+        * `it` - Italian
+        * `pt` - Portuguese
+        * `ja` - Japanese
+        * `ko` - Korean
+        * `ru` - Russian
+        * `zhs` - Simplified Chinese
+        * `zht` - Traditional Chinese
+        * `he` - Hebrew
+        * `la` - Latin
+        * `grc` - Ancient Greek
+        * `ar` - Arabic
+        * `sa` - Sanskrit
+        * `ph` - Phyrexian
+        * `qya` - Quenya
+    Location:
+      type: object
+      description: Owner view of a location. Totals come from the view (context['totals']).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/LocationKindEnum'
+        is_public:
+          type: boolean
+        card_count:
+          type: integer
+          readOnly: true
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - card_count
+      - created_at
+      - id
+      - kind
+      - name
+      - value
+    LocationDelete:
+      type: object
+      properties:
+        cards:
+          $ref: '#/components/schemas/CardsEnum'
+        target:
+          type: integer
+          description: Location id for "move"
+    LocationKindEnum:
+      enum:
+      - binder
+      - box
+      - deck_box
+      type: string
+      description: |-
+        * `binder` - Binder
+        * `box` - Box
+        * `deck_box` - Deck box
+    LocationList:
+      type: object
+      properties:
+        currency:
+          type: string
+        unfiled:
+          $ref: '#/components/schemas/Totals'
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+      required:
+      - currency
+      - locations
+      - unfiled
     Login:
       type: object
       properties:
@@ -366,6 +1508,9 @@ components:
       - date_joined
       - email
       - username
+    NullEnum:
+      enum:
+      - null
     PasswordChange:
       type: object
       properties:
@@ -376,6 +1521,74 @@ components:
       required:
       - current_password
       - new_password
+    PatchedItemWrite:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+        condition:
+          allOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          default: NM
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
+        purchase_price:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
+          nullable: true
+        purchase_currency:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        location:
+          type: integer
+          nullable: true
+          description: Location id; null = Unfiled
+    PatchedLocation:
+      type: object
+      description: Owner view of a location. Totals come from the view (context['totals']).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/LocationKindEnum'
+        is_public:
+          type: boolean
+        card_count:
+          type: integer
+          readOnly: true
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedMe:
       type: object
       description: The logged-in user's own account data.
@@ -399,19 +1612,28 @@ components:
         = no price.
       properties:
         nonfoil:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         foil:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         etched:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
       required:
       - etched
@@ -458,7 +1680,7 @@ components:
         finishes:
           type: array
           items:
-            $ref: '#/components/schemas/FinishesEnum'
+            $ref: '#/components/schemas/FinishEnum'
         image_small:
           oneOf:
           - type: string
@@ -494,6 +1716,185 @@ components:
       - released_at
       - set_code
       - set_name
+    PrintingBrief:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Scryfall id
+        oracle_id:
+          type: string
+          format: uuid
+          description: Same for every printing of a card
+        name:
+          type: string
+          maxLength: 300
+        set_code:
+          type: string
+        set_name:
+          type: string
+        collector_number:
+          type: string
+          maxLength: 20
+        rarity:
+          $ref: '#/components/schemas/RarityEnum'
+        colors:
+          type: array
+          items:
+            type: string
+            maxLength: 1
+        type_line:
+          type: string
+          maxLength: 300
+        finishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishEnum'
+        image_small:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        image_normal:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+        image_large:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
+      required:
+      - collector_number
+      - id
+      - name
+      - oracle_id
+      - rarity
+      - set_code
+      - set_name
+    PublicExportRequest:
+      type: object
+      properties:
+        filter:
+          $ref: '#/components/schemas/ItemFilter'
+    PublicItem:
+      type: object
+      description: What visitors see. Never add purchase or added-price fields here
+        (AC-57).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+        quantity:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+        condition:
+          $ref: '#/components/schemas/ConditionEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        unit_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+          nullable: true
+      required:
+      - finish
+      - id
+      - printing
+      - quantity
+      - unit_price
+    PublicItemPage:
+      type: object
+      properties:
+        currency:
+          type: string
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        count:
+          type: integer
+          description: Matching rows
+        total_quantity:
+          type: integer
+          description: Cards in matching rows
+        total_value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicItem'
+      required:
+      - count
+      - currency
+      - prices_updated_at
+      - results
+      - total_quantity
+      - total_value
+    PublicLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/LocationKindEnum'
+        card_count:
+          type: integer
+          readOnly: true
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          readOnly: true
+      required:
+      - card_count
+      - id
+      - kind
+      - name
+      - value
+    PublicLocationList:
+      type: object
+      properties:
+        currency:
+          type: string
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicLocation'
+      required:
+      - currency
+      - locations
     PublicUser:
       type: object
       description: What anyone may see about a user. Never add private fields here.
@@ -544,6 +1945,21 @@ components:
       - email
       - password
       - username
+    Selection:
+      type: object
+      description: Either explicit ids, or every row matching a filter minus exclusions
+        (AC-39).
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+        filter:
+          $ref: '#/components/schemas/ItemFilter'
+        exclude_ids:
+          type: array
+          items:
+            type: integer
     Set:
       type: object
       properties:
@@ -556,6 +1972,66 @@ components:
       required:
       - code
       - name
+    SortEnum:
+      enum:
+      - name
+      - set
+      - rarity
+      - price
+      - quantity
+      - added
+      - color
+      - mana_value
+      type: string
+      description: |-
+        * `name` - name
+        * `set` - set
+        * `rarity` - rarity
+        * `price` - price
+        * `quantity` - quantity
+        * `added` - added
+        * `color` - color
+        * `mana_value` - mana_value
+    Totals:
+      type: object
+      properties:
+        card_count:
+          type: integer
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+      required:
+      - card_count
+      - value
+    TypeEnum:
+      enum:
+      - Artifact
+      - Battle
+      - Creature
+      - Enchantment
+      - Instant
+      - Kindred
+      - Land
+      - Planeswalker
+      - Sorcery
+      - Tribal
+      type: string
+      description: |-
+        * `Artifact` - Artifact
+        * `Battle` - Battle
+        * `Creature` - Creature
+        * `Enchantment` - Enchantment
+        * `Instant` - Instant
+        * `Kindred` - Kindred
+        * `Land` - Land
+        * `Planeswalker` - Planeswalker
+        * `Sorcery` - Sorcery
+        * `Tribal` - Tribal
   securitySchemes:
     jwtAuth:
       type: http

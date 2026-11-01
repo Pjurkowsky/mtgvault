@@ -83,37 +83,37 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - Done: a shell check on fixture-based rows gives the right result for
     each filter, for a combination, and for every sort in both directions.
 
-- [ ] **T11 Location endpoints** (AC-7 to AC-13)
+- [x] **T11 Location endpoints** (AC-7 to AC-13)
   - List (with Unfiled), create, detail, update, and delete with
     move/unfile/delete.
   - Done: test-client checks for each, including a duplicate name in another
     letter case, Unfiled being read-only, and correct counts and values.
 
-- [ ] **T12 Item endpoints** (AC-14 to AC-28, AC-35, AC-37)
+- [x] **T12 Item endpoints** (AC-14 to AC-28, AC-35, AC-37)
   - List with filters, `offset`/`limit`, `count` and `total_quantity`; add;
     detail; edit (including printing change); delete.
   - Done: test-client checks for add (new and merge), edit merge, and a
     paginated list with totals.
 
-- [ ] **T13 Bulk endpoint** (AC-39 to AC-43)
+- [x] **T13 Bulk endpoint** (AC-39 to AC-43)
   - `/api/items/bulk/` with both selection forms and `dry_run`.
   - Done: test-client checks for move, edit (with skipped finishes), delete,
     and select-all with exclusions.
 
-- [ ] **T14 Text lists, import and export** (AC-45 to AC-53)
+- [x] **T14 Text lists, import and export** (AC-45 to AC-53)
   - `collection/textlist.py`, `/api/imports/preview/`, `/api/imports/commit/`,
     `/api/items/export/`.
   - Done: shell checks parse every line shape from AC-46, report bad lines with
     line numbers, and round-trip an export through import.
 
-- [ ] **T15 Public endpoints** (AC-54 to AC-60)
+- [x] **T15 Public endpoints** (AC-54 to AC-60)
   - Directory, a user's public locations, public items, with serializers that
     have no purchase or added-price fields.
   - Done: test-client checks that a private location returns the same 404 as
     a missing one, and that public responses contain no `purchase_` or
     `added_` keys.
 
-- [ ] **T16 `seed_items` command and API types**
+- [x] **T16 `seed_items` command and API types**
   - `manage.py seed_items --username --rows`, refusing when `DEBUG` is off.
   - Regenerate `openapi.yaml` and `schema.d.ts`.
   - Done: seeding 20,000 rows works, and `scripts/check-api.sh` passes.

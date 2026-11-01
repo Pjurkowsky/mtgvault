@@ -176,6 +176,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Money goes out as JSON numbers everywhere (prices have 2 decimals).
+    'COERCE_DECIMAL_TO_STRING': False,
 }
 
 # Each refresh rotates the token and blacklists the old one, so a session
@@ -196,6 +198,15 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'MTG Vault API',
     'VERSION': '0.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    # One stable name per choice set, used by the generated TypeScript types.
+    'ENUM_NAME_OVERRIDES': {
+        'CurrencyEnum': 'users.models.Currency',
+        'FinishEnum': 'cards.models.Finish',
+        'RarityEnum': 'cards.models.Rarity',
+        'ConditionEnum': 'collection.models.Condition',
+        'LanguageEnum': 'collection.models.Language',
+        'LocationKindEnum': 'collection.models.Location.Kind',
+    },
 }
 
 

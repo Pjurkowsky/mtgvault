@@ -150,6 +150,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/imports/commit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Parses the text again (never trusts the preview) and saves all rows at once (AC-49). */
+        post: operations["imports_commit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/imports/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["imports_preview_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["items_list"];
+        put?: never;
+        post: operations["items_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["items_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["items_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["items_partial_update"];
+        trace?: never;
+    };
+    "/api/items/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Move, edit or delete many rows (AC-38 to AC-43). dry_run only counts. */
+        post: operations["items_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/items/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["items_export_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/locations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["locations_list"];
+        put?: never;
+        post: operations["locations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/locations/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["locations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["locations_partial_update"];
+        trace?: never;
+    };
+    "/api/locations/{id}/delete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Delete a location, deciding what happens to its cards (AC-11). */
+        post: operations["locations_delete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me/": {
         parameters: {
             query?: never;
@@ -184,6 +331,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/": {
         parameters: {
             query?: never;
@@ -200,6 +363,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/locations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_locations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/locations/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_locations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/locations/{id}/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["users_locations_export_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/locations/{id}/items/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_locations_items_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -207,10 +434,39 @@ export interface components {
         AccessToken: {
             access: string;
         };
+        /**
+         * @description * `move` - move
+         *     * `edit` - edit
+         *     * `delete` - delete
+         * @enum {string}
+         */
+        ActionEnum: "move" | "edit" | "delete";
         /** @description Body returned by register and login. The refresh token goes in a cookie. */
         AuthResponse: {
             access: string;
             user: components["schemas"]["Me"];
+        };
+        /** @enum {unknown} */
+        BlankEnum: "";
+        BulkChanges: {
+            condition?: components["schemas"]["ConditionEnum"];
+            language?: components["schemas"]["LanguageEnum"];
+            finish?: components["schemas"]["FinishEnum"];
+        };
+        BulkRequest: {
+            action: components["schemas"]["ActionEnum"];
+            selection: components["schemas"]["Selection"];
+            /** @description Target for move; null = Unfiled */
+            location?: number | null;
+            changes?: components["schemas"]["BulkChanges"];
+            /** @default false */
+            dry_run: boolean;
+        };
+        BulkResult: {
+            rows: number;
+            cards: number;
+            /** @description Rows left unchanged (e.g. finish not available) */
+            skipped: number;
         };
         CardSearchResult: {
             /** Format: uuid */
@@ -218,10 +474,36 @@ export interface components {
             name: string;
             image_small: string;
         };
+        /**
+         * @description * `move` - move
+         *     * `unfile` - unfile
+         *     * `delete` - delete
+         * @enum {string}
+         */
+        CardsEnum: "move" | "unfile" | "delete";
         CatalogStatus: {
             /** Format: date-time */
             prices_updated_at: string | null;
         };
+        /**
+         * @description * `W` - W
+         *     * `U` - U
+         *     * `B` - B
+         *     * `R` - R
+         *     * `G` - G
+         *     * `C` - C
+         * @enum {string}
+         */
+        ColorEnum: "W" | "U" | "B" | "R" | "G" | "C";
+        /**
+         * @description * `NM` - Near Mint
+         *     * `LP` - Lightly Played
+         *     * `MP` - Moderately Played
+         *     * `HP` - Heavily Played
+         *     * `DMG` - Damaged
+         * @enum {string}
+         */
+        ConditionEnum: "NM" | "LP" | "MP" | "HP" | "DMG";
         /**
          * @description * `USD` - US Dollar
          *     * `EUR` - Euro
@@ -230,14 +512,196 @@ export interface components {
          */
         CurrencyEnum: "USD" | "EUR" | "PLN";
         /**
+         * @description * `asc` - asc
+         *     * `desc` - desc
+         * @enum {string}
+         */
+        DirEnum: "asc" | "desc";
+        DirectoryUser: {
+            username: string;
+            public_locations: number;
+        };
+        ExportRequest: {
+            selection: components["schemas"]["Selection"];
+        };
+        ExportResult: {
+            text: string;
+            rows: number;
+        };
+        /**
          * @description * `nonfoil` - Nonfoil
          *     * `foil` - Foil
          *     * `etched` - Etched
          * @enum {string}
          */
-        FinishesEnum: "nonfoil" | "foil" | "etched";
+        FinishEnum: "nonfoil" | "foil" | "etched";
         Health: {
             status: string;
+        };
+        ImportError: {
+            line: number;
+            text: string;
+            reason: string;
+        };
+        ImportPreview: {
+            rows: components["schemas"]["ImportRow"][];
+            errors: components["schemas"]["ImportError"][];
+            cards: number;
+        };
+        ImportRequest: {
+            text: string;
+            location?: number | null;
+            /** @default NM */
+            condition: components["schemas"]["ConditionEnum"];
+            /** @default en */
+            language: components["schemas"]["LanguageEnum"];
+            /** Format: double */
+            purchase_price?: number | null;
+            purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        ImportResult: {
+            rows: number;
+            cards: number;
+        };
+        ImportRow: {
+            line: number;
+            quantity: number;
+            finish: string;
+            printing: components["schemas"]["PrintingBrief"];
+        };
+        /** @description Owner view of a row. Needs `currency` and `rates` in the context. */
+        Item: {
+            readonly id: number;
+            printing: components["schemas"]["PrintingBrief"];
+            quantity: number;
+            finish: components["schemas"]["FinishEnum"];
+            condition?: components["schemas"]["ConditionEnum"];
+            language?: components["schemas"]["LanguageEnum"];
+            /** Format: double */
+            readonly unit_price: number | null;
+            location: number | null;
+            location_name?: string | null;
+            /** Format: double */
+            purchase_price?: number | null;
+            purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: double
+             * @description Purchase price per copy in the viewer currency
+             */
+            readonly purchase_price_converted: number | null;
+            /**
+             * Format: double
+             * @description Market price per copy when added, viewer currency
+             */
+            readonly added_price: number | null;
+            /** Format: date-time */
+            added_at?: string;
+        };
+        ItemFilter: {
+            q?: string;
+            color?: components["schemas"]["ColorEnum"][];
+            type?: components["schemas"]["TypeEnum"][];
+            rarity?: components["schemas"]["RarityEnum"][];
+            set?: string[];
+            finish?: components["schemas"]["FinishEnum"][];
+            condition?: components["schemas"]["ConditionEnum"][];
+            /** Format: double */
+            price_min?: number;
+            /** Format: double */
+            price_max?: number;
+            /** @description Location id or "unfiled" */
+            location?: string;
+            /** @default name */
+            sort: components["schemas"]["SortEnum"];
+            /** @default asc */
+            dir: components["schemas"]["DirEnum"];
+        };
+        ItemPage: {
+            currency: string;
+            /** Format: date-time */
+            prices_updated_at: string | null;
+            /** @description Matching rows */
+            count: number;
+            /** @description Cards in matching rows */
+            total_quantity: number;
+            /** Format: double */
+            total_value: number | null;
+            results: components["schemas"]["Item"][];
+        };
+        ItemSaveResult: {
+            item: components["schemas"]["Item"];
+            /** @description True when the row merged into an existing one */
+            merged: boolean;
+        };
+        ItemWrite: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing: string;
+            /** @default 1 */
+            quantity: number;
+            finish: components["schemas"]["FinishEnum"];
+            /** @default NM */
+            condition: components["schemas"]["ConditionEnum"];
+            /** @default en */
+            language: components["schemas"]["LanguageEnum"];
+            /** Format: double */
+            purchase_price?: number | null;
+            purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Location id; null = Unfiled */
+            location?: number | null;
+        };
+        /**
+         * @description * `en` - English
+         *     * `es` - Spanish
+         *     * `fr` - French
+         *     * `de` - German
+         *     * `it` - Italian
+         *     * `pt` - Portuguese
+         *     * `ja` - Japanese
+         *     * `ko` - Korean
+         *     * `ru` - Russian
+         *     * `zhs` - Simplified Chinese
+         *     * `zht` - Traditional Chinese
+         *     * `he` - Hebrew
+         *     * `la` - Latin
+         *     * `grc` - Ancient Greek
+         *     * `ar` - Arabic
+         *     * `sa` - Sanskrit
+         *     * `ph` - Phyrexian
+         *     * `qya` - Quenya
+         * @enum {string}
+         */
+        LanguageEnum: "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "ru" | "zhs" | "zht" | "he" | "la" | "grc" | "ar" | "sa" | "ph" | "qya";
+        /** @description Owner view of a location. Totals come from the view (context['totals']). */
+        Location: {
+            readonly id: number;
+            name: string;
+            kind: components["schemas"]["LocationKindEnum"];
+            is_public?: boolean;
+            readonly card_count: number;
+            /** Format: double */
+            readonly value: number | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        LocationDelete: {
+            cards?: components["schemas"]["CardsEnum"];
+            /** @description Location id for "move" */
+            target?: number;
+        };
+        /**
+         * @description * `binder` - Binder
+         *     * `box` - Box
+         *     * `deck_box` - Deck box
+         * @enum {string}
+         */
+        LocationKindEnum: "binder" | "box" | "deck_box";
+        LocationList: {
+            currency: string;
+            unfiled: components["schemas"]["Totals"];
+            locations: components["schemas"]["Location"][];
         };
         Login: {
             /** @description Username or email */
@@ -253,9 +717,42 @@ export interface components {
             /** Format: date-time */
             readonly date_joined: string;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         PasswordChange: {
             current_password: string;
             new_password: string;
+        };
+        PatchedItemWrite: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing?: string;
+            /** @default 1 */
+            quantity: number;
+            finish?: components["schemas"]["FinishEnum"];
+            /** @default NM */
+            condition: components["schemas"]["ConditionEnum"];
+            /** @default en */
+            language: components["schemas"]["LanguageEnum"];
+            /** Format: double */
+            purchase_price?: number | null;
+            purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description Location id; null = Unfiled */
+            location?: number | null;
+        };
+        /** @description Owner view of a location. Totals come from the view (context['totals']). */
+        PatchedLocation: {
+            readonly id?: number;
+            name?: string;
+            kind?: components["schemas"]["LocationKindEnum"];
+            is_public?: boolean;
+            readonly card_count?: number;
+            /** Format: double */
+            readonly value?: number | null;
+            /** Format: date-time */
+            readonly created_at?: string;
         };
         /** @description The logged-in user's own account data. */
         PatchedMe: {
@@ -268,12 +765,12 @@ export interface components {
         };
         /** @description Price per copy for each finish, in the viewer's currency. Null = no price. */
         Prices: {
-            /** Format: decimal */
-            nonfoil: string | null;
-            /** Format: decimal */
-            foil: string | null;
-            /** Format: decimal */
-            etched: string | null;
+            /** Format: double */
+            nonfoil: number | null;
+            /** Format: double */
+            foil: number | null;
+            /** Format: double */
+            etched: number | null;
         };
         /** @description A printing with prices. Needs `currency` and `rates` in the context. */
         Printing: {
@@ -297,11 +794,72 @@ export interface components {
             colors?: string[];
             type_line?: string;
             mana_cost?: string;
-            finishes?: components["schemas"]["FinishesEnum"][];
+            finishes?: components["schemas"]["FinishEnum"][];
             image_small?: string;
             image_normal?: string;
             image_large?: string;
             readonly prices: components["schemas"]["Prices"];
+        };
+        PrintingBrief: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Same for every printing of a card
+             */
+            oracle_id: string;
+            name: string;
+            set_code: string;
+            set_name: string;
+            collector_number: string;
+            rarity: components["schemas"]["RarityEnum"];
+            colors?: string[];
+            type_line?: string;
+            finishes?: components["schemas"]["FinishEnum"][];
+            image_small?: string;
+            image_normal?: string;
+            image_large?: string;
+        };
+        PublicExportRequest: {
+            filter?: components["schemas"]["ItemFilter"];
+        };
+        /** @description What visitors see. Never add purchase or added-price fields here (AC-57). */
+        PublicItem: {
+            readonly id: number;
+            printing: components["schemas"]["PrintingBrief"];
+            quantity: number;
+            finish: components["schemas"]["FinishEnum"];
+            condition?: components["schemas"]["ConditionEnum"];
+            language?: components["schemas"]["LanguageEnum"];
+            /** Format: double */
+            readonly unit_price: number | null;
+        };
+        PublicItemPage: {
+            currency: string;
+            /** Format: date-time */
+            prices_updated_at: string | null;
+            /** @description Matching rows */
+            count: number;
+            /** @description Cards in matching rows */
+            total_quantity: number;
+            /** Format: double */
+            total_value: number | null;
+            results: components["schemas"]["PublicItem"][];
+        };
+        PublicLocation: {
+            readonly id: number;
+            name: string;
+            kind: components["schemas"]["LocationKindEnum"];
+            readonly card_count: number;
+            /** Format: double */
+            readonly value: number | null;
+        };
+        PublicLocationList: {
+            currency: string;
+            locations: components["schemas"]["PublicLocation"][];
         };
         /** @description What anyone may see about a user. Never add private fields here. */
         PublicUser: {
@@ -326,10 +884,47 @@ export interface components {
             password: string;
             currency: components["schemas"]["CurrencyEnum"];
         };
+        /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
+        Selection: {
+            ids?: number[];
+            filter?: components["schemas"]["ItemFilter"];
+            exclude_ids?: number[];
+        };
         Set: {
             code: string;
             name: string;
         };
+        /**
+         * @description * `name` - name
+         *     * `set` - set
+         *     * `rarity` - rarity
+         *     * `price` - price
+         *     * `quantity` - quantity
+         *     * `added` - added
+         *     * `color` - color
+         *     * `mana_value` - mana_value
+         * @enum {string}
+         */
+        SortEnum: "name" | "set" | "rarity" | "price" | "quantity" | "added" | "color" | "mana_value";
+        Totals: {
+            card_count: number;
+            /** Format: double */
+            value: number | null;
+        };
+        /**
+         * @description * `Artifact` - Artifact
+         *     * `Battle` - Battle
+         *     * `Creature` - Creature
+         *     * `Enchantment` - Enchantment
+         *     * `Instant` - Instant
+         *     * `Kindred` - Kindred
+         *     * `Land` - Land
+         *     * `Planeswalker` - Planeswalker
+         *     * `Sorcery` - Sorcery
+         *     * `Tribal` - Tribal
+         * @enum {string}
+         */
+        TypeEnum: "Artifact" | "Battle" | "Creature" | "Enchantment" | "Instant" | "Kindred" | "Land" | "Planeswalker" | "Sorcery" | "Tribal";
     };
     responses: never;
     parameters: never;
@@ -541,6 +1136,351 @@ export interface operations {
             };
         };
     };
+    imports_commit_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ImportRequest"];
+                "multipart/form-data": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+        };
+    };
+    imports_preview_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ImportRequest"];
+                "multipart/form-data": components["schemas"]["ImportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportPreview"];
+                };
+            };
+        };
+    };
+    items_list: {
+        parameters: {
+            query?: {
+                color?: string[];
+                condition?: string[];
+                dir?: string;
+                finish?: string[];
+                limit?: string;
+                location?: string;
+                offset?: string;
+                price_max?: string;
+                price_min?: string;
+                q?: string;
+                rarity?: string[];
+                set?: string[];
+                sort?: string;
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemPage"];
+                };
+            };
+        };
+    };
+    items_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["ItemWrite"];
+                "multipart/form-data": components["schemas"]["ItemWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemSaveResult"];
+                };
+            };
+        };
+    };
+    items_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Item"];
+                };
+            };
+        };
+    };
+    items_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    items_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedItemWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedItemWrite"];
+                "multipart/form-data": components["schemas"]["PatchedItemWrite"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemSaveResult"];
+                };
+            };
+        };
+    };
+    items_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BulkRequest"];
+                "multipart/form-data": components["schemas"]["BulkRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+        };
+    };
+    items_export_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExportRequest"];
+                "multipart/form-data": components["schemas"]["ExportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    locations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LocationList"];
+                };
+            };
+        };
+    };
+    locations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Location"];
+                "application/x-www-form-urlencoded": components["schemas"]["Location"];
+                "multipart/form-data": components["schemas"]["Location"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+        };
+    };
+    locations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+        };
+    };
+    locations_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLocation"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLocation"];
+                "multipart/form-data": components["schemas"]["PatchedLocation"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Location"];
+                };
+            };
+        };
+    };
+    locations_delete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LocationDelete"];
+                "application/x-www-form-urlencoded": components["schemas"]["LocationDelete"];
+                "multipart/form-data": components["schemas"]["LocationDelete"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     me_retrieve: {
         parameters: {
             query?: never;
@@ -609,6 +1549,27 @@ export interface operations {
             };
         };
     };
+    users_list: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DirectoryUser"][];
+                };
+            };
+        };
+    };
     users_retrieve: {
         parameters: {
             query?: never;
@@ -626,6 +1587,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicUser"];
+                };
+            };
+        };
+    };
+    users_locations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLocationList"];
+                };
+            };
+        };
+    };
+    users_locations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLocation"];
+                };
+            };
+        };
+    };
+    users_locations_export_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PublicExportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PublicExportRequest"];
+                "multipart/form-data": components["schemas"]["PublicExportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    users_locations_items_retrieve: {
+        parameters: {
+            query?: {
+                color?: string[];
+                condition?: string[];
+                dir?: string;
+                finish?: string[];
+                limit?: string;
+                location?: string;
+                offset?: string;
+                price_max?: string;
+                price_min?: string;
+                q?: string;
+                rarity?: string[];
+                set?: string[];
+                sort?: string;
+                type?: string[];
+            };
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicItemPage"];
                 };
             };
         };
