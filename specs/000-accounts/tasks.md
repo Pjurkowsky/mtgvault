@@ -124,7 +124,7 @@ Done for T13 to T16: each flow works by hand in the browser.
 
 ## Phase 5: End-to-end tests
 
-- [ ] **T17 Playwright setup**
+- [x] **T17 Playwright setup**
   - `@playwright/test`, `playwright.config.ts` with `webServer` for Django
     (`:8100`, DB `mtgvault_e2e`, migrate first) and Vite (`:5180`).
   - `backend/docker/initdb/01-e2e.sql` creates `mtgvault_e2e`. Mount it in
