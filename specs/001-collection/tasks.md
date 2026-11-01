@@ -78,7 +78,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     weighted average, a merge where one side has no purchase price, a merge
     across currencies, and a rejected finish the printing lacks.
 
-- [ ] **T10 Shared filter** (AC-30 to AC-33)
+- [x] **T10 Shared filter** (AC-30 to AC-33)
   - `collection/filters.py`: the filter serializer and `apply_filters`.
   - Done: a shell check on fixture-based rows gives the right result for
     each filter, for a combination, and for every sort in both directions.
