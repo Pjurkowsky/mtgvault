@@ -10,8 +10,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--file', help='Read cards from a local .jsonl or .jsonl.gz instead of downloading')
-        parser.add_argument('--eur-pln', type=Decimal, help='Use this EUR->PLN rate instead of calling NBP')
-        parser.add_argument('--usd-pln', type=Decimal, help='Use this USD->PLN rate instead of calling NBP')
+        parser.add_argument('--eur-pln', type=Decimal, help='Tests only: store this EUR->PLN rate (dated today) instead of calling NBP')
+        parser.add_argument('--usd-pln', type=Decimal, help='Tests only: store this USD->PLN rate (dated today) instead of calling NBP')
 
     def handle(self, *args, file=None, eur_pln=None, usd_pln=None, **options):
         try:

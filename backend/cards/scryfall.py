@@ -15,7 +15,12 @@ PRICE_FIELDS = ['usd', 'usd_foil', 'usd_etched', 'eur', 'eur_foil', 'eur_etched'
 
 
 def should_skip(card: dict) -> bool:
-    return card.get('digital', False) or card.get('layout') in SKIPPED_LAYOUTS
+    if card.get('digital', False) or card.get('layout') in SKIPPED_LAYOUTS:
+        return True
+    # Some tokens use a normal or double-sided layout (Role tokens, Spacecraft Illusion).
+    front = (card.get('card_faces') or [{}])[0]
+    type_line = front.get('type_line') or card.get('type_line', '')
+    return type_line.startswith('Token')
 
 
 def card_types(type_line: str) -> list[str]:

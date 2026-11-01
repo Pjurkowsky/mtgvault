@@ -175,9 +175,16 @@ Done for T33 to T35: `pnpm e2e` passes.
 - [x] **T36 Performance tests** (AC-36, AC-50)
   - `performance.spec.ts`: 20,000 seeded rows show first results within 1 s
     of changing search, filter or sort. A 5,000-line import completes.
-- [ ] **T37 Live sync check** (AC-1, AC-3)
+- [x] **T37 Live sync check** (AC-1, AC-3)
   - Run `sync_cards` against Scryfall and NBP once on the dev database. Record
     printing count, duration and rates in this task.
+  - Result (2026-11-02): 104,661 printings from 746 sets in 26 s. NBP rates
+    for 2026-10-30: EUR 4.3955, USD 3.9251 PLN. Card search on the full
+    catalog answers in 4-50 ms.
+  - The first run failed safely (rolled back, old data kept) on Gleemax's
+    mana value of 1,000,000: `cmc` widened to 10 digits. Nine tokens with a
+    normal or double-sided layout slipped through: the skip rule now also
+    checks for a type line starting with "Token".
 - [ ] **T38 Verify and close the spec**
   - `pnpm e2e` (spec 000 and 001 tests) and `scripts/check-api.sh` pass, and
     the dev and prod Docker images build.
