@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Button } from '@/components/ui/button'
+import 'vue-sonner/style.css'
+import { Toaster } from '@/components/ui/sonner'
 </script>
 
 <template>
-  <div>
-    <Button>Click me</Button>
-  </div>
+  <RouterView />
+  <Toaster position="top-center" />
 </template>
