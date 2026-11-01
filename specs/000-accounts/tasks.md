@@ -10,7 +10,7 @@ running.
 
 ## Phase 1: Backend
 
-- [ ] **T1 User model fields** (AC-1, AC-2, AC-3, AC-4)
+- [x] **T1 User model fields** (AC-1, AC-2, AC-3, AC-4)
   - `users/models.py`: `username` max 30 with the `^[A-Za-z0-9_-]{3,30}$`
     validator, required `email`, `currency` with choices USD/EUR/PLN and no
     default, unique constraints on `Lower(username)` and `Lower(email)`,
