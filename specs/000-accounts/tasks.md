@@ -25,7 +25,7 @@ running.
   - Done: `authenticate(login=..., password=...)` returns the user in a
     `manage.py shell` check for both username and email, in any letter case.
 
-- [ ] **T3 JWT and cookie settings** (AC-9, AC-10)
+- [x] **T3 JWT and cookie settings** (AC-9, AC-10)
   - Add `token_blacklist` app and migrate.
   - simplejwt: refresh lifetime 7 days, rotation, blacklist after rotation.
   - `AUTH_COOKIE_SECURE` env var in settings, `.env.example` and both compose

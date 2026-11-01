@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'drf_spectacular',
     # Local
     'core',
@@ -172,11 +173,19 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+# Each refresh rotates the token and blacklists the old one, so a session
+# lasts 7 days after the last activity (spec 000, AC-9).
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
 }
+
+# The refresh token lives in an httpOnly cookie. Turn Secure on whenever the
+# site is served over HTTPS.
+AUTH_COOKIE_SECURE = env.bool('AUTH_COOKIE_SECURE', default=False)
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'MTG Vault API',
