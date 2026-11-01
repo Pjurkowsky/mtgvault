@@ -1,7 +1,8 @@
 from django.contrib.auth import authenticate
 from django.db import IntegrityError, transaction
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -16,8 +17,11 @@ from .serializers import (
     AuthResponseSerializer,
     LoginSerializer,
     MeSerializer,
+    PasswordChangeSerializer,
+    PublicUserSerializer,
     RegisterSerializer,
 )
+from .models import User
 
 # One message for every failed login, so it never reveals whether an account
 # exists (spec 000, AC-8).
@@ -109,3 +113,32 @@ class LogoutView(APIView):
         response = Response(status=status.HTTP_204_NO_CONTENT)
         clear_refresh_cookie(response)
         return response
+
+
+class MeView(generics.RetrieveUpdateAPIView):
+    """The logged-in user's account. PATCH changes only the currency."""
+
+    serializer_class = MeSerializer
+    http_method_names = ['get', 'patch', 'options', 'head']
+
+    def get_object(self):
+        return self.request.user
+
+
+class PasswordChangeView(APIView):
+    @extend_schema(request=PasswordChangeSerializer, responses={204: None})
+    def post(self, request):
+        serializer = PasswordChangeSerializer(data=request.data, context={'user': request.user})
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save(update_fields=['password'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PublicUserView(generics.RetrieveAPIView):
+    serializer_class = PublicUserSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get_object(self):
+        return get_object_or_404(User, username__iexact=self.kwargs['username'])

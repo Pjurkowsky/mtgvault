@@ -52,14 +52,14 @@ running.
   - Done: curl with a cookie jar: login → refresh works → logout → refresh
     returns 401.
 
-- [ ] **T6 Me and password endpoints** (AC-12 to AC-14)
+- [x] **T6 Me and password endpoints** (AC-12 to AC-14)
   - `GET/PATCH /api/me/` (PATCH accepts `currency` only).
   - `POST /api/me/password/`: checks the current password and validates the
     new one.
   - Done: curl with a bearer token reads me, changes currency, changes the
     password, and a wrong current password returns 400.
 
-- [ ] **T7 Public profile endpoint** (AC-15 to AC-17)
+- [x] **T7 Public profile endpoint** (AC-15 to AC-17)
   - `GET /api/users/<username>/`: case-insensitive lookup, returns
     `{username, date_joined}` only.
   - Done: works without a token, unknown user returns 404, and the response

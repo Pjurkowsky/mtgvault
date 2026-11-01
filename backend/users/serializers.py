@@ -48,6 +48,31 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+class PasswordChangeSerializer(serializers.Serializer):
+    current_password = serializers.CharField(style={'input_type': 'password'})
+    new_password = serializers.CharField(style={'input_type': 'password'})
+
+    def validate_current_password(self, value):
+        if not self.context['user'].check_password(value):
+            raise serializers.ValidationError('Current password is wrong.')
+        return value
+
+    def validate_new_password(self, value):
+        try:
+            password_validation.validate_password(value, user=self.context['user'])
+        except Exception as exc:
+            raise serializers.ValidationError(list(exc.messages))
+        return value
+
+
+class PublicUserSerializer(serializers.ModelSerializer):
+    """What anyone may see about a user. Never add private fields here."""
+
+    class Meta:
+        model = User
+        fields = ['username', 'date_joined']
+
+
 class LoginSerializer(serializers.Serializer):
     login = serializers.CharField(help_text='Username or email')
     password = serializers.CharField(style={'input_type': 'password'})
