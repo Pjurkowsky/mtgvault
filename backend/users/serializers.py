@@ -48,6 +48,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
+class LoginSerializer(serializers.Serializer):
+    login = serializers.CharField(help_text='Username or email')
+    password = serializers.CharField(style={'input_type': 'password'})
+
+
+class AccessTokenSerializer(serializers.Serializer):
+    access = serializers.CharField()
+
+
 class AuthResponseSerializer(serializers.Serializer):
     """Body returned by register and login. The refresh token goes in a cookie."""
 

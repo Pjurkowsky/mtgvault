@@ -42,7 +42,7 @@ running.
     returns 400 with a username error, and a weak password returns one message
     per rule.
 
-- [ ] **T5 Login, refresh, logout endpoints** (AC-7 to AC-10)
+- [x] **T5 Login, refresh, logout endpoints** (AC-7 to AC-10)
   - `POST /api/auth/login/`: the same 401 body for every failure.
   - `POST /api/auth/refresh/`: reads the cookie, returns `{access}`, sets a
     rotated cookie.
