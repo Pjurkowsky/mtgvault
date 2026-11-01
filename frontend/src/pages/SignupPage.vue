@@ -4,10 +4,11 @@ import { useRouter } from 'vue-router'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import { CircleAlertIcon } from '@lucide/vue'
 import { fieldErrors } from '@/api/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -42,14 +43,10 @@ const onSubmit = handleSubmit(async (body) => {
 
 <template>
   <Card>
-    <CardHeader>
-      <CardTitle>Create an account</CardTitle>
-      <CardDescription>Track your cards and where they live.</CardDescription>
-    </CardHeader>
-
     <form novalidate @submit="onSubmit">
       <CardContent class="grid gap-4">
         <Alert v-if="formError" variant="destructive">
+          <CircleAlertIcon />
           <AlertDescription>{{ formError }}</AlertDescription>
         </Alert>
 
@@ -88,9 +85,7 @@ const onSubmit = handleSubmit(async (body) => {
                 <SelectItem v-for="c in CURRENCIES" :key="c.value" :value="c.value">{{ c.label }}</SelectItem>
               </SelectContent>
             </Select>
-            <FormDescription>
-              {{ values.currency === 'PLN' ? PLN_NOTE : 'Prices show in this currency. You can change it later.' }}
-            </FormDescription>
+            <FormDescription v-if="values.currency === 'PLN'">{{ PLN_NOTE }}</FormDescription>
             <FormMessage />
           </FormItem>
         </FormField>

@@ -20,6 +20,9 @@ to screen.
   and public location pages use it, and later specs (decks, binder) reuse it.
   Those features must never get a second implementation.
 - **P-3 No deck links.** Nothing in this spec connects to decks.
+- **P-4 No obvious text.** Skip headings, taglines and helper lines that repeat
+  what a label or button already says. Errors show as a destructive alert with
+  a tinted background.
 
 ## Terms
 

@@ -4,10 +4,11 @@ import { useRoute, useRouter } from 'vue-router'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { z } from 'zod'
+import { CircleAlertIcon } from '@lucide/vue'
 import { fieldErrors } from '@/api/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { safeNext } from '@/router'
@@ -37,13 +38,10 @@ const onSubmit = handleSubmit(async (body) => {
 
 <template>
   <Card>
-    <CardHeader>
-      <CardTitle>Log in</CardTitle>
-    </CardHeader>
-
     <form novalidate @submit="onSubmit">
       <CardContent class="grid gap-4">
         <Alert v-if="formError" variant="destructive" data-testid="login-error">
+          <CircleAlertIcon />
           <AlertDescription>{{ formError }}</AlertDescription>
         </Alert>
 

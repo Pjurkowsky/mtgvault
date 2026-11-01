@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner'
 import { z } from 'zod'
 import { fieldErrors } from '@/api/client'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -62,7 +62,6 @@ const changePassword = handleSubmit(async (body) => {
     <Card>
       <CardHeader>
         <CardTitle>Currency</CardTitle>
-        <CardDescription>Prices across the app show in this currency.</CardDescription>
       </CardHeader>
       <CardContent class="grid gap-2">
         <Label for="currency">Currency</Label>
