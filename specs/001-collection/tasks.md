@@ -65,7 +65,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
 
 ## Phase 2: Collection backend
 
-- [ ] **T8 `collection` app and models** (AC-7, AC-8, AC-14, AC-16, AC-17, AC-19)
+- [x] **T8 `collection` app and models** (AC-7, AC-8, AC-14, AC-16, AC-17, AC-19)
   - `Location` and `CollectionItem` with the constraints from the plan,
     including the unique row rule with `nulls_distinct=False`.
   - Done: `migrate` succeeds. A shell check shows that a second Unfiled row
