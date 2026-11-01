@@ -67,7 +67,7 @@ running.
 
 ## Phase 2: API contract
 
-- [ ] **T8 OpenAPI schema and typed client generation**
+- [x] **T8 OpenAPI schema and typed client generation**
   - Commit `backend/openapi.yaml` (`manage.py spectacular --validate`).
   - Frontend: add `openapi-typescript`, script `gen:api` writing
     `src/api/schema.d.ts`.
