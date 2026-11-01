@@ -83,19 +83,19 @@ running.
     `dropdown-menu`, `alert`.
   - Done: `pnpm build` passes.
 
-- [ ] **T10 API client** (AC-9)
+- [x] **T10 API client** (AC-9)
   - `src/api/client.ts`: openapi-fetch client. Middleware adds the bearer
     token, and on a 401 refreshes once (one shared refresh for parallel
     requests) and retries.
   - Done: `pnpm build` passes (type-checked against `schema.d.ts`).
 
-- [ ] **T11 Auth store** (AC-6, AC-9, AC-10, AC-13)
+- [x] **T11 Auth store** (AC-6, AC-9, AC-10, AC-13)
   - `src/stores/auth.ts`: `user`, `accessToken`, `init`, `register`, `login`,
     `logout`, `updateCurrency`.
   - `src/lib/currency.ts`: currency list and labels.
   - Done: `pnpm build` passes.
 
-- [ ] **T12 Router, guard and layouts** (AC-11)
+- [x] **T12 Router, guard and layouts** (AC-11)
   - Routes from the plan. The guard waits for `auth.init()`, sends guests to
     `/login?next=...`, sends logged-in users away from `/login` and `/signup`,
     and only accepts local `next` paths.
@@ -105,16 +105,16 @@ running.
 
 ## Phase 4: Pages
 
-- [ ] **T13 Sign-up page** (AC-1 to AC-6)
+- [x] **T13 Sign-up page** (AC-1 to AC-6)
   - Username, email, password, currency select with no default and a PLN
     note. Server errors appear under their fields. On success, go to `/`.
-- [ ] **T14 Login page** (AC-7, AC-8, AC-11)
+- [x] **T14 Login page** (AC-7, AC-8, AC-11)
   - "Username or email" + password. One generic error alert. Redirect to
     `next`.
-- [ ] **T15 Settings page** (AC-12 to AC-14)
+- [x] **T15 Settings page** (AC-12 to AC-14)
   - Read-only username and email, currency select that saves on change with
     a toast, and a password change form.
-- [ ] **T16 Profile, not found and collection placeholder** (AC-6, AC-15 to AC-17)
+- [x] **T16 Profile, not found and collection placeholder** (AC-6, AC-15 to AC-17)
   - `/u/:username` shows username and join date, or a "User not found" state
     on 404.
   - Catch-all `NotFoundPage`. `CollectionPage` is an empty state that names
@@ -133,11 +133,11 @@ Done for T13 to T16: each flow works by hand in the browser.
   - Scripts `e2e` and `e2e:ui`.
   - Done: a smoke test that opens `/login` passes.
 
-- [ ] **T18 `signup.spec.ts`** (AC-1 to AC-6)
-- [ ] **T19 `login.spec.ts`** (AC-7, AC-8, AC-11)
-- [ ] **T20 `session.spec.ts`** (AC-9, AC-10)
-- [ ] **T21 `settings.spec.ts`** (AC-12 to AC-14)
-- [ ] **T22 `profile.spec.ts`** (AC-15 to AC-17)
+- [x] **T18 `signup.spec.ts`** (AC-1 to AC-6)
+- [x] **T19 `login.spec.ts`** (AC-7, AC-8, AC-11)
+- [x] **T20 `session.spec.ts`** (AC-9, AC-10)
+- [x] **T21 `settings.spec.ts`** (AC-12 to AC-14)
+- [x] **T22 `profile.spec.ts`** (AC-15 to AC-17)
 
 Done for T18 to T22: `pnpm e2e` passes.
 

@@ -40,10 +40,15 @@ export async function signUp(page: Page, user: TestUser) {
   await expect(page.getByTestId('user-menu')).toHaveText(user.username)
 }
 
-/** Create a user through the API without logging the page in. */
+/**
+ * Create a user through the API without logging the page in.
+ * Safe to call twice: Playwright runs beforeAll once per worker.
+ */
 export async function createUser(request: APIRequestContext, user: TestUser) {
   const response = await request.post('/api/auth/register/', { data: user })
-  expect(response.status()).toBe(201)
+  if (response.status() === 201) return
+  const login = await request.post('/api/auth/login/', { data: { login: user.username, password: user.password } })
+  expect(login.status(), 'user exists with the expected password').toBe(200)
 }
 
 export async function logIn(page: Page, login: string, password: string) {
