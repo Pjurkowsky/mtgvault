@@ -42,7 +42,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     copy of the fixture marks the run failed and leaves earlier printings
     untouched.
 
-- [ ] **T5 Celery, Redis and compose services** (AC-1)
+- [x] **T5 Celery, Redis and compose services** (AC-1)
   - `config/celery.py`, `cards/tasks.py` with `sync_cards`, and a beat schedule
     for 13:00 UTC daily.
   - Add `REDIS_URL` to settings and both `.env.example` files.

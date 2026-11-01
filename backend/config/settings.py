@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from datetime import timedelta
+
+from celery.schedules import crontab
 from pathlib import Path
 
 import environ
@@ -194,4 +196,15 @@ SPECTACULAR_SETTINGS = {
     'TITLE': 'MTG Vault API',
     'VERSION': '0.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
+}
+
+
+# Celery: background jobs and the daily catalog sync.
+REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULE = {
+    # NBP publishes around noon Warsaw time; Scryfall refreshes prices daily.
+    'sync-cards-daily': {'task': 'cards.tasks.sync_cards', 'schedule': crontab(hour=13, minute=0)},
 }
