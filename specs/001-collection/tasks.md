@@ -10,7 +10,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
 
 ## Phase 1: Catalog
 
-- [ ] **T1 `cards` app and models** (AC-1, AC-2)
+- [x] **T1 `cards` app and models** (AC-1, AC-2)
   - `Set`, `Printing`, `ExchangeRate`, `SyncRun` as in the plan.
   - Migration enables `pg_trgm` and adds trigram indexes on `name` and
     `front_name`.
