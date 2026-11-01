@@ -103,6 +103,7 @@ DATABASES = {
 
 
 AUTH_USER_MODEL = 'users.User'
+AUTHENTICATION_BACKENDS = ['users.backends.UsernameOrEmailBackend']
 
 
 # Password validation

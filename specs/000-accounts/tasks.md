@@ -19,7 +19,7 @@ running.
   - Done: `manage.py migrate` succeeds on Postgres. `createsuperuser` asks for
     email and currency.
 
-- [ ] **T2 Username-or-email login backend** (AC-7)
+- [x] **T2 Username-or-email login backend** (AC-7)
   - `users/backends.py` with `UsernameOrEmailBackend`, registered in
     `AUTHENTICATION_BACKENDS`.
   - Done: `authenticate(login=..., password=...)` returns the user in a
