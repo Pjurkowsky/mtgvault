@@ -16,7 +16,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     `front_name`.
   - Done: `migrate` succeeds on Postgres.
 
-- [ ] **T2 Scryfall card mapping** (AC-1, AC-2)
+- [x] **T2 Scryfall card mapping** (AC-1, AC-2)
   - `cards/scryfall.py`: turn one Scryfall JSON object into `Set` and
     `Printing` fields: front face name and image for double-faced cards,
     `types` from the type line, prices as decimals, and the skip rule for
@@ -24,7 +24,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - Done: a shell check maps a normal card, a double-faced card and an
     etched-only card correctly, and skips a token.
 
-- [ ] **T3 Card fixture**
+- [x] **T3 Card fixture**
   - `backend/cards/fixtures/scryfall-sample.jsonl`: about 60 printings saved
     from Scryfall. It needs several printings of one card, a double-faced
     card, an etched-only printing, a printing with no EUR price, multicolor
