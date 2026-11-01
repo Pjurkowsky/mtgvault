@@ -71,7 +71,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - Done: `migrate` succeeds. A shell check shows that a second Unfiled row
     with the same printing, finish, condition and language is rejected.
 
-- [ ] **T9 Merge service** (AC-14, AC-15, AC-19, AC-20)
+- [x] **T9 Merge service** (AC-14, AC-15, AC-19, AC-20)
   - `collection/services.py`: `save_item`, plus `move_item` and `edit_item`
     built on it.
   - Done: shell checks cover a new row with price snapshots, a merge with a
