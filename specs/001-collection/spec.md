@@ -2,7 +2,10 @@
 
 Status: Done
 Depends on: 000-accounts
-Followed by: 002-binder-view
+Followed by: 002-collection-polish, 003-binder-view
+
+> Spec 002 replaces AC-3, AC-26, AC-29 (tiles), AC-32, AC-35 (summary) and
+> AC-38. See [its table](../002-collection-polish/spec.md#replaces-in-spec-001).
 
 ## Goal
 
@@ -216,7 +219,7 @@ to screen.
 
 ## Out of scope (later specs)
 
-- Binder view: grid size, spreads, card positions, page sections (spec 002)
+- Binder view: grid size, spreads, card positions, page sections (spec 003)
 - Decks and reserving copies for decks
 - Tokens
 - Value dashboard, gains and losses
