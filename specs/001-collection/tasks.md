@@ -33,7 +33,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - `backend/cards/fixtures/README.md` lists what each card is there to test.
   - Done: the file has one valid JSON object per line.
 
-- [ ] **T4 Sync service and command** (AC-1, AC-3, AC-6)
+- [x] **T4 Sync service and command** (AC-1, AC-3, AC-6)
   - `cards/sync.py`: download (or read `--file`), stream lines, batch upsert,
     fetch NBP EUR and USD rates (or take `--eur-pln`/`--usd-pln`), and record
     a `SyncRun` per kind. A failure keeps the previous data.
