@@ -1,6 +1,6 @@
 # Spec 000: Accounts
 
-Status: Approved
+Status: Done
 Depends on: nothing
 Needed by: 001-collection
 

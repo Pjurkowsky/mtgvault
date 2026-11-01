@@ -1,5 +1,25 @@
-# Vue 3 + TypeScript + Vite
+# MTG Vault — frontend
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 + Vite + shadcn-vue, written in TypeScript.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Dev server on :5173. `/api` is proxied to Django on :8000 (`API_PROXY_TARGET` overrides it). |
+| `pnpm build` | Type-check and build to `dist/` |
+| `pnpm gen:api` | Regenerate `src/api/schema.d.ts` from `../backend/openapi.yaml` |
+| `pnpm e2e` / `pnpm e2e:ui` | Playwright end-to-end tests (see the root README) |
+
+## Layout
+
+```
+src/
+  api/        typed API client (openapi-fetch) and generated schema types
+  stores/     pinia stores (auth)
+  router/     routes and the login guard
+  layouts/    AppLayout (top bar) and AuthLayout (centered card)
+  pages/      one component per route
+  components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
+e2e/          Playwright tests, one file per area, named by acceptance criterion
+```

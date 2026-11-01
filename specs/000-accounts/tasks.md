@@ -143,7 +143,7 @@ Done for T18 to T22: `pnpm e2e` passes.
 
 ## Phase 6: Wrap up
 
-- [ ] **T23 Verify and close the spec**
+- [x] **T23 Verify and close the spec**
   - `pnpm e2e` and `scripts/check-api.sh` both pass.
   - Update READMEs (new endpoints, `pnpm e2e`, `pnpm gen:api`).
   - Set spec status to "Done".

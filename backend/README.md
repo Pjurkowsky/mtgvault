@@ -19,14 +19,26 @@ uv run manage.py runserver    # http://localhost:8000
 
 ## Endpoints
 
-| Path | Description |
-| --- | --- |
-| `GET /api/health/` | Health check (public) |
-| `POST /api/auth/token/` | Get JWT `access` + `refresh` (username/password) |
-| `POST /api/auth/token/refresh/` | Get a new access token |
-| `POST /api/auth/token/verify/` | Check a token |
-| `/api/docs/` | Swagger UI |
-| `/api/schema/` | OpenAPI schema |
-| `/admin/` | Django admin |
+| Path | Auth | Description |
+| --- | --- | --- |
+| `GET /api/health/` | public | Health check |
+| `POST /api/auth/register/` | public | Sign up. Returns `{access, user}` and sets the refresh cookie. |
+| `POST /api/auth/login/` | public | `{login, password}`, login is username or email. Same response as register. |
+| `POST /api/auth/refresh/` | cookie | New access token and a rotated refresh cookie |
+| `POST /api/auth/logout/` | cookie | Revokes the refresh token and clears the cookie |
+| `GET/PATCH /api/me/` | bearer | Your account. PATCH changes `currency` only. |
+| `POST /api/me/password/` | bearer | `{current_password, new_password}` |
+| `GET /api/users/<username>/` | public | Public profile |
+| `/api/docs/` | public | Swagger UI |
+| `/admin/` | staff | Django admin |
 
-All other API endpoints require `Authorization: Bearer <access token>` by default.
+The access token lasts 15 minutes and lives only in the frontend's memory. The
+refresh token lives in an httpOnly cookie scoped to `/api/auth/`, lasts 7 days
+and rotates on every refresh. Set `AUTH_COOKIE_SECURE=True` when serving over
+HTTPS.
+
+## API contract
+
+`openapi.yaml` is generated from the code and committed. After changing the API,
+run `scripts/check-api.sh` from the project root. It regenerates `openapi.yaml`
+and the frontend types, and fails if either changed.
