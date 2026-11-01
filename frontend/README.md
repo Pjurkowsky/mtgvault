@@ -16,10 +16,13 @@ Vue 3 + Vite + shadcn-vue, written in TypeScript.
 ```
 src/
   api/        typed API client (openapi-fetch) and generated schema types
-  stores/     pinia stores (auth)
+  stores/     pinia stores (auth, locations)
+  composables/  card browser state: URL query, paged loading, selection
   router/     routes and the login guard
   layouts/    AppLayout (top bar) and AuthLayout (centered card)
   pages/      one component per route
+  components/browser/     the shared card browser (spec 001, principle P-2)
+  components/collection/  locations, add card, card detail, import
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
 e2e/          Playwright tests, one file per area, named by acceptance criterion
 ```

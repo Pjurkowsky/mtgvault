@@ -185,7 +185,7 @@ Done for T33 to T35: `pnpm e2e` passes.
     mana value of 1,000,000: `cmc` widened to 10 digits. Nine tokens with a
     normal or double-sided layout slipped through: the skip rule now also
     checks for a type line starting with "Token".
-- [ ] **T38 Verify and close the spec**
+- [x] **T38 Verify and close the spec**
   - `pnpm e2e` (spec 000 and 001 tests) and `scripts/check-api.sh` pass, and
     the dev and prod Docker images build.
   - Update READMEs (sync command, Celery services, new endpoints).

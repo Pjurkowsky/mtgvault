@@ -1,6 +1,6 @@
 # Spec 001: Collection
 
-Status: Approved
+Status: Done
 Depends on: 000-accounts
 Followed by: 002-binder-view
 

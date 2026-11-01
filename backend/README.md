@@ -1,6 +1,12 @@
 # MTG Vault — backend
 
-Django 6.1 + Django REST Framework + PostgreSQL 18, managed with [uv](https://docs.astral.sh/uv/).
+Django 6.1 + Django REST Framework + PostgreSQL 18 + Celery/Redis, managed with [uv](https://docs.astral.sh/uv/).
+
+| App | What it holds |
+| --- | --- |
+| `users` | Accounts, login, currency (spec 000) |
+| `cards` | Card catalog synced from Scryfall, NBP exchange rates, price rules |
+| `collection` | Locations and owned cards, merge rule, filters, import/export, public pages (spec 001) |
 
 ## Setup
 
@@ -10,9 +16,10 @@ To run Django directly on your machine (Postgres from the dev compose file):
 
 ```bash
 cp .env.example .env          # then set a real SECRET_KEY
-docker compose -f ../docker-compose.dev.yml up -d db
+docker compose -f ../docker-compose.dev.yml up -d db redis
 uv sync
 uv run manage.py migrate
+uv run manage.py sync_cards        # card catalog + rates (about 30 s)
 uv run manage.py createsuperuser
 uv run manage.py runserver    # http://localhost:8000
 ```
@@ -29,6 +36,17 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET/PATCH /api/me/` | bearer | Your account. PATCH changes `currency` only. |
 | `POST /api/me/password/` | bearer | `{current_password, new_password}` |
 | `GET /api/users/<username>/` | public | Public profile |
+| `GET /api/catalog/cards/?q=` | bearer | Card search, one entry per card |
+| `GET /api/catalog/cards/<oracle_id>/printings/` | bearer | Printings, newest first, with prices |
+| `GET /api/catalog/sets/?q=`, `GET /api/catalog/status/` | bearer | Set search; last price update |
+| `GET/POST /api/locations/` | bearer | Locations with totals (plus Unfiled) / create |
+| `GET/PATCH /api/locations/<id>/`, `POST .../delete/` | bearer | Detail, edit, delete with move/unfile/delete |
+| `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
+| `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
+| `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
+| `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists |
+| `GET /api/users/` | public | Directory of users with public locations |
+| `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
 
@@ -42,3 +60,17 @@ HTTPS.
 `openapi.yaml` is generated from the code and committed. After changing the API,
 run `scripts/check-api.sh` from the project root. It regenerates `openapi.yaml`
 and the frontend types, and fails if either changed.
+
+## Card catalog and prices
+
+`manage.py sync_cards` downloads Scryfall's `default_cards` file (every paper
+printing) and NBP's EUR and USD rates. Celery beat runs it daily at 13:00 UTC.
+A failed sync rolls back and keeps the previous data.
+
+- USD prices are TCGplayer's, EUR prices Cardmarket's (both via Scryfall).
+- PLN = EUR × the NBP rate, shown as an estimate.
+- `--file <path>` reads a local file instead of downloading (tests use
+  `cards/fixtures/scryfall-sample.jsonl`).
+
+`manage.py seed_items --username <u> --rows 20000` fills a collection for
+performance checks (only with `DEBUG` on).
