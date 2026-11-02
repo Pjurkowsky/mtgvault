@@ -86,6 +86,13 @@ def _find_row(user, key: dict, exclude_id=None):
     return rows.first()
 
 
+def _fill_deck(row: CollectionItem):
+    """Cards that land in a deck box join its decklist (spec 004, AC-29)."""
+    if row.location_id and not row.in_cart:
+        from decks.services import fill_from_box  # decks builds on collection
+        fill_from_box(row.location_id, row.printing.oracle_id)
+
+
 @transaction.atomic
 def save_item(user, *, printing, finish, condition, language, location, copies: Copies, rates=None, in_cart=False):
     """Add copies (to the cart with in_cart=True). Returns (row, merged)."""
@@ -98,19 +105,22 @@ def save_item(user, *, printing, finish, condition, language, location, copies: 
 
     existing = _find_row(user, key)
     if existing:
-        return _merge_into(existing, copies, rates), True
-    try:
-        with transaction.atomic():
-            row = CollectionItem.objects.create(
-                user=user, **key, quantity=copies.quantity,
-                purchase_price=copies.purchase_price,
-                purchase_currency=copies.purchase_currency if copies.purchase_price is not None else None,
-                **snapshot(printing, finish, rates),
-            )
-        return row, False
-    except IntegrityError:
-        # Another request created the same row a moment ago: merge into it.
-        return _merge_into(_find_row(user, key), copies, rates), True
+        row, merged = _merge_into(existing, copies, rates), True
+    else:
+        try:
+            with transaction.atomic():
+                row = CollectionItem.objects.create(
+                    user=user, **key, quantity=copies.quantity,
+                    purchase_price=copies.purchase_price,
+                    purchase_currency=copies.purchase_currency if copies.purchase_price is not None else None,
+                    **snapshot(printing, finish, rates),
+                )
+            merged = False
+        except IntegrityError:
+            # Another request created the same row a moment ago: merge into it.
+            row, merged = _merge_into(_find_row(user, key), copies, rates), True
+    _fill_deck(row)
+    return row, merged
 
 
 @transaction.atomic
@@ -137,6 +147,7 @@ def edit_item(row: CollectionItem, rates=None, **changes):
     other = _find_row(row.user, key, exclude_id=row.pk)
     if other is None:
         row.save()
+        _fill_deck(row)
         return row, False
 
     copies = Copies(
@@ -147,7 +158,9 @@ def edit_item(row: CollectionItem, rates=None, **changes):
         added={f: getattr(row, f) for f in ('added_usd', 'added_eur', 'added_pln')},
     )
     row.delete()
-    return _merge_into(other, copies, rates), True
+    merged_row = _merge_into(other, copies, rates)
+    _fill_deck(merged_row)
+    return merged_row, True
 
 
 def move_item(row: CollectionItem, location, rates=None):

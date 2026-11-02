@@ -113,7 +113,10 @@ The `decks` app keeps decklists (`Deck`, `DeckCard`). A deck card is a card
 (`oracle_id`) with a preferred printing for its picture and price; any owned
 printing counts. A deck may have a deck box: a `Location` of kind Deck box,
 one-to-one. The location endpoints keep the two in sync: a new Deck box
-location gets a Casual deck, and changing the kind away unlinks it.
+location gets a Casual deck, and changing the kind away unlinks it. Cards
+that land in a deck box join its decklist's Mainboard when the list has fewer
+copies (`decks.services.fill_from_box`, called from `save_item` and
+`edit_item`); taking cards out never changes the list.
 
 - `decks/ownership.py`: per deck card, copies in this box, free copies
   (outside every deck box, not in the cart), copies in other decks' boxes,

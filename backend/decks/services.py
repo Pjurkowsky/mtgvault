@@ -2,6 +2,7 @@
 merging rules stay the same everywhere."""
 
 from django.db import transaction
+from django.db.models import Sum
 from rest_framework.exceptions import ValidationError
 
 from collection.models import CollectionItem, Location
@@ -48,9 +49,41 @@ def sync_location(location: Location):
     if location.kind == Location.Kind.DECK_BOX and deck is None:
         Deck.objects.create(user=location.user, name=location.name, format=Deck.Format.CASUAL,
                             is_public=location.is_public, location=location)
+        fill_from_box(location.pk)
     elif location.kind != Location.Kind.DECK_BOX and deck is not None:
         deck.location = None
         deck.save(update_fields=['location'])
+
+
+COUNTED_ZONES = (DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN, DeckCard.Zone.SIDE)
+
+
+@transaction.atomic
+def fill_from_box(location_id: int, oracle_id=None):
+    """AC-29: copies in a deck box that its list doesn't cover join the Mainboard.
+
+    Only adds; taking cards out of a box never changes the list. `oracle_id`
+    limits the check to one card (the row that just changed).
+    """
+    deck = Deck.objects.filter(location_id=location_id).first()
+    if deck is None:
+        return
+    rows = CollectionItem.objects.filter(location_id=location_id, in_cart=False)
+    if oracle_id is not None:
+        rows = rows.filter(printing__oracle_id=oracle_id)
+    in_box = {r['printing__oracle_id']: r['n'] for r in rows.values('printing__oracle_id').annotate(n=Sum('quantity'))}
+    if not in_box:
+        return
+    listed = {
+        r['oracle_id']: r['n']
+        for r in deck.cards.filter(oracle_id__in=in_box, zone__in=COUNTED_ZONES).values('oracle_id').annotate(n=Sum('quantity'))
+    }
+    for oracle, count in in_box.items():
+        short = count - listed.get(oracle, 0)
+        if short > 0:
+            # A new entry shows the newest printing among the box's copies.
+            row = rows.filter(printing__oracle_id=oracle).select_related('printing').order_by('-printing__released_at').first()
+            add_card(deck, row.printing, short, DeckCard.Zone.MAIN)
 
 
 def move_copies(row: CollectionItem, quantity: int, location) -> CollectionItem:

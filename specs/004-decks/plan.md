@@ -43,6 +43,9 @@ one mainboard entry per card in it (newest printing among its rows).
   - `create_box(deck, moves)`
   - `move_copies(row, n, location)`: split a row and merge at the target
   - `delete_deck(deck, box_action)`
+  - `fill_from_box(location, oracle_id=None)`: AC-29, called by
+    `collection.services.save_item` and `edit_item` whenever the resulting
+    row is in a deck box, and by `sync_location`
 - `decks/ownership.py`: per oracle, owned copies grouped as `box`, `others`
   ({deck, quantity}), `free` ({item_id, location, quantity}). Per deck card:
   `needed`, `in_box`, `free`, `other_decks`, `missing`, `state`.

@@ -39,3 +39,7 @@ Done for T4-T7: shell checks against the real catalog.
 
 - [x] **T17 e2e: decks, deck-cards, deck-ownership, deck-legality, deck-import**
 - [x] **T18 Full suite, Docker build, READMEs, spec status**
+
+## Phase 6: Follow-up
+
+- [x] **T19 Box contents join the decklist** (AC-29): `fill_from_box`, hooks in save/edit and location sync, e2e

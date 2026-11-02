@@ -34,6 +34,12 @@ where they are, and keep a deck's physical cards together in its deck box.
 - **AC-4** Creating a location of kind Deck box also creates its deck
   (Casual, same name and visibility). Changing a location to Deck box does
   the same; changing it away from Deck box leaves the deck without a box.
+- **AC-29** Cards put into a deck box (added, imported, moved, edited or moved
+  from the cart) join its decklist: when the box holds more copies of a card
+  than the list's Commander, Mainboard and Sideboard together, the Mainboard
+  gets the difference, with the box copy's printing for a new entry. Taking
+  cards out of a box never changes the list. Changing a location to Deck box
+  fills its new deck the same way.
 - **AC-5** A deck without a box can get one ("Create deck box"). A dialog then
   lists the deck's free owned copies with their locations, all ticked, and
   moves the ticked copies into the new box.

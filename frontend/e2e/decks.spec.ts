@@ -146,4 +146,40 @@ test.describe('Decks', () => {
     await page.reload()
     await expect(page.getByTestId('deck-name')).toHaveText('Final')
   })
+
+  test('AC-29: cards put into a deck box join its decklist; taking them out does not', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const box = await api.location('Mono Red', 'deck_box')
+    const decks = await api.get('/api/decks/')
+    const deck = decks.decks.find((d: { name: string }) => d.name === 'Mono Red')
+    await api.importList('2 Lightning Bolt (FDC) 163', box)
+    await api.importList('1 Counterspell (FDC) 61')
+
+    // Move the Unfiled Counterspell into the box from the collection.
+    await page.goto('/cards')
+    await tile(page, 'Counterspell').click({ button: 'right' })
+    await page.getByRole('menuitem', { name: 'Edit' }).click()
+    await page.getByTestId('edit-dialog').getByRole('group', { name: 'Location' }).getByRole('button', { name: 'Mono Red' }).click()
+    await page.getByTestId('edit-dialog').getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByTestId('edit-dialog')).toBeHidden()
+
+    await page.goto(`/decks/${deck.id}`)
+    await expect(page.getByTestId('group-main-Instants')).toContainText('Instants (3)')
+    await expect(deckRow(page, 'Lightning Bolt')).toContainText('2')
+    await expect(deckRow(page, 'Counterspell').getByTestId('ownership')).toHaveAttribute('data-state', 'in_box')
+
+    const items = await api.get(`/api/items/?location=${box}&q=bolt`)
+    await api.patch(`/api/items/${items.results[0].id}/`, { location: null })
+    await page.reload()
+    await expect(deckRow(page, 'Lightning Bolt')).toContainText('2')
+    await expect(deckRow(page, 'Lightning Bolt').getByTestId('ownership')).toHaveAttribute('data-state', 'owned')
+
+    // A location that becomes a Deck box brings its cards into the new deck.
+    const binder = await api.location('Green Binder')
+    await api.importList('3 Forest (M21) 272', binder)
+    await api.patch(`/api/locations/${binder}/`, { kind: 'deck_box' })
+    const green = (await api.get('/api/decks/')).decks.find((d: { name: string }) => d.name === 'Green Binder')
+    await page.goto(`/decks/${green.id}`)
+    await expect(deckRow(page, 'Forest')).toContainText('3')
+  })
 })
