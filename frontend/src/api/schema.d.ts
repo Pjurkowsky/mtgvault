@@ -168,6 +168,216 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_list"];
+        put?: never;
+        post: operations["decks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["decks_partial_update"];
+        trace?: never;
+    };
+    "/api/decks/{id}/box/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_box_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/cards/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_cards_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/cards/{card_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["decks_cards_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["decks_cards_partial_update"];
+        trace?: never;
+    };
+    "/api/decks/{id}/cards/{card_id}/own/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description AC-15: move a free copy into the deck box, or record a new copy. */
+        post: operations["decks_cards_own_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/delete/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_delete_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_export_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/import/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_import_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/missing/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_missing_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/missing/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_missing_export_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/add-from-collection/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description AC-10: one copy of each selected card, into a deck's zone. */
+        post: operations["decks_add_from_collection_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/import/preview/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["decks_import_preview_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health/": {
         parameters: {
             query?: never;
@@ -497,6 +707,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/decks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/decks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description AC-28: everything but where your cards are. Private and missing decks look the same. */
+        get: operations["users_decks_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/locations/": {
         parameters: {
             query?: never;
@@ -575,6 +818,16 @@ export interface components {
          * @enum {string}
          */
         ActionEnum: "move" | "edit" | "delete";
+        AddFromCollection: {
+            deck: number;
+            /** @default main */
+            zone?: components["schemas"]["ZoneEnum"];
+            selection: components["schemas"]["Selection"];
+        };
+        AddResult: {
+            /** @description Distinct cards added */
+            cards: number;
+        };
         /** @description Body returned by register and login. The refresh token goes in a cookie. */
         AuthResponse: {
             access: string;
@@ -582,6 +835,17 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: "";
+        /**
+         * @description * `keep` - keep
+         *     * `unfile` - unfile
+         *     * `delete` - delete
+         * @enum {string}
+         */
+        BoxEnum: "keep" | "unfile" | "delete";
+        BoxMove: {
+            item_id: number;
+            quantity: number;
+        };
         BulkChanges: {
             condition?: components["schemas"]["ConditionEnum"];
             language?: components["schemas"]["LanguageEnum"];
@@ -663,6 +927,21 @@ export interface components {
          * @enum {string}
          */
         ConditionEnum: "NM" | "LP" | "MP" | "HP" | "DMG";
+        Counts: {
+            commander: number;
+            main: number;
+            side: number;
+            maybe: number;
+            /** @description Commander + Mainboard */
+            size: number;
+            /** @description The format's deck size */
+            target: number | null;
+            owned: number;
+            missing: number;
+        };
+        CreateBox: {
+            moves?: components["schemas"]["BoxMove"][];
+        };
         /**
          * @description * `USD` - US Dollar
          *     * `EUR` - Euro
@@ -670,6 +949,119 @@ export interface components {
          * @enum {string}
          */
         CurrencyEnum: "USD" | "EUR" | "PLN";
+        DeckCard: {
+            id: number;
+            zone: components["schemas"]["ZoneEnum"];
+            quantity: number;
+            printing: components["schemas"]["DeckPrinting"];
+            /** Format: double */
+            price: number | null;
+            prices: components["schemas"]["Money"];
+            ownership: components["schemas"]["Ownership"];
+        };
+        DeckCardWrite: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing: string;
+            /** @default 1 */
+            quantity?: number;
+            /** @default main */
+            zone?: components["schemas"]["ZoneEnum"];
+        };
+        DeckDelete: {
+            box?: components["schemas"]["BoxEnum"];
+        };
+        DeckDetail: {
+            id: number;
+            name: string;
+            format: components["schemas"]["FormatEnum"];
+            is_public: boolean;
+            location: number | null;
+            location_name: string | null;
+            image: string;
+            counts: components["schemas"]["Counts"];
+            /** Format: double */
+            value: number | null;
+            values: components["schemas"]["Money"];
+            username: string;
+            currency: string;
+            cards: components["schemas"]["DeckCard"][];
+            legality: components["schemas"]["Legality"];
+            stats: components["schemas"]["Stats"];
+        };
+        DeckImportPreview: {
+            rows: components["schemas"]["DeckImportRow"][];
+            errors: components["schemas"]["ImportError"][];
+            cards: number;
+        };
+        DeckImportRow: {
+            line: number;
+            zone: string;
+            quantity: number;
+            printing: components["schemas"]["PrintingBrief"];
+        };
+        DeckList: {
+            currency: string;
+            decks: components["schemas"]["DeckSummary"][];
+        };
+        DeckPrinting: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            readonly id: string;
+            /**
+             * Format: uuid
+             * @description Same for every printing of a card
+             */
+            readonly oracle_id: string;
+            readonly name: string;
+            set_code: string;
+            set_name: string;
+            readonly collector_number: string;
+            readonly rarity: components["schemas"]["RarityEnum"];
+            readonly colors: string[];
+            readonly type_line: string;
+            readonly finishes: components["schemas"]["FinishEnum"][];
+            /** Format: uri */
+            readonly image_small: string;
+            /** Format: uri */
+            readonly image_normal: string;
+            /** Format: uri */
+            readonly image_large: string;
+            readonly mana_cost: string;
+            /** Format: double */
+            readonly cmc: number;
+            readonly types: string[];
+            readonly color_identity: string[];
+        };
+        DeckSummary: {
+            id: number;
+            name: string;
+            format: components["schemas"]["FormatEnum"];
+            is_public: boolean;
+            location: number | null;
+            location_name: string | null;
+            image: string;
+            counts: components["schemas"]["Counts"];
+            /** Format: double */
+            value: number | null;
+            values: components["schemas"]["Money"];
+        };
+        DeckText: {
+            text: string;
+        };
+        DeckWrite: {
+            name: string;
+            format?: components["schemas"]["FormatEnum"];
+            is_public?: boolean;
+            /** @default false */
+            create_box?: boolean;
+            /** @description Decklist to import */
+            text?: string;
+        };
         /**
          * @description * `asc` - asc
          *     * `desc` - desc
@@ -679,6 +1071,7 @@ export interface components {
         DirectoryUser: {
             username: string;
             public_locations: number;
+            public_decks: number;
         };
         Edhrec: {
             available: boolean;
@@ -741,6 +1134,28 @@ export interface components {
          * @enum {string}
          */
         FinishEnum: "nonfoil" | "foil" | "etched";
+        /**
+         * @description * `commander` - Commander
+         *     * `brawl` - Brawl
+         *     * `standard` - Standard
+         *     * `pioneer` - Pioneer
+         *     * `modern` - Modern
+         *     * `legacy` - Legacy
+         *     * `vintage` - Vintage
+         *     * `pauper` - Pauper
+         *     * `casual` - Casual
+         * @enum {string}
+         */
+        FormatEnum: "commander" | "brawl" | "standard" | "pioneer" | "modern" | "legacy" | "vintage" | "pauper" | "casual";
+        FreeCopy: {
+            item_id: number;
+            quantity: number;
+            location: string;
+            location_id: number | null;
+            set_code: string;
+            collector_number: string;
+            finish: string;
+        };
         Health: {
             status: string;
         };
@@ -774,6 +1189,11 @@ export interface components {
             quantity: number;
             finish: string;
             printing: components["schemas"]["PrintingBrief"];
+        };
+        Issue: {
+            code: string;
+            message: string;
+            cards: string[];
         };
         /** @description Owner view of a row. Needs `currency` and `rates` in the context. */
         Item: {
@@ -823,6 +1243,8 @@ export interface components {
             price_max?: number;
             /** @description Location id, "unfiled" or "cart" */
             location?: string;
+            /** @description Only copies of this deck's cards */
+            deck?: number;
             /** @default name */
             sort?: components["schemas"]["SortEnum"];
             /** @default asc */
@@ -887,6 +1309,10 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "en" | "es" | "fr" | "de" | "it" | "pt" | "ja" | "ko" | "ru" | "zhs" | "zht" | "he" | "la" | "grc" | "ar" | "sa" | "ph" | "qya";
+        Legality: {
+            legal: boolean;
+            issues: components["schemas"]["Issue"][];
+        };
         /** @description Owner view of a location. Totals come from the view (context['totals']). */
         Location: {
             readonly id: number;
@@ -928,6 +1354,14 @@ export interface components {
             login: string;
             password: string;
         };
+        MarkOwned: {
+            /** @default 1 */
+            quantity?: number;
+            /** @description Move this free copy into the deck box */
+            item_id?: number;
+            /** @description Or record a new copy */
+            new?: components["schemas"]["NewCopy"];
+        };
         /** @description The logged-in user's own account data. */
         Me: {
             readonly username: string;
@@ -936,6 +1370,9 @@ export interface components {
             currency: components["schemas"]["CurrencyEnum"];
             /** Format: date-time */
             readonly date_joined: string;
+        };
+        MissingExport: {
+            filter?: components["schemas"]["ItemFilter"];
         };
         /** @description One amount in every currency. Null = no price. */
         Money: {
@@ -946,11 +1383,57 @@ export interface components {
             /** Format: double */
             PLN: number | null;
         };
+        NewCopy: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing?: string;
+            finish?: components["schemas"]["FinishEnum"];
+            /** @default NM */
+            condition?: components["schemas"]["ConditionEnum"];
+            /** @default en */
+            language?: components["schemas"]["LanguageEnum"];
+        };
         /** @enum {unknown} */
         NullEnum: null;
+        OtherDeck: {
+            deck: string;
+            quantity: number;
+        };
+        Ownership: {
+            state: components["schemas"]["StateEnum"];
+            needed: number;
+            in_box: number;
+            free: number;
+            in_other_decks: number;
+            missing: number;
+            /** @description Empty for visitors */
+            free_copies: components["schemas"]["FreeCopy"][];
+            /** @description Empty for visitors */
+            other_decks: components["schemas"]["OtherDeck"][];
+        };
         PasswordChange: {
             current_password: string;
             new_password: string;
+        };
+        PatchedDeckCardEdit: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing?: string;
+            quantity?: number;
+            zone?: components["schemas"]["ZoneEnum"];
+        };
+        PatchedDeckWrite: {
+            name?: string;
+            format?: components["schemas"]["FormatEnum"];
+            is_public?: boolean;
+            /** @default false */
+            create_box?: boolean;
+            /** @description Decklist to import */
+            text?: string;
         };
         PatchedItemWrite: {
             /**
@@ -1201,6 +1684,29 @@ export interface components {
          * @enum {string}
          */
         SoundEnum: "click" | "ding" | "big_ding";
+        /**
+         * @description * `in_box` - in_box
+         *     * `owned` - owned
+         *     * `other_decks` - other_decks
+         *     * `missing` - missing
+         * @enum {string}
+         */
+        StateEnum: "in_box" | "owned" | "other_decks" | "missing";
+        Stats: {
+            curve: {
+                [key: string]: number;
+            };
+            pips: {
+                [key: string]: number;
+            };
+            types: {
+                [key: string]: number;
+            };
+            /** Format: double */
+            average_mana_value: number;
+            value: components["schemas"]["ValueSplit"];
+            values: components["schemas"]["ValuesSplit"];
+        };
         Totals: {
             card_count: number;
             /** Format: double */
@@ -1226,6 +1732,27 @@ export interface components {
             remaining: number;
             cart: components["schemas"]["Totals"];
         };
+        ValueSplit: {
+            /** Format: double */
+            total: number | null;
+            /** Format: double */
+            owned: number | null;
+            /** Format: double */
+            missing: number | null;
+        };
+        ValuesSplit: {
+            total: components["schemas"]["Money"];
+            owned: components["schemas"]["Money"];
+            missing: components["schemas"]["Money"];
+        };
+        /**
+         * @description * `commander` - Commander
+         *     * `main` - Mainboard
+         *     * `side` - Sideboard
+         *     * `maybe` - Maybeboard
+         * @enum {string}
+         */
+        ZoneEnum: "commander" | "main" | "side" | "maybe";
     };
     responses: never;
     parameters: never;
@@ -1460,6 +1987,417 @@ export interface operations {
             };
         };
     };
+    decks_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckList"];
+                };
+            };
+        };
+    };
+    decks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeckWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeckWrite"];
+                "multipart/form-data": components["schemas"]["DeckWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDeckWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDeckWrite"];
+                "multipart/form-data": components["schemas"]["PatchedDeckWrite"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_box_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateBox"];
+                "application/x-www-form-urlencoded": components["schemas"]["CreateBox"];
+                "multipart/form-data": components["schemas"]["CreateBox"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_cards_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeckCardWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeckCardWrite"];
+                "multipart/form-data": components["schemas"]["DeckCardWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_cards_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decks_cards_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedDeckCardEdit"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedDeckCardEdit"];
+                "multipart/form-data": components["schemas"]["PatchedDeckCardEdit"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_cards_own_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkOwned"];
+                "application/x-www-form-urlencoded": components["schemas"]["MarkOwned"];
+                "multipart/form-data": components["schemas"]["MarkOwned"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_delete_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DeckDelete"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeckDelete"];
+                "multipart/form-data": components["schemas"]["DeckDelete"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decks_export_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    decks_import_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeckText"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeckText"];
+                "multipart/form-data": components["schemas"]["DeckText"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_missing_retrieve: {
+        parameters: {
+            query?: {
+                color?: string[];
+                condition?: string[];
+                deck?: string;
+                dir?: string;
+                finish?: string[];
+                limit?: string;
+                location?: string;
+                offset?: string;
+                price_max?: string;
+                price_min?: string;
+                q?: string;
+                rarity?: string[];
+                set?: string[];
+                sort?: string;
+                type?: string[];
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicItemPage"];
+                };
+            };
+        };
+    };
+    decks_missing_export_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MissingExport"];
+                "application/x-www-form-urlencoded": components["schemas"]["MissingExport"];
+                "multipart/form-data": components["schemas"]["MissingExport"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    decks_add_from_collection_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddFromCollection"];
+                "application/x-www-form-urlencoded": components["schemas"]["AddFromCollection"];
+                "multipart/form-data": components["schemas"]["AddFromCollection"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AddResult"];
+                };
+            };
+        };
+    };
+    decks_import_preview_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeckText"];
+                "application/x-www-form-urlencoded": components["schemas"]["DeckText"];
+                "multipart/form-data": components["schemas"]["DeckText"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckImportPreview"];
+                };
+            };
+        };
+    };
     health_retrieve: {
         parameters: {
             query?: never;
@@ -1534,6 +2472,7 @@ export interface operations {
             query?: {
                 color?: string[];
                 condition?: string[];
+                deck?: string;
                 dir?: string;
                 finish?: string[];
                 limit?: string;
@@ -2091,6 +3030,49 @@ export interface operations {
             };
         };
     };
+    users_decks_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckList"];
+                };
+            };
+        };
+    };
+    users_decks_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
     users_locations_list: {
         parameters: {
             query?: never;
@@ -2167,6 +3149,7 @@ export interface operations {
             query?: {
                 color?: string[];
                 condition?: string[];
+                deck?: string;
                 dir?: string;
                 finish?: string[];
                 limit?: string;

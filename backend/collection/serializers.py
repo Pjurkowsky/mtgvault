@@ -260,6 +260,7 @@ class ImportResultSerializer(serializers.Serializer):
 class DirectoryUserSerializer(serializers.Serializer):
     username = serializers.CharField()
     public_locations = serializers.IntegerField()
+    public_decks = serializers.IntegerField()
 
 
 class PublicLocationSerializer(serializers.ModelSerializer):

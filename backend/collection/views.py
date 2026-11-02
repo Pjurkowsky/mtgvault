@@ -123,7 +123,7 @@ def browse_params():
         OpenApiParameter(name, str, many=many) for name, many in [
             ('q', False), ('color', True), ('type', True), ('rarity', True), ('set', True),
             ('finish', True), ('condition', True), ('price_min', False), ('price_max', False),
-            ('location', False), ('sort', False), ('dir', False), ('offset', False), ('limit', False),
+            ('location', False), ('deck', False), ('sort', False), ('dir', False), ('offset', False), ('limit', False),
         ]
     ]
 
@@ -358,13 +358,14 @@ class DirectoryView(APIView):
     def get(self, request):
         users = (
             get_user_model().objects
-            .annotate(public_locations=Count('locations', filter=Q(locations__is_public=True)))
-            .filter(public_locations__gt=0)
+            .annotate(public_locations=Count('locations', filter=Q(locations__is_public=True), distinct=True),
+                      public_decks=Count('decks', filter=Q(decks__is_public=True), distinct=True))
+            .filter(Q(public_locations__gt=0) | Q(public_decks__gt=0))
             .order_by('username')
         )
         if q := request.query_params.get('q', '').strip():
             users = users.filter(username__icontains=q)
-        return Response(DirectoryUserSerializer(users.values('username', 'public_locations')[:100], many=True).data)
+        return Response(DirectoryUserSerializer(users.values('username', 'public_locations', 'public_decks')[:100], many=True).data)
 
 
 class PublicLocationListView(APIView):

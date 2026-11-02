@@ -22,9 +22,9 @@ Done for T4-T7: shell checks against the real catalog.
 
 ## Phase 3: API
 
-- [ ] **T8 Deck endpoints: list, create, detail, edit, delete, cards, own, box** (AC-1 to AC-21)
-- [ ] **T9 Import, export, add from collection, missing, items `deck` filter** (AC-10, AC-16, AC-17, AC-25 to AC-27)
-- [ ] **T10 Public decks, directory, API types** (AC-28)
+- [x] **T8 Deck endpoints: list, create, detail, edit, delete, cards, own, box** (AC-1 to AC-21)
+- [x] **T9 Import, export, add from collection, missing, items `deck` filter** (AC-10, AC-16, AC-17, AC-25 to AC-27)
+- [x] **T10 Public decks, directory, API types** (AC-28)
 
 ## Phase 4: Frontend
 

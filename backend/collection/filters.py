@@ -29,6 +29,7 @@ class ItemFilterSerializer(serializers.Serializer):
     price_min = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, min_value=0)
     price_max = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, min_value=0)
     location = serializers.CharField(required=False, help_text='Location id, "unfiled" or "cart"')
+    deck = serializers.IntegerField(required=False, help_text="Only copies of this deck's cards")
     sort = serializers.ChoiceField(SORTS, default='name')
     dir = serializers.ChoiceField(['asc', 'desc'], default='asc')
 
@@ -100,6 +101,9 @@ def apply_filters(items, params: dict, currency: str, rates: dict):
         items = items.filter(unit_price__gte=params['price_min'])
     if params.get('price_max') is not None:
         items = items.filter(unit_price__lte=params['price_max'])
+    if deck := params.get('deck'):
+        from decks.models import DeckCard  # decks depends on collection
+        items = items.filter(printing__oracle_id__in=DeckCard.objects.filter(deck_id=deck).values('oracle_id'))
     # The cart is only ever shown on its own; everything else is the collection (spec 003, AC-18).
     location = params.get('location')
     items = items.filter(in_cart=location == 'cart')

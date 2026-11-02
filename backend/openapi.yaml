@@ -216,6 +216,506 @@ paths:
               schema:
                 $ref: '#/components/schemas/CatalogStatus'
           description: ''
+  /api/decks/:
+    get:
+      operationId: decks_list
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckList'
+          description: ''
+    post:
+      operationId: decks_create
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeckWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeckWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/:
+    get:
+      operationId: decks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+    patch:
+      operationId: decks_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/box/:
+    post:
+      operationId: decks_box_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBox'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreateBox'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreateBox'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/cards/:
+    post:
+      operationId: decks_cards_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckCardWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeckCardWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeckCardWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/cards/{card_id}/:
+    patch:
+      operationId: decks_cards_partial_update
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckCardEdit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckCardEdit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDeckCardEdit'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+    delete:
+      operationId: decks_cards_destroy
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/decks/{id}/cards/{card_id}/own/:
+    post:
+      operationId: decks_cards_own_create
+      description: 'AC-15: move a free copy into the deck box, or record a new copy.'
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkOwned'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarkOwned'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarkOwned'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/delete/:
+    post:
+      operationId: decks_delete_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckDelete'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeckDelete'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeckDelete'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/decks/{id}/export/:
+    get:
+      operationId: decks_export_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+          description: ''
+  /api/decks/{id}/import/:
+    post:
+      operationId: decks_import_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/missing/:
+    get:
+      operationId: decks_missing_retrieve
+      parameters:
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: deck
+        schema:
+          type: string
+      - in: query
+        name: dir
+        schema:
+          type: string
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: string
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: price_max
+        schema:
+          type: string
+      - in: query
+        name: price_min
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicItemPage'
+          description: ''
+  /api/decks/{id}/missing/export/:
+    post:
+      operationId: decks_missing_export_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissingExport'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MissingExport'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MissingExport'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResult'
+          description: ''
+  /api/decks/add-from-collection/:
+    post:
+      operationId: decks_add_from_collection_create
+      description: 'AC-10: one copy of each selected card, into a deck''s zone.'
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddFromCollection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AddFromCollection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AddFromCollection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddResult'
+          description: ''
+  /api/decks/import/preview/:
+    post:
+      operationId: decks_import_preview_create
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeckText'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckImportPreview'
+          description: ''
   /api/health/:
     get:
       operationId: health_retrieve
@@ -301,6 +801,10 @@ paths:
           type: array
           items:
             type: string
+      - in: query
+        name: deck
+        schema:
+          type: string
       - in: query
         name: dir
         schema:
@@ -877,6 +1381,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicUser'
           description: ''
+  /api/users/{username}/decks/:
+    get:
+      operationId: users_decks_list
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckList'
+          description: ''
+  /api/users/{username}/decks/{id}/:
+    get:
+      operationId: users_decks_retrieve
+      description: 'AC-28: everything but where your cards are. Private and missing
+        decks look the same.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
   /api/users/{username}/locations/:
     get:
       operationId: users_locations_list
@@ -978,6 +1531,10 @@ paths:
           items:
             type: string
       - in: query
+        name: deck
+        schema:
+          type: string
+      - in: query
         name: dir
         schema:
           type: string
@@ -1074,6 +1631,28 @@ components:
         * `move` - move
         * `edit` - edit
         * `delete` - delete
+    AddFromCollection:
+      type: object
+      properties:
+        deck:
+          type: integer
+        zone:
+          allOf:
+          - $ref: '#/components/schemas/ZoneEnum'
+          default: main
+        selection:
+          $ref: '#/components/schemas/Selection'
+      required:
+      - deck
+      - selection
+    AddResult:
+      type: object
+      properties:
+        cards:
+          type: integer
+          description: Distinct cards added
+      required:
+      - cards
     AuthResponse:
       type: object
       description: Body returned by register and login. The refresh token goes in
@@ -1089,6 +1668,27 @@ components:
     BlankEnum:
       enum:
       - ''
+    BoxEnum:
+      enum:
+      - keep
+      - unfile
+      - delete
+      type: string
+      description: |-
+        * `keep` - keep
+        * `unfile` - unfile
+        * `delete` - delete
+    BoxMove:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - item_id
+      - quantity
     BulkChanges:
       type: object
       properties:
@@ -1245,6 +1845,44 @@ components:
         * `MP` - Moderately Played
         * `HP` - Heavily Played
         * `DMG` - Damaged
+    Counts:
+      type: object
+      properties:
+        commander:
+          type: integer
+        main:
+          type: integer
+        side:
+          type: integer
+        maybe:
+          type: integer
+        size:
+          type: integer
+          description: Commander + Mainboard
+        target:
+          type: integer
+          nullable: true
+          description: The format's deck size
+        owned:
+          type: integer
+        missing:
+          type: integer
+      required:
+      - commander
+      - main
+      - maybe
+      - missing
+      - owned
+      - side
+      - size
+      - target
+    CreateBox:
+      type: object
+      properties:
+        moves:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoxMove'
     CurrencyEnum:
       enum:
       - USD
@@ -1255,6 +1893,327 @@ components:
         * `USD` - US Dollar
         * `EUR` - Euro
         * `PLN` - Polish Złoty
+    DeckCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        zone:
+          $ref: '#/components/schemas/ZoneEnum'
+        quantity:
+          type: integer
+        printing:
+          $ref: '#/components/schemas/DeckPrinting'
+        price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        prices:
+          $ref: '#/components/schemas/Money'
+        ownership:
+          $ref: '#/components/schemas/Ownership'
+      required:
+      - id
+      - ownership
+      - price
+      - prices
+      - printing
+      - quantity
+      - zone
+    DeckCardWrite:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+        zone:
+          allOf:
+          - $ref: '#/components/schemas/ZoneEnum'
+          default: main
+      required:
+      - printing
+    DeckDelete:
+      type: object
+      properties:
+        box:
+          $ref: '#/components/schemas/BoxEnum'
+    DeckDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        is_public:
+          type: boolean
+        location:
+          type: integer
+          nullable: true
+        location_name:
+          type: string
+          nullable: true
+        image:
+          type: string
+        counts:
+          $ref: '#/components/schemas/Counts'
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        values:
+          $ref: '#/components/schemas/Money'
+        username:
+          type: string
+        currency:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckCard'
+        legality:
+          $ref: '#/components/schemas/Legality'
+        stats:
+          $ref: '#/components/schemas/Stats'
+      required:
+      - cards
+      - counts
+      - currency
+      - format
+      - id
+      - image
+      - is_public
+      - legality
+      - location
+      - location_name
+      - name
+      - stats
+      - username
+      - value
+      - values
+    DeckImportPreview:
+      type: object
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckImportRow'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportError'
+        cards:
+          type: integer
+      required:
+      - cards
+      - errors
+      - rows
+    DeckImportRow:
+      type: object
+      properties:
+        line:
+          type: integer
+        zone:
+          type: string
+        quantity:
+          type: integer
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+      required:
+      - line
+      - printing
+      - quantity
+      - zone
+    DeckList:
+      type: object
+      properties:
+        currency:
+          type: string
+        decks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckSummary'
+      required:
+      - currency
+      - decks
+    DeckPrinting:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Scryfall id
+        oracle_id:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Same for every printing of a card
+        name:
+          type: string
+          readOnly: true
+        set_code:
+          type: string
+        set_name:
+          type: string
+        collector_number:
+          type: string
+          readOnly: true
+        rarity:
+          allOf:
+          - $ref: '#/components/schemas/RarityEnum'
+          readOnly: true
+        colors:
+          type: array
+          items:
+            type: string
+            maxLength: 1
+          readOnly: true
+        type_line:
+          type: string
+          readOnly: true
+        finishes:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinishEnum'
+          readOnly: true
+        image_small:
+          type: string
+          format: uri
+          readOnly: true
+        image_normal:
+          type: string
+          format: uri
+          readOnly: true
+        image_large:
+          type: string
+          format: uri
+          readOnly: true
+        mana_cost:
+          type: string
+          readOnly: true
+        cmc:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        types:
+          type: array
+          items:
+            type: string
+            maxLength: 20
+          readOnly: true
+        color_identity:
+          type: array
+          items:
+            type: string
+            maxLength: 1
+          readOnly: true
+      required:
+      - cmc
+      - collector_number
+      - color_identity
+      - colors
+      - finishes
+      - id
+      - image_large
+      - image_normal
+      - image_small
+      - mana_cost
+      - name
+      - oracle_id
+      - rarity
+      - set_code
+      - set_name
+      - type_line
+      - types
+    DeckSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        is_public:
+          type: boolean
+        location:
+          type: integer
+          nullable: true
+        location_name:
+          type: string
+          nullable: true
+        image:
+          type: string
+        counts:
+          $ref: '#/components/schemas/Counts'
+        value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        values:
+          $ref: '#/components/schemas/Money'
+      required:
+      - counts
+      - format
+      - id
+      - image
+      - is_public
+      - location
+      - location_name
+      - name
+      - value
+      - values
+    DeckText:
+      type: object
+      properties:
+        text:
+          type: string
+      required:
+      - text
+    DeckWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        is_public:
+          type: boolean
+        create_box:
+          type: boolean
+          writeOnly: true
+          default: false
+        text:
+          type: string
+          writeOnly: true
+          description: Decklist to import
+      required:
+      - name
     DirEnum:
       enum:
       - asc
@@ -1270,7 +2229,10 @@ components:
           type: string
         public_locations:
           type: integer
+        public_decks:
+          type: integer
       required:
+      - public_decks
       - public_locations
       - username
     Edhrec:
@@ -1401,6 +2363,54 @@ components:
         * `nonfoil` - Nonfoil
         * `foil` - Foil
         * `etched` - Etched
+    FormatEnum:
+      enum:
+      - commander
+      - brawl
+      - standard
+      - pioneer
+      - modern
+      - legacy
+      - vintage
+      - pauper
+      - casual
+      type: string
+      description: |-
+        * `commander` - Commander
+        * `brawl` - Brawl
+        * `standard` - Standard
+        * `pioneer` - Pioneer
+        * `modern` - Modern
+        * `legacy` - Legacy
+        * `vintage` - Vintage
+        * `pauper` - Pauper
+        * `casual` - Casual
+    FreeCopy:
+      type: object
+      properties:
+        item_id:
+          type: integer
+        quantity:
+          type: integer
+        location:
+          type: string
+        location_id:
+          type: integer
+          nullable: true
+        set_code:
+          type: string
+        collector_number:
+          type: string
+        finish:
+          type: string
+      required:
+      - collector_number
+      - finish
+      - item_id
+      - location
+      - location_id
+      - quantity
+      - set_code
     Health:
       type: object
       properties:
@@ -1494,6 +2504,21 @@ components:
       - line
       - printing
       - quantity
+    Issue:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        cards:
+          type: array
+          items:
+            type: string
+      required:
+      - cards
+      - code
+      - message
     Item:
       type: object
       description: Owner view of a row. Needs `currency` and `rates` in the context.
@@ -1641,6 +2666,9 @@ components:
         location:
           type: string
           description: Location id, "unfiled" or "cart"
+        deck:
+          type: integer
+          description: Only copies of this deck's cards
         sort:
           allOf:
           - $ref: '#/components/schemas/SortEnum'
@@ -1778,6 +2806,18 @@ components:
         * `sa` - Sanskrit
         * `ph` - Phyrexian
         * `qya` - Quenya
+    Legality:
+      type: object
+      properties:
+        legal:
+          type: boolean
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/Issue'
+      required:
+      - issues
+      - legal
     Location:
       type: object
       description: Owner view of a location. Totals come from the view (context['totals']).
@@ -1884,6 +2924,21 @@ components:
       required:
       - login
       - password
+    MarkOwned:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+        item_id:
+          type: integer
+          description: Move this free copy into the deck box
+        new:
+          allOf:
+          - $ref: '#/components/schemas/NewCopy'
+          description: Or record a new copy
     Me:
       type: object
       description: The logged-in user's own account data.
@@ -1906,6 +2961,11 @@ components:
       - date_joined
       - email
       - username
+    MissingExport:
+      type: object
+      properties:
+        filter:
+          $ref: '#/components/schemas/ItemFilter'
     Money:
       type: object
       description: One amount in every currency. Null = no price.
@@ -1938,9 +2998,70 @@ components:
       - EUR
       - PLN
       - USD
+    NewCopy:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        finish:
+          $ref: '#/components/schemas/FinishEnum'
+        condition:
+          allOf:
+          - $ref: '#/components/schemas/ConditionEnum'
+          default: NM
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          default: en
     NullEnum:
       enum:
       - null
+    OtherDeck:
+      type: object
+      properties:
+        deck:
+          type: string
+        quantity:
+          type: integer
+      required:
+      - deck
+      - quantity
+    Ownership:
+      type: object
+      properties:
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        needed:
+          type: integer
+        in_box:
+          type: integer
+        free:
+          type: integer
+        in_other_decks:
+          type: integer
+        missing:
+          type: integer
+        free_copies:
+          type: array
+          items:
+            $ref: '#/components/schemas/FreeCopy'
+          description: Empty for visitors
+        other_decks:
+          type: array
+          items:
+            $ref: '#/components/schemas/OtherDeck'
+          description: Empty for visitors
+      required:
+      - free
+      - free_copies
+      - in_box
+      - in_other_decks
+      - missing
+      - needed
+      - other_decks
+      - state
     PasswordChange:
       type: object
       properties:
@@ -1951,6 +3072,37 @@ components:
       required:
       - current_password
       - new_password
+    PatchedDeckCardEdit:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+        zone:
+          $ref: '#/components/schemas/ZoneEnum'
+    PatchedDeckWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        is_public:
+          type: boolean
+        create_box:
+          type: boolean
+          writeOnly: true
+          default: false
+        text:
+          type: string
+          writeOnly: true
+          description: Decklist to import
     PatchedItemWrite:
       type: object
       properties:
@@ -2571,6 +3723,47 @@ components:
         * `click` - click
         * `ding` - ding
         * `big_ding` - big_ding
+    StateEnum:
+      enum:
+      - in_box
+      - owned
+      - other_decks
+      - missing
+      type: string
+      description: |-
+        * `in_box` - in_box
+        * `owned` - owned
+        * `other_decks` - other_decks
+        * `missing` - missing
+    Stats:
+      type: object
+      properties:
+        curve:
+          type: object
+          additionalProperties:
+            type: integer
+        pips:
+          type: object
+          additionalProperties:
+            type: integer
+        types:
+          type: object
+          additionalProperties:
+            type: integer
+        average_mana_value:
+          type: number
+          format: double
+        value:
+          $ref: '#/components/schemas/ValueSplit'
+        values:
+          $ref: '#/components/schemas/ValuesSplit'
+      required:
+      - average_mana_value
+      - curve
+      - pips
+      - types
+      - value
+      - values
     Totals:
       type: object
       properties:
@@ -2625,6 +3818,62 @@ components:
       required:
       - cart
       - remaining
+    ValueSplit:
+      type: object
+      properties:
+        total:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        owned:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        missing:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+      required:
+      - missing
+      - owned
+      - total
+    ValuesSplit:
+      type: object
+      properties:
+        total:
+          $ref: '#/components/schemas/Money'
+        owned:
+          $ref: '#/components/schemas/Money'
+        missing:
+          $ref: '#/components/schemas/Money'
+      required:
+      - missing
+      - owned
+      - total
+    ZoneEnum:
+      enum:
+      - commander
+      - main
+      - side
+      - maybe
+      type: string
+      description: |-
+        * `commander` - Commander
+        * `main` - Mainboard
+        * `side` - Sideboard
+        * `maybe` - Maybeboard
   securitySchemes:
     jwtAuth:
       type: http
