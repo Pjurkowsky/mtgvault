@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'cards',
     'collection',
     'scanner',
+    'decks',
 ]
 
 MIDDLEWARE = [

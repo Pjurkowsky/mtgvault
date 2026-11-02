@@ -95,6 +95,12 @@ def item_page(request, items, serializer_class, ctx):
     })
 
 
+def sync_deck(location):
+    """Deck box locations are decks (spec 004, AC-4). Imported here: decks depends on collection."""
+    from decks.services import sync_location
+    sync_location(location)
+
+
 def own_location(user, location_id):
     if location_id is None:
         return None
@@ -144,6 +150,7 @@ class LocationListView(APIView):
         serializer = LocationSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         location = serializer.save(user=request.user)
+        sync_deck(location)
         return Response(LocationSerializer(location, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -163,7 +170,7 @@ class LocationDetailView(APIView):
         location = self.get_location(request, pk)
         serializer = LocationSerializer(location, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        sync_deck(serializer.save())
         return self.get(request, pk)
 
 

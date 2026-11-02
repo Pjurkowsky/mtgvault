@@ -1,0 +1,119 @@
+"""Writes for decks (spec 004). Copies move through collection.services, so
+merging rules stay the same everywhere."""
+
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
+
+from collection.models import CollectionItem, Location
+from collection.services import MAX_QUANTITY, Copies, edit_item, save_item
+
+from .legality import FORMATS
+from .models import Deck, DeckCard
+
+
+def check_zone(deck: Deck, zone: str):
+    rules = FORMATS[deck.format]
+    if zone == DeckCard.Zone.COMMANDER and not rules.commander:
+        raise ValidationError({'zone': [f'{deck.get_format_display()} decks have no commander zone.']})
+    if zone == DeckCard.Zone.SIDE and rules.commander:
+        raise ValidationError({'zone': [f'{deck.get_format_display()} decks have no sideboard.']})
+
+
+@transaction.atomic
+def add_card(deck: Deck, printing, quantity: int = 1, zone: str = DeckCard.Zone.MAIN) -> DeckCard:
+    """Add copies of a card; the same card in the same zone raises its quantity (AC-10)."""
+    check_zone(deck, zone)
+    card, created = DeckCard.objects.select_for_update().get_or_create(
+        deck=deck, oracle_id=printing.oracle_id, zone=zone,
+        defaults={'printing': printing, 'quantity': min(quantity, MAX_QUANTITY)},
+    )
+    if not created:
+        card.quantity = min(card.quantity + quantity, MAX_QUANTITY)
+        card.save(update_fields=['quantity'])
+    return card
+
+
+def unique_location_name(user, name: str) -> str:
+    taken = {n.lower() for n in Location.objects.filter(user=user).values_list('name', flat=True)}
+    candidate, n = name, 1
+    while candidate.lower() in taken:
+        candidate = f'{name} deck' if n == 1 else f'{name} deck {n}'
+        n += 1
+    return candidate
+
+
+def sync_location(location: Location):
+    """A Deck box location is a deck's box (AC-4): create its deck, or unlink when it stops being one."""
+    deck = Deck.objects.filter(location=location).first()
+    if location.kind == Location.Kind.DECK_BOX and deck is None:
+        Deck.objects.create(user=location.user, name=location.name, format=Deck.Format.CASUAL,
+                            is_public=location.is_public, location=location)
+    elif location.kind != Location.Kind.DECK_BOX and deck is not None:
+        deck.location = None
+        deck.save(update_fields=['location'])
+
+
+def move_copies(row: CollectionItem, quantity: int, location) -> CollectionItem:
+    """Move `quantity` copies of a row to `location`, merging there; the rest stays."""
+    if quantity >= row.quantity:
+        return edit_item(row, location=location)[0]
+    row.quantity -= quantity
+    row.save(update_fields=['quantity'])
+    moved, merged = save_item(
+        row.user, printing=row.printing, finish=row.finish, condition=row.condition, language=row.language,
+        location=location, copies=Copies(quantity, row.purchase_price, row.purchase_currency,
+                                         added_at=row.added_at,
+                                         added={f: getattr(row, f) for f in ('added_usd', 'added_eur', 'added_pln')}),
+    )
+    if not merged:  # a new row keeps the original's date and price-when-added
+        moved.added_at = row.added_at
+        moved.added_usd, moved.added_eur, moved.added_pln = row.added_usd, row.added_eur, row.added_pln
+        moved.save(update_fields=['added_at', 'added_usd', 'added_eur', 'added_pln'])
+    return moved
+
+
+def free_row(deck: Deck, item_id: int) -> CollectionItem:
+    """An owned copy the deck may take: not in the cart, not in any deck's box."""
+    row = CollectionItem.objects.select_related('printing', 'location').filter(
+        pk=item_id, user=deck.user, in_cart=False,
+    ).first()
+    if row is None or (row.location_id and Deck.objects.filter(location_id=row.location_id).exists()):
+        raise ValidationError({'item_id': ['That copy is not free.']})
+    return row
+
+
+@transaction.atomic
+def create_box(deck: Deck, moves: list[dict]) -> Location:
+    """Give a deck its box and move the chosen free copies into it (AC-5)."""
+    if deck.location_id:
+        raise ValidationError({'detail': 'This deck already has a deck box.'})
+    box = Location.objects.create(user=deck.user, name=unique_location_name(deck.user, deck.name),
+                                  kind=Location.Kind.DECK_BOX, is_public=deck.is_public)
+    deck.location = box
+    deck.save(update_fields=['location'])
+    for move in moves:
+        row = free_row(deck, move['item_id'])
+        move_copies(row, min(move['quantity'], row.quantity), box)
+    return box
+
+
+@transaction.atomic
+def delete_deck(deck: Deck, box_action: str | None):
+    """AC-6: keep the box as a Box, move its cards to Unfiled, or delete them too."""
+    box = deck.location
+    if box is not None:
+        if box_action not in ('keep', 'unfile', 'delete'):
+            raise ValidationError({'box': ['Choose what happens to the deck box.']})
+        deck.location = None
+        deck.save(update_fields=['location'])
+        if box_action == 'keep':
+            box.kind = Location.Kind.BOX
+            box.save(update_fields=['kind'])
+        else:
+            for row in list(box.items.all()):
+                if box_action == 'delete':
+                    row.delete()
+                else:
+                    edit_item(row, location=None)
+            box.delete()
+    deck.delete()

@@ -7,16 +7,16 @@ after API changes.
 
 ## Phase 1: Data
 
-- [ ] **T1 Rules fields on Printing** (legalities, color identity, keywords, oracle text) + resync
-- [ ] **T2 Deck and DeckCard models, data migration for existing deck boxes** (AC-4)
-- [ ] **T3 Location ↔ deck sync** (AC-4)
+- [x] **T1 Rules fields on Printing** (legalities, color identity, keywords, oracle text) + resync
+- [x] **T2 Deck and DeckCard models, data migration for existing deck boxes** (AC-4)
+- [x] **T3 Location ↔ deck sync** (AC-4)
 
 ## Phase 2: Rules
 
-- [ ] **T4 Ownership** (AC-13, AC-14)
-- [ ] **T5 Legality and commander pairing** (AC-12, AC-22, AC-23)
-- [ ] **T6 Stats** (AC-24)
-- [ ] **T7 Deck text lists** (AC-25, AC-27)
+- [x] **T4 Ownership** (AC-13, AC-14)
+- [x] **T5 Legality and commander pairing** (AC-12, AC-22, AC-23)
+- [x] **T6 Stats** (AC-24)
+- [x] **T7 Deck text lists** (AC-25, AC-27)
 
 Done for T4-T7: shell checks against the real catalog.
 

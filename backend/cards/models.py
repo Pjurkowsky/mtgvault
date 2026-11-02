@@ -50,6 +50,11 @@ class Printing(models.Model):
     # Same artwork across reprints; the scanner recognizes artwork, not printings.
     illustration_id = models.UUIDField(null=True, blank=True, db_index=True)
     promo = models.BooleanField(default=False)
+    # Deck rules (spec 004): format legality, commander colors, partner keywords.
+    legalities = models.JSONField(default=dict, blank=True)
+    color_identity = ArrayField(models.CharField(max_length=1), default=list, blank=True)
+    keywords = ArrayField(models.CharField(max_length=60), default=list, blank=True)
+    oracle_text = models.TextField(blank=True)
     image_small = models.URLField(max_length=500, blank=True)
     image_normal = models.URLField(max_length=500, blank=True)
     image_large = models.URLField(max_length=500, blank=True)
