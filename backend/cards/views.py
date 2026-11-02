@@ -108,7 +108,7 @@ class CardDetailView(APIView):
         owned = 0
         if request.user.is_authenticated:
             owned = CollectionItem.objects.filter(
-                user=request.user, printing__oracle_id=oracle_id,
+                user=request.user, printing__oracle_id=oracle_id, in_cart=False,
             ).aggregate(n=Sum('quantity'))['n'] or 0
         data = {'oracle_id': oracle_id, 'name': printings[0].name, 'owned': owned, 'printings': printings}
         return Response(CardDetailSerializer(data, context=price_context(request)).data)

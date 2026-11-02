@@ -1360,6 +1360,9 @@ components:
         location_name:
           type: string
           nullable: true
+        in_cart:
+          type: boolean
+          readOnly: true
         purchase_price:
           type: number
           format: double
@@ -1412,6 +1415,7 @@ components:
       - added_prices
       - finish
       - id
+      - in_cart
       - location
       - printing
       - purchase_price_converted
@@ -1463,7 +1467,7 @@ components:
           exclusiveMaximum: true
         location:
           type: string
-          description: Location id or "unfiled"
+          description: Location id, "unfiled" or "cart"
         sort:
           allOf:
           - $ref: '#/components/schemas/SortEnum'
@@ -1668,11 +1672,16 @@ components:
           type: string
         unfiled:
           $ref: '#/components/schemas/Totals'
+        cart:
+          allOf:
+          - $ref: '#/components/schemas/Totals'
+          description: Scanned cards waiting in the cart (not part of the collection)
         locations:
           type: array
           items:
             $ref: '#/components/schemas/Location'
       required:
+      - cart
       - currency
       - locations
       - unfiled

@@ -67,6 +67,8 @@ def printing_fields(card: dict) -> dict:
         'mana_cost': card.get('mana_cost') or front.get('mana_cost', ''),
         'cmc': Decimal(str(card.get('cmc', 0))),
         'finishes': card.get('finishes', []),
+        'illustration_id': card.get('illustration_id') or front.get('illustration_id'),
+        'promo': bool(card.get('promo', False)),
         'image_small': images.get('small', ''),
         'image_normal': images.get('normal', ''),
         'image_large': images.get('large', ''),

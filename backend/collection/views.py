@@ -128,11 +128,14 @@ class LocationListView(APIView):
     @extend_schema(operation_id='locations_list', responses=LocationListSerializer)
     def get(self, request):
         ctx = price_context(request)
-        totals = location_totals(CollectionItem.objects.filter(user=request.user), ctx['currency'], ctx['rates'])
+        rows = CollectionItem.objects.filter(user=request.user)
+        totals = location_totals(rows.filter(in_cart=False), ctx['currency'], ctx['rates'])
+        cart = location_totals(rows.filter(in_cart=True), ctx['currency'], ctx['rates'])
         locations = Location.objects.filter(user=request.user).order_by(F('name').asc())
         return Response({
             'currency': ctx['currency'],
             'unfiled': totals.get(None, EMPTY_TOTALS),
+            'cart': cart.get(None, EMPTY_TOTALS),
             'locations': LocationSerializer(locations, many=True, context={**ctx, 'totals': totals, 'request': request}).data,
         })
 
@@ -269,6 +272,7 @@ class BulkView(APIView):
         if d['action'] == 'move':
             if 'location' not in d:
                 raise ValidationError({'location': ['Choose where to move the cards.']})
+            # Moving always lands in the collection, also from the cart (spec 003, AC-21).
             changes = {'location': own_location(request.user, d['location'])}
         elif d['action'] == 'edit' and not changes:
             raise ValidationError({'changes': ['Choose what to change.']})

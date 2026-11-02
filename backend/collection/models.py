@@ -71,6 +71,8 @@ class CollectionItem(models.Model):
     printing = models.ForeignKey(Printing, on_delete=models.PROTECT, related_name='+')
     # Null means Unfiled. PROTECT: deleting a location must decide what happens to its cards (AC-11).
     location = models.ForeignKey(Location, on_delete=models.PROTECT, null=True, blank=True, related_name='items')
+    # Scanned cards waiting in the user's cart: not part of the collection (spec 003, AC-18).
+    in_cart = models.BooleanField(default=False)
     quantity = models.PositiveSmallIntegerField()
     finish = models.CharField(max_length=10, choices=Finish.choices)
     condition = models.CharField(max_length=3, choices=Condition.choices, default=Condition.NEAR_MINT)
@@ -87,9 +89,13 @@ class CollectionItem(models.Model):
         constraints = [
             # AC-19. nulls_distinct=False so two Unfiled rows also collide.
             models.UniqueConstraint(
-                fields=['user', 'printing', 'finish', 'condition', 'language', 'location'],
+                fields=['user', 'printing', 'finish', 'condition', 'language', 'location', 'in_cart'],
                 nulls_distinct=False,
                 name='collection_item_unique_row',
+            ),
+            models.CheckConstraint(
+                condition=Q(in_cart=False) | Q(location__isnull=True),
+                name='collection_item_cart_has_no_location',
             ),
             models.CheckConstraint(
                 condition=Q(quantity__gte=1, quantity__lte=999),

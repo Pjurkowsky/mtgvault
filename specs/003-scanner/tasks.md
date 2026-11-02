@@ -7,11 +7,11 @@ API change, run `scripts/check-api.sh` and commit the regenerated files.
 
 ## Phase 1: Catalog and cart backend
 
-- [ ] **T1 `illustration_id` and `promo` on Printing**
+- [x] **T1 `illustration_id` and `promo` on Printing**
   - Migration, `scryfall.py` mapping, resync of the dev catalog.
   - Done: the fixture's Sol Ring has its illustration id, and a full dev
     sync fills them.
-- [ ] **T2 Cart flag and filters** (AC-17, AC-18, AC-21)
+- [x] **T2 Cart flag and filters** (AC-17, AC-18, AC-21)
   - `in_cart` + unique key, services, filters (`location=cart`), totals,
     public, directory, `owned`, bulk move clears the flag, `cart` totals in
     the locations list.

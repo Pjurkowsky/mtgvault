@@ -673,6 +673,7 @@ export interface components {
             readonly unit_prices: components["schemas"]["Money"];
             location: number | null;
             location_name?: string | null;
+            readonly in_cart: boolean;
             /** Format: double */
             purchase_price?: number | null;
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["BlankEnum"] | components["schemas"]["NullEnum"]) | null;
@@ -704,7 +705,7 @@ export interface components {
             price_min?: number;
             /** Format: double */
             price_max?: number;
-            /** @description Location id or "unfiled" */
+            /** @description Location id, "unfiled" or "cart" */
             location?: string;
             /** @default name */
             sort?: components["schemas"]["SortEnum"];
@@ -798,6 +799,8 @@ export interface components {
         LocationList: {
             currency: string;
             unfiled: components["schemas"]["Totals"];
+            /** @description Scanned cards waiting in the cart (not part of the collection) */
+            cart: components["schemas"]["Totals"];
             locations: components["schemas"]["Location"][];
         };
         Login: {

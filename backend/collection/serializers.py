@@ -58,6 +58,7 @@ class LocationSerializer(serializers.ModelSerializer):
 class LocationListSerializer(serializers.Serializer):
     currency = serializers.CharField()
     unfiled = TotalsSerializer()
+    cart = TotalsSerializer(help_text='Scanned cards waiting in the cart (not part of the collection)')
     locations = LocationSerializer(many=True)
 
 
@@ -100,6 +101,7 @@ class ItemSerializer(PublicItemSerializer):
     """Owner view of a row. Needs `currency` and `rates` in the context."""
 
     location = serializers.IntegerField(source='location_id', allow_null=True)
+    in_cart = serializers.BooleanField(read_only=True)
     location_name = serializers.CharField(source='location.name', allow_null=True, default=None)
     purchase_price_converted = serializers.SerializerMethodField(
         help_text='Purchase price per copy in the viewer currency')
@@ -109,7 +111,7 @@ class ItemSerializer(PublicItemSerializer):
 
     class Meta(PublicItemSerializer.Meta):
         fields = PublicItemSerializer.Meta.fields + [
-            'location', 'location_name', 'purchase_price', 'purchase_currency',
+            'location', 'location_name', 'in_cart', 'purchase_price', 'purchase_currency',
             'purchase_price_converted', 'purchase_prices', 'added_price', 'added_prices', 'added_at',
         ]
 

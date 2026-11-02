@@ -47,6 +47,9 @@ class Printing(models.Model):
     mana_cost = models.CharField(max_length=100, blank=True)
     cmc = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Gleemax costs 1,000,000
     finishes = ArrayField(models.CharField(max_length=10, choices=Finish.choices), default=list)
+    # Same artwork across reprints; the scanner recognizes artwork, not printings.
+    illustration_id = models.UUIDField(null=True, blank=True, db_index=True)
+    promo = models.BooleanField(default=False)
     image_small = models.URLField(max_length=500, blank=True)
     image_normal = models.URLField(max_length=500, blank=True)
     image_large = models.URLField(max_length=500, blank=True)

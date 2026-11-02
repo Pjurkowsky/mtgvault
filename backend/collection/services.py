@@ -12,7 +12,7 @@ from cards.pricing import CENT, convert, latest_rates, price
 from .models import CollectionItem
 
 MAX_QUANTITY = 999
-ROW_KEY = ('printing', 'finish', 'condition', 'language', 'location')
+ROW_KEY = ('printing', 'finish', 'condition', 'language', 'location', 'in_cart')
 
 
 @dataclass
@@ -87,13 +87,14 @@ def _find_row(user, key: dict, exclude_id=None):
 
 
 @transaction.atomic
-def save_item(user, *, printing, finish, condition, language, location, copies: Copies, rates=None):
-    """Add copies. Returns (row, merged)."""
+def save_item(user, *, printing, finish, condition, language, location, copies: Copies, rates=None, in_cart=False):
+    """Add copies (to the cart with in_cart=True). Returns (row, merged)."""
     check_finish(printing, finish)
     if not 1 <= copies.quantity <= MAX_QUANTITY:
         raise ValidationError({'quantity': [f'Use 1 to {MAX_QUANTITY}.']})
     rates = rates or latest_rates()
-    key = dict(printing=printing, finish=finish, condition=condition, language=language, location=location)
+    key = dict(printing=printing, finish=finish, condition=condition, language=language,
+               location=None if in_cart else location, in_cart=in_cart)
 
     existing = _find_row(user, key)
     if existing:
@@ -119,6 +120,9 @@ def edit_item(row: CollectionItem, rates=None, **changes):
     rates = rates or latest_rates()
     row = CollectionItem.objects.select_for_update().get(pk=row.pk)
 
+    # Giving a cart row a location (or Unfiled) moves it into the collection (spec 003, AC-21).
+    if 'location' in changes:
+        changes['in_cart'] = False
     if 'printing' in changes and changes['printing'].oracle_id != row.printing.oracle_id:
         raise ValidationError({'printing': ['Pick a printing of the same card.']})
     for field, value in changes.items():
