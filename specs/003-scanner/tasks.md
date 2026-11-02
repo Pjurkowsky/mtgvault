@@ -67,5 +67,11 @@ API change, run `scripts/check-api.sh` and commit the regenerated files.
 
 ## Phase 7: Wrap up
 
-- [ ] **T22 Real-device check** (if a phone is available) and live bundle update check
-- [ ] **T23 READMEs (MPL credits, scanner setup), spec status**
+- [x] **T22 Real-device check** (if a phone is available) and live bundle update check
+  - No phone was available to the agent: a check on a real phone (focus,
+    glare, moving cards) is still to do by hand.
+  - Live update (2026-11-02): the Celery task installed/kept the newest
+    release in the dev worker; on the prod stack the install took 7 s into
+    the shared volume, files served with immutable caching, and nginx sent
+    the isolation headers only on /scan/fast.
+- [x] **T23 READMEs (MPL credits, scanner setup), spec status**

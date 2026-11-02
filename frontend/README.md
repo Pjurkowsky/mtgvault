@@ -26,6 +26,9 @@ src/
   components/             shared: Price (tooltip with other currencies), ConfirmDialog
                           (useConfirm), IconButton (tooltip), CardPreview (hover),
                           ExpandButton + FullscreenCard, ManaSymbol
+  scanner/                camera, frame loop, sounds; recognition/ is ported from
+                          manavault (MPL-2.0, see the root README)
+  components/scanner/     result bar, scanner settings sheet
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
 e2e/          Playwright tests, one file per area, named by acceptance criterion
 ```

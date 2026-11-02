@@ -1,6 +1,6 @@
 # Spec 003: Card scanner
 
-Status: Approved
+Status: Done
 Depends on: 001-collection, 002-collection-polish
 Followed by: 004-binder-view
 

@@ -49,6 +49,12 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists |
 | `GET /api/users/` | public | Directory of users with public locations |
 | `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only |
+| `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
+| `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
+| `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets) |
+| `GET /api/scanner/locked-illustrations/` | bearer | Artwork printed in the locked sets |
+| `POST /api/scanner/scans/` | bearer | Log recognized art into the cart |
+| `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a cart row |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
 
@@ -91,3 +97,17 @@ only `sol-ring.json` exists there.
 
 Every price in the API also comes in all three currencies (`unit_prices`,
 `values`, `prices_all`, …) so the frontend can show the others in a tooltip.
+
+## Scanner
+
+The `scanner` app installs manavault's published recognition models
+(`scanner-bundle-*` GitHub releases, MPL-2.0) into `SCANNER_DIR`
+(default `var/scanner`). `manage.py sync_scanner_bundle` installs the newest
+one (`--from-dir` for a local copy, `--if-missing` to skip when installed);
+Celery beat runs it daily at 04:00 UTC. Every file is checked against the
+manifest's SHA-256 before `current` switches; the previous version is kept.
+
+Recognition runs in the browser. The server resolves recognized artwork to a
+printing (`scanner/resolve.py`, needs `Printing.illustration_id` from the card
+sync) and logs it into the user's cart: `CollectionItem.in_cart`, rows that
+stay out of the collection until moved into a location.

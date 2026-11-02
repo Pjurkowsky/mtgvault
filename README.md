@@ -31,9 +31,12 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 - Everything on http://localhost (`HTTP_PORT`): nginx serves the Vue app and proxies `/api`, `/admin` and `/static` to Django.
 - Migrations run automatically when the backend starts.
-- Load the card catalog once after the first start (later the daily job
-  keeps it fresh):
+- Load the card catalog and the scanner's recognition models once after the
+  first start (daily jobs keep both fresh):
   `docker compose -f docker-compose.prod.yml exec backend python manage.py sync_cards`
+  `docker compose -f docker-compose.prod.yml exec backend python manage.py sync_scanner_bundle`
+- The scanner needs HTTPS (browsers only allow cameras on secure pages, or on
+  localhost).
 
 Useful commands (swap `dev` for `prod` as needed):
 
@@ -57,9 +60,25 @@ pnpm exec playwright install chromium               # first time only
 pnpm e2e                                            # or pnpm e2e:ui
 ```
 
+The scanner tests (`scanner` project) use the real recognition models
+(downloaded once into `backend/var/scanner-e2e`, about 50 MB) and Chromium's
+fake camera showing a Sol Ring (`e2e/camera.setup.ts`, built once into
+`e2e/.cache/`). Both need network the first time.
+
 The tests load a fixed card sample (`backend/cards/fixtures/`) with fixed
 exchange rates, so they need no network. Timing tests (`performance.spec.ts`)
 run alone after the others.
 
 After any API change, run `scripts/check-api.sh` to regenerate the API schema
 and frontend types.
+
+## Credits
+
+The card scanner reuses [ManaVault](https://github.com/cfbender/manavault)'s
+browser recognition pipeline and its published models, trained in
+[Oracle](https://github.com/cfbender/oracle). Both are licensed under the
+[Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/). The ported files in
+`frontend/src/scanner/recognition/` and `frontend/src/scanner/decision.ts`
+keep that license and name their source files; the rest of MTG Vault is not
+affected. Card data and images come from [Scryfall](https://scryfall.com),
+EDHREC data from [EDHREC](https://edhrec.com).
