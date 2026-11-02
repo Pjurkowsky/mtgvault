@@ -14,5 +14,3 @@ export function formatMoney(value: number | null | undefined, currency: Currency
   }
   return formatter.format(value)
 }
-
-export const PLN_ESTIMATE = 'PLN is an estimate, converted from EUR at the daily NBP rate.'

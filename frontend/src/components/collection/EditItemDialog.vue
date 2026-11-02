@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { api, fieldErrors } from '@/api/client'
+import { api, fieldErrors, type Schemas } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -10,8 +10,9 @@ import type { Currency } from '@/lib/currency'
 import { useAuthStore } from '@/stores/auth'
 import { useLocationsStore } from '@/stores/locations'
 import ItemFields, { type ItemForm } from './ItemFields.vue'
+import PrintingPicker from './PrintingPicker.vue'
 
-/** Edit a row's fields (right-click → Edit, or Edit in the detail). Printing changes live in the detail's reprints. */
+/** Edit a row (right-click → Edit, or Edit in the detail), including its printing (spec 002, AC-18, AC-18a). */
 const props = defineProps<{ row: BrowserRow | null }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ saved: [item: BrowserRow] }>()
@@ -19,12 +20,22 @@ const auth = useAuthStore()
 const locations = useLocationsStore()
 
 const form = ref<ItemForm | null>(null)
+const printings = ref<Schemas['Printing'][]>([])
+const printingId = ref<string | null>(null)
+const printing = computed(() => printings.value.find((p) => p.id === printingId.value) ?? null)
+// Finish options follow the chosen printing.
+const finishes = computed(() => printing.value?.finishes ?? props.row?.printing.finishes ?? [])
+watch(printing, (p) => {
+  if (p && form.value && !p.finishes.includes(form.value.finish)) form.value.finish = (p.finishes[0] ?? 'nonfoil') as Finish
+})
 const errors = ref<Record<string, string>>({})
 const busy = ref(false)
 
-watch(open, (isOpen) => {
+watch(open, async (isOpen) => {
   const row = props.row
   if (!isOpen || !row) return
+  printingId.value = row.printing.id
+  printings.value = []
   if (!locations.loaded) locations.load()
   errors.value = {}
   form.value = {
@@ -36,6 +47,8 @@ watch(open, (isOpen) => {
     purchase_currency: (row.purchase_currency ?? auth.user?.currency ?? 'USD') as Currency,
     location: row.location == null ? 'unfiled' : String(row.location),
   }
+  const { data } = await api.GET('/api/catalog/cards/{oracle_id}/printings/', { params: { path: { oracle_id: row.printing.oracle_id } } })
+  printings.value = data ?? []
 })
 
 async function save() {
@@ -45,6 +58,7 @@ async function save() {
   const { data, error } = await api.PATCH('/api/items/{id}/', {
     params: { path: { id: props.row.id } },
     body: {
+      printing: printingId.value ?? undefined,
       quantity: f.quantity,
       finish: f.finish,
       condition: f.condition,
@@ -64,12 +78,14 @@ async function save() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent v-if="row && form" class="sm:max-w-2xl" data-testid="edit-dialog">
+    <DialogContent v-if="row && form" class="max-h-[90vh] overflow-y-auto sm:max-w-2xl" data-testid="edit-dialog">
       <DialogHeader>
         <DialogTitle>Edit {{ row.printing.name }}</DialogTitle>
         <DialogDescription>{{ row.printing.set_name }} #{{ row.printing.collector_number }}</DialogDescription>
       </DialogHeader>
-      <ItemFields v-model="form" :finishes="row.printing.finishes" :errors="errors" />
+      <PrintingPicker v-if="printings.length > 1" v-model="printingId" :printings="printings" />
+      <ItemFields v-model="form" :finishes="finishes" :errors="errors" />
+      <p v-if="errors.printing" class="text-sm text-destructive">{{ errors.printing }}</p>
       <DialogFooter>
         <Button :disabled="busy" @click="save">Save</Button>
       </DialogFooter>

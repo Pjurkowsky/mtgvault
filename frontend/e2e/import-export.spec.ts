@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { apiAs, choose, createUser, locationTile, signUpAndLogIn, tile, uniqueUser } from './helpers'
+import { apiAs, check, choose, createUser, locationTile, more, signUpAndLogIn, tile, uniqueUser } from './helpers'
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
@@ -14,7 +14,7 @@ const LIST = `# deck
 1 Lightning Helix (PWCS) 2024-07 *F*`
 
 async function openImport(page: Page) {
-  await page.getByRole('button', { name: 'Import' }).click()
+  await more(page, 'Import')
   return page.getByRole('dialog')
 }
 
@@ -47,12 +47,12 @@ test.describe('Import', () => {
 
     await dialog.getByRole('button', { name: 'Import 9 cards' }).click()
     await expect(page.getByText('Imported 9 cards.')).toBeVisible()
-    await expect(page.getByTestId('browser-summary')).toContainText('5 rows · 9 cards')
+    await expect(page.getByTestId('browser-summary')).toContainText('9 cards')
 
     await tile(page, 'Sol Ring').click()
-    await expect(page.getByRole('combobox', { name: 'Condition' })).toHaveText('Lightly Played')
-    await expect(page.getByRole('combobox', { name: 'Language' })).toHaveText('German')
-    await expect(page.getByRole('combobox', { name: 'Location' })).toHaveText('Deck Box')
+    await expect(page.getByTestId('detail-condition')).toHaveText('Lightly Played')
+    await expect(page.getByTestId('copies')).toContainText('German')
+    await expect(page.getByTestId('detail-location')).toHaveText('Deck Box')
     await expect(page.getByTestId('detail-purchase-price')).toHaveText('€0.50')
   })
 
@@ -76,12 +76,12 @@ test.describe('Export', () => {
     const { api } = await signUpAndLogIn(page, request)
     await api.importList('4 Lightning Bolt (MSC) 806\n1 Sol Ring (C21) 263\n2 Fire // Ice (MH2) 290 *E*')
     await page.goto('/cards?q=i')
-    await page.getByRole('button', { name: 'Export' }).click()
+    await more(page, 'Export')
     const text = page.getByTestId('export-text')
     await expect(text).toHaveValue('2 Fire // Ice (MH2) 290 *E*\n4 Lightning Bolt (MSC) 806\n1 Sol Ring (C21) 263\n')
 
     await page.goto('/cards?q=bolt')
-    await page.getByRole('button', { name: 'Export' }).click()
+    await more(page, 'Export')
     await expect(text).toHaveValue('4 Lightning Bolt (MSC) 806\n')
     await page.getByRole('button', { name: 'Copy' }).click()
     await expect(page.getByText('Copied.')).toBeVisible()
@@ -95,8 +95,7 @@ test.describe('Export', () => {
     const { api } = await signUpAndLogIn(page, request)
     await api.importList('4 Lightning Bolt (MSC) 806\n1 Sol Ring (C21) 263')
     await page.goto('/cards')
-    await page.getByRole('button', { name: 'Select', exact: true }).click()
-    await tile(page, 'Sol Ring').click()
+    await check(page, 'Sol Ring')
     await page.getByTestId('selection-bar').getByRole('button', { name: 'Export' }).click()
     await expect(page.getByTestId('export-text')).toHaveValue('1 Sol Ring (C21) 263\n')
   })

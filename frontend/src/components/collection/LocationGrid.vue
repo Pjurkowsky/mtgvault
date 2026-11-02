@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
 import { EllipsisIcon, GlobeIcon, InboxIcon } from '@lucide/vue'
+import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
-import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -39,16 +38,11 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
           </RouterLink>
           <GlobeIcon v-if="location.is_public" class="size-4 shrink-0 text-muted-foreground" aria-label="Public" />
           <DropdownMenu v-if="editable">
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="ghost" size="icon" class="relative z-10 -mt-1 -mr-2 size-7" :aria-label="`${location.name} options`">
-                    <EllipsisIcon />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>Options</TooltipContent>
-            </Tooltip>
+            <DropdownMenuTrigger as-child>
+              <IconButton label="Options" variant="ghost" class="relative z-10 -mt-1 -mr-2 size-7" :aria-label="`${location.name} options`">
+                <EllipsisIcon />
+              </IconButton>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem @select="emit('edit', location)">Edit</DropdownMenuItem>
               <DropdownMenuItem variant="destructive" @select="emit('delete', location)">Delete</DropdownMenuItem>

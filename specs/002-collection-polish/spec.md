@@ -15,7 +15,7 @@ a richer card detail with EDHREC data, and the same small conventions
 
 | Spec 001 | Replaced by |
 | --- | --- |
-| AC-3 (PLN marked "≈") | AC-1, AC-2 |
+| AC-3 (PLN marked "≈" as an estimate) | AC-1, AC-2: no estimate mark |
 | AC-26 (card detail) | AC-26 to AC-38 |
 | AC-29 (grid tiles with name and price below) | AC-17 |
 | AC-32 (filter chips above the cards) | AC-21 |
@@ -30,8 +30,8 @@ Everything else in spec 001 still holds.
 
 - **AC-1** Every price shows in the user's currency, without a "≈" mark.
 - **AC-2** Hovering or focusing a price shows a tooltip with the same price in
-  the other two currencies. When PLN appears in the tooltip, or is the shown
-  currency, the tooltip says PLN is an estimate converted from EUR.
+  the other two currencies, and nothing else. (Changed 2026-11-02: no PLN
+  estimate note.)
 - **AC-3** A missing price still shows "–". Its tooltip lists the other
   currencies, also "–" where missing.
 
@@ -64,9 +64,12 @@ Everything else in spec 001 still holds.
 - **AC-13** While at least one card is selected, every card shows its
   checkbox, and clicking a card toggles it instead of opening it. Shift-click
   selects a range.
-- **AC-14** The toolbar always has "Select all", which selects every row
+- **AC-14** "Select all" appears in the bulk bar once a card is selected,
+  and as a checkbox in the table view's header row. It selects every row
   matching the current search and filters, including rows not loaded yet
-  (spec 001 AC-39 and AC-40 still apply).
+  (spec 001 AC-39 and AC-40 still apply). With everything selected, it clears
+  the selection. There is no separate "Clear selection" button (replaces that
+  part of spec 001 AC-40). (Changed 2026-11-02: no longer in the toolbar.)
 - **AC-15** The bulk bar appears while anything is selected. There is no
   separate Select button.
 
@@ -76,8 +79,17 @@ Everything else in spec 001 still holds.
 - **AC-17** Grid tiles show only the card image and the quantity badge. Name
   and price appear when the user hovers the tile.
 - **AC-18** Right-clicking a card (long-press on touch) opens a menu with Open,
-  Edit and Delete. Edit opens the row's edit form in a dialog. Delete asks per
-  AC-5.
+  Edit and Delete. Edit opens the row's edit form in a dialog, including a
+  printing picker. Delete asks per AC-5.
+- **AC-18a** Printing pickers (Add card and Edit) show a large preview when
+  hovering a printing. Choosing another printing in Edit and saving merges
+  with a matching row like any edit (spec 001 AC-19). (Added 2026-11-02.)
+- **AC-18b** Every card image in Add card, Edit and the card detail (search
+  results, printings, reprints, EDHREC tab cards) shows an expand button on
+  hover that opens the card full screen. Clicking the card itself keeps its
+  normal action. In the detail, clicking the big image also opens it full
+  screen. Escape or a click closes the preview and leaves the dialog open.
+  (Added 2026-11-02.)
 - **AC-19** Import and Export sit in a "More" (⋯) menu in the toolbar.
 - **AC-20** The color filter shows Scryfall's mana symbols (W, U, B, R, G, C)
   instead of letters. The symbols ship with the app.

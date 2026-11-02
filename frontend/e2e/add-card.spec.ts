@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { choose, locationTile, signUpAndLogIn, tile } from './helpers'
+import { choose, locationTile, pressed, signUpAndLogIn, tile } from './helpers'
 
 async function openAdd(page: Page) {
   await page.getByRole('button', { name: 'Add card' }).click()
@@ -32,11 +32,11 @@ test.describe('Add a card', () => {
     await openAdd(page)
     await pickCard(page, 'sol ring', 'Sol Ring')
     await expect(page.getByLabel('Quantity')).toHaveValue('1')
-    await expect(page.getByRole('combobox', { name: 'Finish' })).toHaveText('Nonfoil')
+    await expect(pressed(page, 'Finish')).toHaveText('Nonfoil')
     await expect(page.getByRole('combobox', { name: 'Condition' })).toHaveText('Near Mint')
     await expect(page.getByRole('combobox', { name: 'Language' })).toHaveText('English')
     await expect(page.getByRole('combobox', { name: 'Purchase currency' })).toHaveText('EUR')
-    await expect(page.getByRole('combobox', { name: 'Location' })).toHaveText('Unfiled')
+    await expect(pressed(page, 'Location')).toHaveText('Unfiled')
   })
 
   test('AC-24: location defaults to the location being viewed', async ({ page, request }) => {
@@ -46,7 +46,7 @@ test.describe('Add a card', () => {
     await locationTile(page, 'Red Binder').getByRole('link').click()
     await openAdd(page)
     await pickCard(page, 'sol ring', 'Sol Ring')
-    await expect(page.getByRole('combobox', { name: 'Location' })).toHaveText('Red Binder')
+    await expect(pressed(page, 'Location')).toHaveText('Red Binder')
   })
 
   test('AC-15: finish options follow the printing', async ({ page, request }) => {
@@ -54,12 +54,11 @@ test.describe('Add a card', () => {
     await page.goto('/cards')
     await openAdd(page)
     await pickCard(page, 'fire', 'Fire // Ice')
-    await page.getByRole('combobox', { name: 'Finish' }).click()
-    await expect(page.getByRole('option')).toHaveText(['Nonfoil', 'Foil', 'Etched'])
-    await page.keyboard.press('Escape')
+    await expect(page.getByRole('group', { name: 'Finish' }).getByRole('button')).toHaveText(['Nonfoil', 'Foil', 'Etched'])
     await page.getByRole('button', { name: 'Back to results' }).click()
     await pickCard(page, 'abstergo', 'Abstergo Entertainment')
-    await expect(page.getByRole('combobox', { name: 'Finish' })).toHaveText('Etched')
+    await expect(pressed(page, 'Finish')).toHaveText('Etched')
+    await expect(page.getByRole('group', { name: 'Finish' }).getByRole('button')).toHaveText(['Etched'])
   })
 
   test('AC-16, AC-17: condition and language lists', async ({ page, request }) => {

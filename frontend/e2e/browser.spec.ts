@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { fixtureList, signUpAndLogIn, tile } from './helpers'
+import { clearFilters, fixtureList, signUpAndLogIn } from './helpers'
 
 // Sol Ring (colorless, €0.91), Lightning Bolt (red, €1.91), Counterspell (blue, €3.36),
 // Lightning Helix (red/white, €0.14), Llanowar Elves (green creature, €0.38), Forest (foil, €0.18).
@@ -24,7 +24,7 @@ test.describe('Card browser', () => {
     await api.importList(LIST, binder)
     await api.importList('1 Llanowar Elves (FDC) 213', null, { condition: 'LP' })
     await page.goto('/cards')
-    await expect(page.getByTestId('browser-summary')).toContainText('6 rows')
+    await expect(page.getByTestId('browser-summary')).toContainText('6 cards')
   })
 
   test('AC-29: grid and table views; the choice is remembered', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('Card browser', () => {
     await page.getByLabel('Table view').click()
     await expect(page.getByTestId('card-table')).toBeVisible()
     await expect(page.getByTestId('card-table').getByRole('columnheader')).toHaveText(
-      ['Image', 'Name', 'Set', '#', 'Finish', 'Condition', 'Language', 'Qty', 'Price', 'Location'])
+      ['', 'Image', 'Name', 'Set', '#', 'Finish', 'Condition', 'Language', 'Qty', 'Price', 'Location'])
     await page.goto('/cards')
     await expect(page.getByTestId('card-table')).toBeVisible()
   })
@@ -47,30 +47,30 @@ test.describe('Card browser', () => {
   test('AC-31: each filter, and filters combine with AND', async ({ page }) => {
     await filter(page, (p) => p.getByRole('button', { name: 'Red' }).click())
     await expect.poll(() => names(page)).toEqual(['Lightning Bolt', 'Lightning Helix'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, (p) => p.getByRole('button', { name: 'Colorless' }).click())
     await expect.poll(() => names(page)).toEqual(['Forest', 'Sol Ring'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, (p) => p.getByRole('checkbox', { name: 'Creature' }).click())
     await expect.poll(() => names(page)).toEqual(['Llanowar Elves'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, (p) => p.getByRole('checkbox', { name: 'Foil', exact: true }).click())
     await expect.poll(() => names(page)).toEqual(['Forest'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, (p) => p.getByRole('checkbox', { name: 'Lightly Played' }).click())
     await expect.poll(() => names(page)).toEqual(['Llanowar Elves'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, async (p) => {
       await p.getByLabel('Set').fill('Commander 2021')
       await p.getByRole('checkbox', { name: /Commander 2021/ }).click()
     })
     await expect.poll(() => names(page)).toEqual(['Sol Ring'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     await filter(page, async (p) => {
       await p.getByLabel('Minimum price').fill('1')
@@ -78,7 +78,7 @@ test.describe('Card browser', () => {
       await p.getByLabel('Maximum price').press('Enter')
     })
     await expect.poll(() => names(page)).toEqual(['Lightning Bolt'])
-    await page.getByRole('button', { name: 'Clear all' }).click()
+    await clearFilters(page)
 
     // AND across filters: red + uncommon + instant + price ≥ 1
     await filter(page, async (p) => {
@@ -94,20 +94,7 @@ test.describe('Card browser', () => {
     await expect.poll(() => names(page)).toEqual(['Lightning Bolt'])
   })
 
-  test('AC-32: active filters show as removable chips with Clear all', async ({ page }) => {
-    await filter(page, async (p) => {
-      await p.getByRole('button', { name: 'Red' }).click()
-      await p.getByRole('checkbox', { name: 'Uncommon' }).click()
-    })
-    const chips = page.getByTestId('filter-chips')
-    await expect(chips).toContainText('Red')
-    await expect(chips).toContainText('Uncommon')
-    await chips.getByRole('button', { name: 'Remove Uncommon' }).click()
-    await expect(chips).not.toContainText('Uncommon')
-    await chips.getByRole('button', { name: 'Clear all' }).click()
-    await expect(chips).toHaveCount(0)
-    await expect(page.getByTestId('browser-summary')).toContainText('6 rows')
-  })
+  // AC-32 (filter chips) is replaced by spec 002 AC-21: see polish-browser.spec.ts.
 
   test('AC-33: sort options in both directions', async ({ page }) => {
     await page.getByRole('combobox', { name: 'Sort by' }).click()
@@ -130,7 +117,7 @@ test.describe('Card browser', () => {
 
     await page.reload()
     await expect(page.getByLabel('Search cards')).toHaveValue('lightning')
-    await expect(page.getByTestId('filter-chips')).toContainText('Red')
+    await expect(page.getByRole('button', { name: 'Filters' })).toContainText('1')
     await expect(page.getByTestId('card-table')).toBeVisible()
 
     await page.goto('/')
@@ -151,7 +138,7 @@ test('AC-35: loads more as you scroll and shows totals', async ({ page, request 
   await api.importList(fixtureList())
   await api.importList(fixtureList(), null, { condition: 'LP' })
   await page.goto('/cards')
-  await expect(page.getByTestId('browser-summary')).toContainText('92 rows · 92 cards')
+  await expect(page.getByTestId('browser-summary')).toContainText('92 cards')
   await expect(page.getByTestId('card-tile')).toHaveCount(60)
   await page.getByTestId('card-tile').last().scrollIntoViewIfNeeded()
   await expect(page.getByTestId('card-tile')).toHaveCount(92)

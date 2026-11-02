@@ -119,3 +119,31 @@ export async function choose(page: Page, select: string, option: string) {
   await page.getByRole('combobox', { name: select }).click()
   await page.getByRole('option', { name: option, exact: true }).click()
 }
+
+/** Open the browser's More (⋯) menu and pick an item (spec 002, AC-19). */
+export async function more(page: Page, item: 'Import' | 'Export') {
+  await page.getByRole('button', { name: 'More' }).click()
+  await page.getByRole('menuitem', { name: item }).click()
+}
+
+/** Tick a card's checkbox (spec 002, AC-12). */
+export async function check(page: Page, name: string) {
+  await page.getByRole('checkbox', { name: `Select ${name}` }).first().click()
+}
+
+/** Clear all filters from the filter menu (spec 002, AC-21). */
+export async function clearFilters(page: Page) {
+  await page.getByRole('button', { name: 'Filters' }).click()
+  await page.getByTestId('filter-panel').getByRole('button', { name: 'Clear' }).click()
+  await page.keyboard.press('Escape')
+}
+
+/** The pressed button in a labelled toggle group. */
+export const pressed = (page: Page, group: string) =>
+  page.getByRole('group', { name: group }).getByRole('button', { pressed: true })
+
+/** Select every matching row: tick a card if nothing is selected, then Select all in the bulk bar (spec 002, AC-14). */
+export async function selectAll(page: Page) {
+  if (!(await page.getByTestId('selection-bar').count())) await page.getByTestId('card-checkbox').first().click()
+  await page.getByTestId('selection-bar').getByTestId('select-all').click()
+}

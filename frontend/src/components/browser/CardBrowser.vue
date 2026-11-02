@@ -127,8 +127,9 @@ function onCardClick(row: BrowserRow, index: number, event: MouseEvent) {
 const selectAllState = computed<boolean | 'indeterminate'>(() =>
   selection.allSelected.value ? true : selecting.value ? 'indeterminate' : false,
 )
+/** Bulk bar and table header (AC-14): select every matching row, or clear when all are selected. */
 function toggleSelectAll() {
-  if (selecting.value) selection.clear()
+  if (selection.allSelected.value) selection.clear()
   else selection.selectAll(query.value, page.value?.count ?? 0)
   lastIndex = null
 }
@@ -243,19 +244,10 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
       </ToggleGroup>
 
       <div class="ml-auto flex items-center gap-2">
-        <label v-if="editable" class="flex items-center gap-2 px-1 text-sm">
-          <Checkbox :model-value="selectAllState" :disabled="!page?.count" data-testid="select-all" @click.prevent="toggleSelectAll" />
-          Select all
-        </label>
         <DropdownMenu>
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="icon" aria-label="More"><EllipsisIcon /></Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>More</TooltipContent>
-          </Tooltip>
+          <DropdownMenuTrigger as-child>
+            <IconButton label="More"><EllipsisIcon /></IconButton>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem v-if="editable" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
@@ -281,8 +273,9 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
     <CardTable
       v-else-if="rows.length"
       :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
-      :show-location="source.kind === 'own' && !location"
+      :show-location="source.kind === 'own' && !location" :select-all-state="selectAllState"
       @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow"
+      @select-all="toggleSelectAll"
     />
     <p v-else-if="!loading && page" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
       {{ activeFilterCount || filter.q ? 'No cards match.' : 'No cards yet.' }}
@@ -303,7 +296,10 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
     >
       <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
         <span class="mr-2 font-medium" data-testid="selected-count">{{ selection.count.value }} selected</span>
-        <Button variant="ghost" size="sm" @click="selection.clear()">Clear selection</Button>
+        <label class="flex items-center gap-2 px-2 text-sm">
+          <Checkbox :model-value="selectAllState" data-testid="select-all" @click.prevent="toggleSelectAll" />
+          Select all {{ page?.count ?? '' }}
+        </label>
         <div class="ml-auto flex flex-wrap gap-2">
           <Button size="sm" variant="outline" @click="openBulk('move')">Move</Button>
           <Button size="sm" variant="outline" @click="openBulk('edit')">Edit</Button>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { apiAs, createUser, locationTile, signUpAndLogIn, tile, uniqueUser } from './helpers'
+import { apiAs, createUser, locationTile, more, signUpAndLogIn, tile, uniqueUser } from './helpers'
 
 test.describe('Public locations and directory', () => {
   const owner = uniqueUser('pub', 'EUR')
@@ -41,7 +41,7 @@ test.describe('Public locations and directory', () => {
     await signUpAndLogIn(page, request, uniqueUser('vis', 'PLN'))
     await page.goto(`/u/${owner.username}`)
     // Each copy converts and rounds first, like the prices shown: 2 × PLN 4.00 + PLN 8.40
-    await expect(locationTile(page, 'Showcase').getByTestId('location-value')).toHaveText('≈ PLN 16.40')
+    await expect(locationTile(page, 'Showcase').getByTestId('location-value')).toHaveText('PLN 16.40')
   })
 
   test('AC-56, AC-57: the public page is read-only and hides purchase prices', async ({ page }) => {
@@ -50,20 +50,24 @@ test.describe('Public locations and directory', () => {
     await page.goto(`/u/${owner.username}`)
     await locationTile(page, 'Showcase').getByRole('link').click()
     await expect(page.getByTestId('location-name')).toHaveText('Showcase')
-    await expect(page.getByTestId('browser-summary')).toContainText('2 rows · 3 cards')
-    for (const name of ['Select', 'Import', 'Add card']) {
-      await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0)
-    }
-    await expect(page.getByRole('button', { name: 'Export' })).toBeVisible()
+    await expect(page.getByTestId('browser-summary')).toContainText('3 cards')
+    await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(0)
+    await expect(page.getByTestId('select-all')).toHaveCount(0)
+    await expect(page.getByTestId('card-checkbox')).toHaveCount(0)
+    await page.getByRole('button', { name: 'More' }).click()
+    await expect(page.getByRole('menuitem', { name: 'Import' })).toHaveCount(0)
+    await expect(page.getByRole('menuitem', { name: 'Export' })).toBeVisible()
+    await page.keyboard.press('Escape')
     await page.getByLabel('Search cards').fill('sol')
-    await expect(page.getByTestId('browser-summary')).toContainText('1 row')
+    await expect(page.getByTestId('browser-summary')).toContainText('2 cards')
 
     await tile(page, 'Sol Ring').click()
     const detail = page.getByTestId('card-detail')
     await expect(detail).toContainText('Near Mint')
     await expect(detail).not.toContainText('Purchase price')
     await expect(detail).not.toContainText('99')
-    await expect(detail.getByRole('button', { name: 'Save' })).toHaveCount(0)
+    await expect(detail.getByRole('button', { name: 'Edit' })).toHaveCount(0)
+    await expect(detail.getByRole('button', { name: 'Delete' })).toHaveCount(0)
 
     expect(responses.length).toBeGreaterThan(0)
     for (const body of responses) {
@@ -73,7 +77,7 @@ test.describe('Public locations and directory', () => {
 
   test('AC-56: visitors can export a public location', async ({ page }) => {
     await page.goto(`/u/${owner.username}/locations/${publicId}`)
-    await page.getByRole('button', { name: 'Export' }).click()
+    await more(page, 'Export')
     await expect(page.getByTestId('export-text')).toHaveValue('1 Lightning Bolt (MSC) 806\n2 Sol Ring (C21) 263\n')
   })
 

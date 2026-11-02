@@ -100,24 +100,29 @@ no EDHREC data.
 
 ## Phase 6: Tests
 
-- [ ] **T18 Playwright setup**
+- [x] **T18 Playwright setup**
   - Set `EDHREC_FIXTURE_DIR` for the Django web server.
   - Update the helpers for the More menu and checkbox selection.
-- [ ] **T19 Update spec 001 tests** that spec 002 replaced: `browser`,
+- [x] **T19 Update spec 001 tests** that spec 002 replaced: `browser`,
   `bulk`, `catalog`, `card-detail`, `add-card`, `import-export`, `public`.
-- [ ] **T20 `polish-global.spec.ts`** (AC-1 to AC-6)
-- [ ] **T21 `polish-add-card.spec.ts`** (AC-7 to AC-11)
-- [ ] **T22 `polish-browser.spec.ts`** (AC-12 to AC-23)
-- [ ] **T23 `card-detail.spec.ts` rewrite** (AC-24 to AC-38)
+- [x] **T20 `polish-global.spec.ts`** (AC-1 to AC-6)
+- [x] **T21 `polish-add-card.spec.ts`** (AC-7 to AC-11)
+- [x] **T22 `polish-browser.spec.ts`** (AC-12 to AC-23)
+- [x] **T23 `card-detail.spec.ts` rewrite** (AC-24 to AC-38)
 
 Done for T18 to T23: `pnpm e2e` passes (specs 000, 001 and 002), and the
 non-timing tests pass twice in a row.
 
 ## Phase 7: Wrap up
 
-- [ ] **T24 Live EDHREC check** (AC-35)
+- [x] **T24 Live EDHREC check** (AC-35)
   - On the dev stack, open Sol Ring and a double-faced card. Note which
     tabs filled and how long the first and the cached call took.
+  - Result (2026-11-02): Sol Ring and Delver of Secrets both filled all three
+    tabs (24 commanders, 10 groups, 6 similar). First call ~250 ms, cached
+    under 1 ms. Every card on five pages matched our catalog after partner
+    pairs ("Frodo, Adventurous Hobbit // Sam, Loyal Attendant") started
+    matching by their first card.
 - [ ] **T25 Verify and close the spec**
   - `pnpm e2e` and `scripts/check-api.sh` pass, and the Docker images build.
   - Update READMEs (EDHREC proxy, `EDHREC_FIXTURE_DIR`).

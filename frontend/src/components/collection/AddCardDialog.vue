@@ -4,6 +4,7 @@ import { ArrowLeftIcon, LayoutGridIcon, ListIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import CardPreview from '@/components/CardPreview.vue'
+import ExpandButton from '@/components/ExpandButton.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
@@ -155,7 +156,8 @@ async function add() {
 
       <template v-if="!card && results.length">
         <ul v-if="view === 'grid'" :class="cn('grid gap-3', GRID_COLUMNS[size])" data-testid="card-results" :data-size="size">
-          <li v-for="r in results" :key="r.oracle_id">
+          <li v-for="r in results" :key="r.oracle_id" class="group relative">
+            <ExpandButton :image="r.image_normal" :name="r.name" />
             <CardPreview :image="r.image_normal" :name="r.name">
               <button type="button" class="block w-full" :aria-label="r.name" @click="choose(r)">
                 <img :src="size === 'sm' ? r.image_small : r.image_normal || r.image_small" :alt="r.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted object-cover transition hover:ring-2 hover:ring-primary" />
@@ -164,7 +166,8 @@ async function add() {
           </li>
         </ul>
         <ul v-else class="grid max-h-96 gap-1 overflow-y-auto" data-testid="card-results">
-          <li v-for="r in results" :key="r.oracle_id">
+          <li v-for="r in results" :key="r.oracle_id" class="group relative">
+            <ExpandButton :image="r.image_normal" :name="r.name" />
             <CardPreview :image="r.image_normal" :name="r.name">
               <button type="button" class="flex w-full items-center gap-3 rounded-md p-1.5 text-left hover:bg-muted" :aria-label="r.name" @click="choose(r)">
                 <img :src="r.image_small" alt="" class="h-14 rounded-sm" loading="lazy" />

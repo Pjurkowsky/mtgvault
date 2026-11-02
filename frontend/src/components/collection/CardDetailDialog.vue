@@ -4,14 +4,16 @@ import { ArrowLeftIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
-import CardPreview from '@/components/CardPreview.vue'
+import ExpandButton from '@/components/ExpandButton.vue'
+import EdhrecCardGrid from './EdhrecCardGrid.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirm } from '@/composables/useConfirm'
+import { showFullscreen } from '@/composables/useFullscreen'
 import { CONDITIONS, FINISHES, LANGUAGES, labelOf } from '@/lib/cards'
 import { cn } from '@/lib/utils'
 
@@ -25,13 +27,18 @@ const emit = defineEmits<{ changed: []; edit: [row: BrowserRow]; delete: [row: B
 const confirm = useConfirm()
 
 type Entry = { oracleId: string; row: BrowserRow | null }
-type EdhrecCard = Schemas['EdhrecCard'] & { share?: number }
 
 const stack = ref<Entry[]>([])
 const card = ref<Schemas['CardDetail'] | null>(null)
 const edhrec = ref<Schemas['Edhrec'] | null>(null)
 const loadingEdhrec = ref(false)
 const tab = ref('commanders')
+// The tab whose cards are on screen. It follows `tab` one frame later, after
+// the skeleton has painted, so switching never feels frozen.
+const shownTab = ref('commanders')
+watch(tab, (next) => {
+  requestAnimationFrame(() => setTimeout(() => (shownTab.value = next)))
+})
 
 const current = computed(() => stack.value.at(-1) ?? null)
 const row = computed(() => current.value?.row ?? null)
@@ -48,6 +55,7 @@ async function load() {
   edhrec.value = null
   loadingEdhrec.value = true
   tab.value = 'commanders'
+  shownTab.value = 'commanders'
   const path = { params: { path: { oracle_id: entry.oracleId } } }
   const [detail, tabs] = await Promise.all([
     api.GET('/api/catalog/cards/{oracle_id}/', path),
@@ -98,7 +106,6 @@ async function switchTo(printing: Schemas['Printing']) {
   emit('changed')
 }
 
-const pct = (share?: number) => (share === undefined ? '' : `${Math.round(share * 100)}% of decks`)
 const tabs = computed(() => [
   { value: 'commanders', label: 'Commanders' },
   { value: 'played_with', label: 'Played with' },
@@ -120,23 +127,24 @@ const tabs = computed(() => [
       <div class="grid gap-6 md:grid-cols-[20rem_1fr]">
         <!-- Big image and reprints (AC-24, AC-26) -->
         <div class="grid content-start gap-3">
-          <img
-            v-if="shown" :src="shown.image_large || shown.image_normal" :alt="shown.name"
-            class="w-full rounded-[4.75%/3.5%] bg-muted" data-testid="detail-image"
-          />
+          <button v-if="shown" type="button" class="cursor-zoom-in" :aria-label="`Preview ${shown.name}`" @click="showFullscreen(shown.image_large || shown.image_normal, shown.name)">
+            <img :src="shown.image_large || shown.image_normal" :alt="shown.name" class="w-full rounded-[4.75%/3.5%] bg-muted" data-testid="detail-image" />
+          </button>
           <Skeleton v-else class="aspect-[488/680] w-full" />
           <div v-if="card" class="flex gap-2 overflow-x-auto pb-2" role="radiogroup" aria-label="Reprints" data-testid="reprints">
+            <div v-for="p in card.printings" :key="p.id" class="group relative shrink-0">
+            <ExpandButton :image="p.image_large || p.image_normal" :name="`${p.name} (${p.set_name})`" />
             <component
               :is="ownRow ? 'button' : 'div'"
-              v-for="p in card.printings" :key="p.id"
               :type="ownRow ? 'button' : undefined"
               role="radio" :aria-checked="p.id === shown?.id" :aria-label="`${p.set_name} #${p.collector_number}`"
-              class="w-16 shrink-0 text-left"
+              class="block w-16 text-left"
               @click="switchTo(p)"
             >
               <img :src="p.image_small" alt="" loading="lazy" :class="cn('rounded-[4.75%/3.5%] bg-muted', p.id === shown?.id ? 'ring-2 ring-primary ring-offset-2' : ownRow && 'opacity-70 hover:opacity-100')" />
               <span class="mt-1 block truncate text-[10px] uppercase">{{ p.set_code }} #{{ p.collector_number }}</span>
             </component>
+            </div>
           </div>
         </div>
 
@@ -175,48 +183,20 @@ const tabs = computed(() => [
               <Skeleton v-for="n in 10" :key="n" class="aspect-[488/680] w-full" />
             </div>
             <p v-else-if="!edhrec?.available" class="mt-4 text-sm text-muted-foreground" data-testid="edhrec-empty">No EDHREC data</p>
-            <template v-else>
-              <TabsContent value="commanders" class="mt-4">
-                <ul class="grid grid-cols-3 gap-3 sm:grid-cols-5" data-testid="edhrec-commanders">
-                  <li v-for="c in edhrec.commanders" :key="c.name">
-                    <CardPreview :image="c.image_normal" :name="c.name">
-                      <button type="button" class="block w-full text-left disabled:cursor-default" :disabled="!c.oracle_id" :aria-label="c.name" data-testid="edhrec-card" @click="push(c.oracle_id)">
-                        <img v-if="c.image_small" :src="c.image_small" :alt="c.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
-                        <span v-else class="flex aspect-[488/680] items-center rounded-md bg-muted p-2 text-xs">{{ c.name }}</span>
-                        <span class="mt-1 block text-xs text-muted-foreground">{{ pct((c as EdhrecCard).share) }}</span>
-                      </button>
-                    </CardPreview>
-                  </li>
-                </ul>
-              </TabsContent>
-              <TabsContent value="played_with" class="mt-4 grid gap-5" data-testid="edhrec-played-with">
+            <!-- Render the new tab's cards a frame after the switch, so the tab responds at once. -->
+            <div v-else-if="shownTab !== tab" class="mt-4 grid grid-cols-4 gap-3 sm:grid-cols-5" data-testid="edhrec-switching">
+              <Skeleton v-for="n in 10" :key="n" class="aspect-[488/680] w-full" />
+            </div>
+            <div v-else class="mt-4">
+              <EdhrecCardGrid v-if="shownTab === 'commanders'" :cards="edhrec.commanders" testid="edhrec-commanders" @open="push" />
+              <div v-else-if="shownTab === 'played_with'" class="grid gap-5" data-testid="edhrec-played-with">
                 <section v-for="g in edhrec.played_with" :key="g.group" class="grid gap-2">
                   <h3 class="text-sm font-medium">{{ g.group }}</h3>
-                  <ul class="grid grid-cols-3 gap-3 sm:grid-cols-5">
-                    <li v-for="c in g.cards" :key="c.name">
-                      <CardPreview :image="c.image_normal" :name="c.name">
-                        <button type="button" class="block w-full text-left disabled:cursor-default" :disabled="!c.oracle_id" :aria-label="c.name" data-testid="edhrec-card" @click="push(c.oracle_id)">
-                          <img v-if="c.image_small" :src="c.image_small" :alt="c.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
-                          <span v-else class="flex aspect-[488/680] items-center rounded-md bg-muted p-2 text-xs">{{ c.name }}</span>
-                        </button>
-                      </CardPreview>
-                    </li>
-                  </ul>
+                  <EdhrecCardGrid :cards="g.cards" :limit="10" @open="push" />
                 </section>
-              </TabsContent>
-              <TabsContent value="similar" class="mt-4">
-                <ul class="grid grid-cols-3 gap-3 sm:grid-cols-5" data-testid="edhrec-similar">
-                  <li v-for="c in edhrec.similar" :key="c.name">
-                    <CardPreview :image="c.image_normal" :name="c.name">
-                      <button type="button" class="block w-full text-left disabled:cursor-default" :disabled="!c.oracle_id" :aria-label="c.name" data-testid="edhrec-card" @click="push(c.oracle_id)">
-                        <img v-if="c.image_small" :src="c.image_small" :alt="c.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
-                        <span v-else class="flex aspect-[488/680] items-center rounded-md bg-muted p-2 text-xs">{{ c.name }}</span>
-                      </button>
-                    </CardPreview>
-                  </li>
-                </ul>
-              </TabsContent>
-            </template>
+              </div>
+              <EdhrecCardGrid v-else :cards="edhrec.similar" testid="edhrec-similar" @open="push" />
+            </div>
           </Tabs>
         </div>
       </div>

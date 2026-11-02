@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { CheckIcon, ChevronsUpDownIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -76,6 +76,7 @@ const setLocation = (v: unknown) => v && (form.value.location = String(v))
             <CommandInput placeholder="Search locations" />
             <CommandList>
               <CommandEmpty>No location found.</CommandEmpty>
+              <CommandGroup>
               <CommandItem
                 v-for="o in locationOptions" :key="o.value" :value="o.label"
                 @select="() => { form.location = o.value; pickerOpen = false }"
@@ -83,6 +84,7 @@ const setLocation = (v: unknown) => v && (form.value.location = String(v))
                 <CheckIcon :class="cn('size-4', form.location === o.value ? 'opacity-100' : 'opacity-0')" />
                 {{ o.label }}
               </CommandItem>
+              </CommandGroup>
             </CommandList>
           </Command>
         </PopoverContent>

@@ -13,6 +13,7 @@ defineProps<{
   selecting: boolean
   isSelected: (id: number) => boolean
   showLocation: boolean
+  selectAllState?: boolean | 'indeterminate'
 }>()
 const emit = defineEmits<{
   click: [row: BrowserRow, index: number, event: MouseEvent]
@@ -20,6 +21,7 @@ const emit = defineEmits<{
   open: [row: BrowserRow]
   edit: [row: BrowserRow]
   delete: [row: BrowserRow]
+  selectAll: []
 }>()
 </script>
 
@@ -28,7 +30,9 @@ const emit = defineEmits<{
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead v-if="editable" class="w-8"><span class="sr-only">Selected</span></TableHead>
+          <TableHead v-if="editable" class="w-8">
+            <Checkbox :model-value="selectAllState ?? false" aria-label="Select all" data-testid="select-all-header" @click.prevent="emit('selectAll')" />
+          </TableHead>
           <TableHead class="w-12"><span class="sr-only">Image</span></TableHead>
           <TableHead>Name</TableHead>
           <TableHead>Set</TableHead>

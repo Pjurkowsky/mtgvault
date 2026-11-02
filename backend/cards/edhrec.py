@@ -81,6 +81,9 @@ def _attach_catalog(result: dict) -> dict:
     """Add oracle_id and images for every name we have, in one query."""
     cards = result['commanders'] + result['similar'] + [c for g in result['played_with'] for c in g['cards']]
     names = {card['name'] for card in cards}
+    # Partner pairs ("Frodo, Adventurous Hobbit // Sam, Loyal Attendant") are two
+    # cards; double-faced cards use " // " too but match by full name first.
+    names |= {card['name'].split(' // ')[0] for card in cards}
     found = {}
     printings = (
         Printing.objects.filter(Q(name__in=names) | Q(front_name__in=names))
@@ -91,7 +94,7 @@ def _attach_catalog(result: dict) -> dict:
         for key in (p['name'], p['front_name']):
             found.setdefault(key, p)
     for card in cards:
-        match = found.get(card['name'])
+        match = found.get(card['name']) or found.get(card['name'].split(' // ')[0])
         card['oracle_id'] = str(match['oracle_id']) if match else None
         card['image_small'] = match['image_small'] if match else ''
         card['image_normal'] = match['image_normal'] if match else ''
