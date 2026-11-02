@@ -47,8 +47,17 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
 | `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
 | `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists |
-| `GET /api/users/` | public | Directory of users with public locations |
+| `GET /api/users/` | public | Directory of users with public locations or decks |
 | `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only |
+| `GET/POST /api/decks/` | bearer | Deck tiles / create (`create_box`, optional `text` to import) |
+| `GET/PATCH /api/decks/<id>/`, `POST .../delete/` | bearer | Full deck (cards with ownership, legality, stats) / edit / delete with keep, unfile or delete for its box |
+| `POST /api/decks/<id>/cards/`, `PATCH/DELETE .../cards/<cid>/` | bearer | Add (merges by card and zone), change, remove |
+| `POST /api/decks/<id>/cards/<cid>/own/` | bearer | Mark owned: move a free copy into the box, or add a new copy |
+| `POST /api/decks/<id>/box/` | bearer | Create the deck box and move free copies into it |
+| `POST /api/decks/add-from-collection/` | bearer | One copy of each selected card into a deck |
+| `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings |
+| `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text |
+| `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without locations or other deck names |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
 | `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets) |
@@ -97,6 +106,24 @@ only `sol-ring.json` exists there.
 
 Every price in the API also comes in all three currencies (`unit_prices`,
 `values`, `prices_all`, …) so the frontend can show the others in a tooltip.
+
+## Decks
+
+The `decks` app keeps decklists (`Deck`, `DeckCard`). A deck card is a card
+(`oracle_id`) with a preferred printing for its picture and price; any owned
+printing counts. A deck may have a deck box: a `Location` of kind Deck box,
+one-to-one. The location endpoints keep the two in sync: a new Deck box
+location gets a Casual deck, and changing the kind away unlinks it.
+
+- `decks/ownership.py`: per deck card, copies in this box, free copies
+  (outside every deck box, not in the cart), copies in other decks' boxes,
+  and the state (`in_box`, `owned`, `other_decks`, `missing`). Commander,
+  Mainboard and Sideboard count; the Maybeboard never does.
+- `decks/legality.py`: the formats table, Scryfall card legality (from
+  `Printing.legalities`), size, copies, sideboard, commander pairing and
+  color identity.
+- `decks/stats.py`, `decks/textlist.py`: curve, pips, types, values; zone-aware
+  import and export.
 
 ## Scanner
 

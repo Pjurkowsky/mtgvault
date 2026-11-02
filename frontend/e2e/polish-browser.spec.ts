@@ -61,9 +61,9 @@ test.describe('Card browser (spec 002)', () => {
     await expect(page.getByTestId('card-detail')).toBeVisible()
   })
 
-  test('AC-18: right-click menu: Open, Edit, Delete', async ({ page }) => {
+  test('AC-18: right-click menu: Open, Edit, Add to deck (spec 004), Delete', async ({ page }) => {
     await tile(page, 'Lightning Bolt').click({ button: 'right' })
-    await expect(page.getByTestId('card-menu').getByRole('menuitem')).toHaveText(['Open', 'Edit', 'Delete'])
+    await expect(page.getByTestId('card-menu').getByRole('menuitem')).toHaveText(['Open', 'Edit', 'Add to deck', 'Delete'])
     await page.getByRole('menuitem', { name: 'Edit' }).click()
     await page.getByTestId('edit-dialog').getByLabel('Quantity').fill('7')
     await page.getByTestId('edit-dialog').getByRole('button', { name: 'Save' }).click()
