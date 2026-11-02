@@ -12,9 +12,25 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CURRENCIES, PLN_NOTE, type Currency } from '@/lib/currency'
+import { api } from '@/api/client'
+import { Switch } from '@/components/ui/switch'
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
+
+// Scanner: multi-threaded recognition on a cross-origin isolated page (spec 003, AC-16).
+const fastScanning = ref<boolean | null>(null)
+onMounted(async () => {
+  const { data } = await api.GET('/api/scanner/settings/')
+  fastScanning.value = data?.fast ?? false
+})
+async function setFastScanning(value: boolean) {
+  const { data } = await api.PATCH('/api/scanner/settings/', { body: { fast: value } })
+  if (!data) return toast.error('Could not save.')
+  fastScanning.value = data.fast ?? false
+  toast.success(value ? 'Fast scanning on.' : 'Fast scanning off.')
+}
 
 async function changeCurrency(value: unknown) {
   const currency = value as Currency
@@ -76,6 +92,19 @@ const changePassword = handleSubmit(async (body) => {
           </SelectContent>
         </Select>
         <p v-if="auth.user.currency === 'PLN'" class="text-sm text-muted-foreground">{{ PLN_NOTE }}</p>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          Scanner
+          <InfoTip text="Fast scanning uses several processor threads for recognition. The scanner then opens with a full page load." />
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="flex items-center gap-3">
+        <Switch id="fast-scanning" :model-value="fastScanning ?? false" :disabled="fastScanning === null" @update:model-value="setFastScanning" />
+        <Label for="fast-scanning" class="font-normal">Fast scanning</Label>
       </CardContent>
     </Card>
 

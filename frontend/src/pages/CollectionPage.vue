@@ -50,7 +50,7 @@ function openDelete(location: { id: number }) {
 
     <template v-if="tab === 'collection'">
       <LocationGrid
-        :locations="store.locations" :unfiled="store.unfiled" :currency="store.currency" editable
+        :locations="store.locations" :unfiled="store.unfiled" :cart="store.cart" :currency="store.currency" editable
         :to="(l) => ({ name: 'location', params: { id: l.id } })"
         @edit="openEdit" @delete="openDelete"
       />

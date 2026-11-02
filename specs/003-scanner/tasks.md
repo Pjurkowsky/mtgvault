@@ -47,23 +47,23 @@ API change, run `scripts/check-api.sh` and commit the regenerated files.
 
 ## Phase 4: Scanner UI
 
-- [ ] **T11 Camera and frame loop** (AC-2, AC-4, AC-5, AC-6, AC-7, AC-8)
-- [ ] **T12 Scan page, status, download progress** (AC-1, AC-3, AC-7)
-- [ ] **T13 Result bar** (AC-11)
-- [ ] **T14 Sounds and running total** (AC-13, AC-14)
-- [ ] **T15 Settings sheet and Fast scanning switch** (AC-12, AC-15, AC-16)
+- [x] **T11 Camera and frame loop** (AC-2, AC-4, AC-5, AC-6, AC-7, AC-8)
+- [x] **T12 Scan page, status, download progress** (AC-1, AC-3, AC-7)
+- [x] **T13 Result bar** (AC-11)
+- [x] **T14 Sounds and running total** (AC-13, AC-14)
+- [x] **T15 Settings sheet and Fast scanning switch** (AC-12, AC-15, AC-16)
 
 ## Phase 5: Cart UI
 
-- [ ] **T16 Cart tile and cart page** (AC-19, AC-20, AC-22)
-- [ ] **T17 Move from cart, edit without location** (AC-20, AC-21)
+- [x] **T16 Cart tile and cart page** (AC-19, AC-20, AC-22)
+- [x] **T17 Move from cart, edit without location** (AC-20, AC-21)
 
 ## Phase 6: Tests
 
-- [ ] **T18 `cart.spec.ts`** (AC-17 to AC-22)
-- [ ] **T19 `scanner-settings.spec.ts`** (AC-12, AC-15, AC-16)
-- [ ] **T20 Scanner project with fake camera, `scanner.spec.ts`** (AC-1 to AC-11, AC-13, AC-14)
-- [ ] **T21 Full suite and spec 001/002 regressions**
+- [x] **T18 `cart.spec.ts`** (AC-17 to AC-22)
+- [x] **T19 `scanner-settings.spec.ts`** (AC-12, AC-15, AC-16)
+- [x] **T20 Scanner project with fake camera, `scanner.spec.ts`** (AC-1 to AC-11, AC-13, AC-14)
+- [x] **T21 Full suite and spec 001/002 regressions**
 
 ## Phase 7: Wrap up
 

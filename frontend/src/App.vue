@@ -8,9 +8,10 @@ import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
+import BareLayout from '@/layouts/BareLayout.vue'
 
 const route = useRoute()
-const layout = computed(() => (route.meta.layout === 'auth' ? AuthLayout : AppLayout))
+const layout = computed(() => ({ auth: AuthLayout, bare: BareLayout, app: AppLayout })[route.meta.layout ?? 'app'])
 </script>
 
 <template>

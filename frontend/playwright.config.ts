@@ -4,6 +4,8 @@ import { defineConfig, devices } from '@playwright/test'
 const API_PORT = 8100
 const WEB_PORT = 5180
 export const RATES = { EUR: 4.4, USD: 4.0 }
+/** Fake camera for the scanner tests: Sol Ring on a table (built by e2e/camera.setup.ts). */
+export const CAMERA_FEED = new URL('./e2e/.cache/camera.mjpeg', import.meta.url).pathname
 export const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://mtgvault:mtgvault@localhost:5432/mtgvault_e2e'
 
@@ -18,13 +20,36 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /performance\.spec\.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: [/performance\.spec\.ts/, /scanner\.spec\.ts/, /\.setup\.ts/],
+    },
     // Timing tests run alone after the rest, so parallel tests don't skew them.
     {
       name: 'performance',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /performance\.spec\.ts/,
       dependencies: ['chromium'],
+    },
+    { name: 'camera', testMatch: /camera\.setup\.ts/ },
+    // Real recognition models with Chromium's fake camera (spec 003).
+    {
+      name: 'scanner',
+      testMatch: /scanner\.spec\.ts/,
+      // After the timing tests: recognition is CPU-heavy and would skew them.
+      dependencies: ['camera', 'performance'],
+      use: {
+        ...devices['Desktop Chrome'],
+        permissions: ['camera'],
+        launchOptions: {
+          args: [
+            '--use-fake-device-for-media-stream',
+            '--use-fake-ui-for-media-stream',
+            `--use-file-for-fake-video-capture=${CAMERA_FEED}`,
+          ],
+        },
+      },
     },
   ],
   webServer: [

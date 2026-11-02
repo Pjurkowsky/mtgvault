@@ -16,9 +16,10 @@ const store = useLocationsStore()
 
 const id = computed(() => String(route.params.id))
 const isUnfiled = computed(() => id.value === 'unfiled')
-const location = computed(() => (isUnfiled.value ? null : store.byId(Number(id.value))))
-const totals = computed(() => (isUnfiled.value ? store.unfiled : location.value))
-const missing = computed(() => store.loaded && !isUnfiled.value && !location.value)
+const isCart = computed(() => id.value === 'cart')
+const location = computed(() => (isUnfiled.value || isCart.value ? null : store.byId(Number(id.value))))
+const totals = computed(() => (isCart.value ? store.cart : isUnfiled.value ? store.unfiled : location.value))
+const missing = computed(() => store.loaded && !isUnfiled.value && !isCart.value && !location.value)
 
 const editOpen = ref(false)
 const deleteOpen = ref(false)
@@ -38,7 +39,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
       </RouterLink>
       <div class="flex flex-wrap items-center gap-3">
         <component :is="kindOf(location?.kind)?.icon" v-if="location" class="size-6 text-muted-foreground" />
-        <h1 class="text-2xl font-semibold" data-testid="location-name">{{ location?.name ?? 'Unfiled' }}</h1>
+        <h1 class="text-2xl font-semibold" data-testid="location-name">{{ location?.name ?? (isCart ? 'Cart' : 'Unfiled') }}</h1>
         <span v-if="location" class="text-sm text-muted-foreground" data-testid="location-kind">{{ kindOf(location.kind)?.label }}</span>
         <GlobeIcon v-if="location?.is_public" class="size-4 text-muted-foreground" aria-label="Public" />
         <div v-if="location" class="ml-auto flex gap-2">

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 declare module 'vue-router' {
   interface RouteMeta {
     /** Page frame. Defaults to the app layout with the top bar. */
-    layout?: 'app' | 'auth'
+    layout?: 'app' | 'auth' | 'bare'
     requiresAuth?: boolean
     guestOnly?: boolean
   }
@@ -25,6 +25,9 @@ export const router = createRouter({
     { path: '/', name: 'collection', component: () => import('@/pages/CollectionPage.vue'), meta: { requiresAuth: true } },
     { path: '/cards', name: 'cards', component: () => import('@/pages/CollectionPage.vue'), meta: { requiresAuth: true } },
     { path: '/locations/:id', name: 'location', component: () => import('@/pages/LocationPage.vue'), meta: { requiresAuth: true } },
+    // /scan/fast is served cross-origin isolated for multi-threaded recognition (spec 003, AC-16).
+    { path: '/scan', name: 'scan', component: () => import('@/pages/ScanPage.vue'), meta: { requiresAuth: true, layout: 'bare' } },
+    { path: '/scan/fast', name: 'scan-fast', component: () => import('@/pages/ScanPage.vue'), meta: { requiresAuth: true, layout: 'bare' } },
     { path: '/users', name: 'directory', component: () => import('@/pages/DirectoryPage.vue') },
     { path: '/u/:username/locations/:id', name: 'public-location', component: () => import('@/pages/PublicLocationPage.vue') },
     { path: '/settings', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { requiresAuth: true } },

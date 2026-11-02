@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
+  CameraIcon,
   ArrowDownWideNarrowIcon,
   ArrowUpNarrowWideIcon,
   DownloadIcon,
@@ -12,6 +13,7 @@ import {
   UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
+import { useRouter } from 'vue-router'
 import { api } from '@/api/client'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
@@ -56,7 +58,10 @@ const emit = defineEmits<{ changed: [] }>()
 const { filter, view, update, setView, clearFilters, activeFilterCount } = useBrowserQuery()
 const selection = useSelection()
 const confirm = useConfirm()
+const router = useRouter()
 const editable = computed(() => props.source.kind === 'own' && !props.readonly)
+// The cart (spec 003): scanned cards waiting to be moved into the collection.
+const isCart = computed(() => props.location === 'cart')
 const selecting = computed(() => selection.count.value > 0)
 const defaultLocation = computed(() => (props.location && props.location !== 'unfiled' ? Number(props.location) : null))
 
@@ -174,6 +179,13 @@ function onSaved(item: BrowserRow) {
   refresh()
 }
 
+/** Open the scanner; Fast scanning needs a full page load of the isolated /scan/fast (spec 003, AC-16). */
+async function openScanner() {
+  const { data } = await api.GET('/api/scanner/settings/')
+  if (data?.fast) window.location.assign('/scan/fast')
+  else router.push({ name: 'scan' })
+}
+
 function openBulk(action: BulkAction) {
   bulkAction.value = action
   bulkOpen.value = true
@@ -249,11 +261,12 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
             <IconButton label="More"><EllipsisIcon /></IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem v-if="editable" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
+            <DropdownMenuItem v-if="editable && !isCart" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button v-if="editable" @click="addOpen = true"><PlusIcon /> Add card</Button>
+        <IconButton v-if="editable" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
+        <Button v-if="editable && !isCart" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>
 
@@ -301,7 +314,8 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
           Select all {{ page?.count ?? '' }}
         </label>
         <div class="ml-auto flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" @click="openBulk('move')">Move</Button>
+          <Button size="sm" variant="outline" @click="openBulk('move')">{{ isCart ? 'Move to' : 'Move' }}</Button>
+          <Button v-if="isCart" size="sm" variant="outline" disabled>Move to want list</Button>
           <Button size="sm" variant="outline" @click="openBulk('edit')">Edit</Button>
           <Button size="sm" variant="outline" @click="openExport(true)">Export</Button>
           <Button size="sm" variant="outline" class="text-destructive" @click="openBulk('delete')">Delete</Button>

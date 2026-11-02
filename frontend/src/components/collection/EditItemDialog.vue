@@ -65,7 +65,8 @@ async function save() {
       language: f.language,
       purchase_price: f.purchase_price === '' ? null : Number(f.purchase_price),
       purchase_currency: f.purchase_price === '' ? null : f.purchase_currency,
-      location: f.location === 'unfiled' ? null : Number(f.location),
+      // Cart rows keep no location here: a location would move them out of the cart.
+      ...(props.row.in_cart ? {} : { location: f.location === 'unfiled' ? null : Number(f.location) }),
     },
   })
   busy.value = false
@@ -84,7 +85,7 @@ async function save() {
         <DialogDescription>{{ row.printing.set_name }} #{{ row.printing.collector_number }}</DialogDescription>
       </DialogHeader>
       <PrintingPicker v-if="printings.length > 1" v-model="printingId" :printings="printings" />
-      <ItemFields v-model="form" :finishes="finishes" :errors="errors" />
+      <ItemFields v-model="form" :finishes="finishes" :errors="errors" :hide-location="!!row.in_cart" />
       <p v-if="errors.printing" class="text-sm text-destructive">{{ errors.printing }}</p>
       <DialogFooter>
         <Button :disabled="busy" @click="save">Save</Button>

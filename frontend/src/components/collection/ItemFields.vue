@@ -28,7 +28,7 @@ const MAX_LOCATION_TOGGLES = 6
 // The chosen toggle stands out clearly.
 const ACTIVE = 'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground'
 
-const props = defineProps<{ finishes: string[]; errors?: Record<string, string> }>()
+const props = defineProps<{ finishes: string[]; errors?: Record<string, string>; hideLocation?: boolean }>()
 const form = defineModel<ItemForm>({ required: true })
 const locations = useLocationsStore()
 
@@ -57,7 +57,7 @@ const setLocation = (v: unknown) => v && (form.value.location = String(v))
       <p v-if="errors?.finish" class="text-sm text-destructive">{{ errors.finish }}</p>
     </div>
 
-    <div class="grid gap-2">
+    <div v-if="!hideLocation" class="grid gap-2">
       <Label id="item-location-label">Location</Label>
       <ToggleGroup
         v-if="asToggles" type="single" variant="outline" :model-value="form.location"
