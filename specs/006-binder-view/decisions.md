@@ -1,4 +1,4 @@
-# Spec 005: Binder view (decisions so far)
+# Spec 006: Binder view (decisions so far)
 
 Status: Not written yet. These answers came from the spec 001 grilling session
 and seed the 002 grilling.

@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 001-collection, 002-collection-polish
-Followed by: 005-binder-view
+Followed by: 006-binder-view
 
 ## Goal
 
