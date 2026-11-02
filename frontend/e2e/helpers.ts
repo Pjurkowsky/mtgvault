@@ -81,6 +81,9 @@ export async function apiAs(request: APIRequestContext, user: TestUser) {
     /** Create a location; returns its id. */
     location: async (name: string, kind = 'binder', isPublic = false) =>
       (await call('post', '/api/locations/', { name, kind, is_public: isPublic })).id as number,
+    /** Create a deck (spec 004); returns the deck detail. */
+    deck: (name: string, format = 'casual', extra: Record<string, unknown> = {}) =>
+      call('post', '/api/decks/', { name, format, is_public: false, create_box: false, text: '', ...extra }),
     /** Import a text list into a location (or Unfiled). */
     importList: (text: string, location: number | null = null, extra: Record<string, unknown> = {}) =>
       call('post', '/api/imports/commit/', { text, location, ...extra }),
@@ -146,4 +149,13 @@ export const pressed = (page: Page, group: string) =>
 export async function selectAll(page: Page) {
   if (!(await page.getByTestId('selection-bar').count())) await page.getByTestId('card-checkbox').first().click()
   await page.getByTestId('selection-bar').getByTestId('select-all').click()
+}
+
+/** A row in a deck's list (spec 004, AC-18). */
+export const deckRow = (page: Page, name: string) => page.getByTestId('deck-row').filter({ hasText: name })
+
+/** Open the deck page's More (⋯) menu and pick an item. */
+export async function deckMenu(page: Page, item: 'Import' | 'Export' | 'Edit' | 'Create deck box' | 'Delete') {
+  await page.getByRole('button', { name: 'More' }).click()
+  await page.getByRole('menuitem', { name: item }).click()
 }

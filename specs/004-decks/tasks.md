@@ -37,5 +37,5 @@ Done for T4-T7: shell checks against the real catalog.
 
 ## Phase 5: Tests and wrap up
 
-- [ ] **T17 e2e: decks, deck-cards, deck-ownership, deck-legality, deck-import**
+- [x] **T17 e2e: decks, deck-cards, deck-ownership, deck-legality, deck-import**
 - [ ] **T18 Full suite, Docker build, READMEs, spec status**

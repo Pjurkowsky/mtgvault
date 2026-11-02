@@ -15,9 +15,15 @@ watch(query, (q) => {
     users.value = data ?? []
   }, query.value ? 200 : 0)
 }, { immediate: true })
+
+const plural = (n: number, word: string) => `${n} public ${word}${n === 1 ? '' : 's'}`
+/** Only the non-zero counts (spec 004, AC-28). */
+const counts = (u: Schemas['DirectoryUser']) =>
+  [u.public_locations ? plural(u.public_locations, 'location') : '', u.public_decks ? plural(u.public_decks, 'deck') : '']
+    .filter(Boolean).join(' · ')
 </script>
 
-<!-- Users with at least one public location (AC-54). -->
+<!-- Users with at least one public location or deck (spec 001 AC-54, spec 004 AC-28). -->
 <template>
   <div class="mx-auto grid max-w-xl gap-4">
     <div class="relative">
@@ -28,7 +34,7 @@ watch(query, (q) => {
       <li v-for="u in users" :key="u.username">
         <RouterLink :to="{ name: 'profile', params: { username: u.username } }" class="flex items-center justify-between px-4 py-3 hover:bg-muted/50">
           <span class="font-medium">{{ u.username }}</span>
-          <span class="text-sm text-muted-foreground">{{ u.public_locations }} public {{ u.public_locations === 1 ? 'location' : 'locations' }}</span>
+          <span class="text-sm text-muted-foreground">{{ counts(u) }}</span>
         </RouterLink>
       </li>
     </ul>

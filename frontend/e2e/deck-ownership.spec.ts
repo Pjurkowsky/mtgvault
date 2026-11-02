@@ -1,0 +1,113 @@
+import { expect, test } from '@playwright/test'
+import { deckRow, signUpAndLogIn, tile } from './helpers'
+
+const state = (page: import('@playwright/test').Page, name: string) => deckRow(page, name).getByTestId('ownership')
+
+test.describe('Deck ownership', () => {
+  test('AC-13, AC-14: four states; the Maybeboard counts toward no totals', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const other = await api.deck('Other', 'casual', { create_box: true, text: '1 Sol Ring' })
+    await api.importList('1 Sol Ring (C21) 263', other.location)
+    const deck = await api.deck('Mine', 'casual', {
+      create_box: true, text: '2 Lightning Bolt\n1 Counterspell\n1 Sol Ring\n4 Forest\n\nMaybeboard\n1 Brainstorm',
+    })
+    await api.importList('2 Lightning Bolt (FDC) 163', deck.location)
+    await api.importList('1 Counterspell (FDC) 61\n1 Forest (M21) 272')
+
+    await page.goto(`/decks/${deck.id}`)
+    await expect(state(page, 'Lightning Bolt')).toHaveAttribute('data-state', 'in_box')
+    await expect(state(page, 'Counterspell')).toHaveAttribute('data-state', 'owned')
+    await expect(state(page, 'Sol Ring')).toHaveAttribute('data-state', 'other_decks')
+    await expect(state(page, 'Forest')).toHaveAttribute('data-state', 'missing')
+    await expect(state(page, 'Brainstorm')).toHaveAttribute('data-state', 'missing')
+
+    await deckRow(page, 'Sol Ring').click()
+    const dialog = page.getByTestId('deck-card-dialog')
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('In other decks')
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in deck Other')
+    await page.keyboard.press('Escape')
+    await deckRow(page, 'Forest').click()
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in Unfiled')
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('3 missing')
+    await page.keyboard.press('Escape')
+
+    // 2 Bolt + 1 Counterspell + 1 Forest owned; 1 Sol Ring + 3 Forest missing. Brainstorm doesn't count.
+    await expect(page.getByRole('tab', { name: /Owned/ })).toContainText('4')
+    await expect(page.getByRole('tab', { name: /Missing/ })).toContainText('4')
+  })
+
+  test('AC-15: mark owned by moving a free copy or adding a new one', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const deck = await api.deck('Boxed', 'casual', { create_box: true, text: '1 Counterspell\n1 Forest' })
+    await api.importList('1 Counterspell (SLD) 7117')
+    await page.goto(`/decks/${deck.id}`)
+    const dialog = page.getByTestId('deck-card-dialog')
+
+    await deckRow(page, 'Counterspell').click()
+    await dialog.getByRole('button', { name: 'Move to deck box' }).click()
+    await expect(page.getByText('Moved into the deck box.')).toBeVisible()
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in the deck box')
+    await page.keyboard.press('Escape')
+    await expect(state(page, 'Counterspell')).toHaveAttribute('data-state', 'in_box')
+
+    await deckRow(page, 'Forest').click()
+    await dialog.getByRole('button', { name: 'Add a new copy to the deck box' }).click()
+    await expect(page.getByText('Added a copy to the deck box.')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(state(page, 'Forest')).toHaveAttribute('data-state', 'in_box')
+
+    await page.getByTestId('deck-box').click()
+    await expect(tile(page, 'Counterspell')).toBeVisible()
+    await expect(tile(page, 'Forest')).toBeVisible()
+  })
+
+  test('AC-15: without a deck box a new copy goes to Unfiled', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const deck = await api.deck('Loose', 'casual', { text: '1 Sol Ring' })
+    await page.goto(`/decks/${deck.id}`)
+    await deckRow(page, 'Sol Ring').click()
+    const dialog = page.getByTestId('deck-card-dialog')
+    await expect(dialog.getByRole('button', { name: 'Move to deck box' })).toHaveCount(0)
+    await dialog.getByRole('button', { name: 'Add a new copy' }).click()
+    await expect(page.getByText('Added a copy to Unfiled.')).toBeVisible()
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in Unfiled')
+    await page.keyboard.press('Escape')
+    await expect(state(page, 'Sol Ring')).toHaveAttribute('data-state', 'owned')
+  })
+
+  test('AC-16: the Owned tab shows owned copies of the deck cards in the card browser', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const binder = await api.location('Binder')
+    await api.importList('1 Sol Ring (C21) 263\n2 Lightning Bolt (FDC) 163', binder)
+    await api.importList('1 Counterspell (FDC) 61\n1 Shivan Dragon (FDN) 763')
+    const deck = await api.deck('Owned', 'casual', { text: '1 Sol Ring\n1 Lightning Bolt\n1 Counterspell\n1 Forest' })
+    await page.goto(`/decks/${deck.id}`)
+    await page.getByRole('tab', { name: /Owned/ }).click()
+    await expect(page).toHaveURL(/tab=owned/)
+    await expect(page.getByTestId('card-tile')).toHaveCount(3)
+    await expect(tile(page, 'Shivan Dragon')).toHaveCount(0)
+    await page.getByLabel('Search cards').fill('bolt')
+    await expect(page.getByTestId('card-tile')).toHaveCount(1)
+    await expect(tile(page, 'Lightning Bolt')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(1) // only the deck's own button
+  })
+
+  test('AC-17: the Missing tab lists missing copies with search and exports them', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    await api.importList('1 Forest (M21) 272\n1 Sol Ring (C21) 263')
+    const deck = await api.deck('Missing', 'casual', { text: '4 Forest\n1 Sol Ring\n2 Counterspell (FDC) 61\n1 Shivan Dragon\n\nMaybeboard\n1 Brainstorm' })
+    await page.goto(`/decks/${deck.id}`)
+    await page.getByRole('tab', { name: /Missing/ }).click()
+    await expect(page.getByTestId('card-tile')).toHaveCount(3)
+    await expect(tile(page, 'Sol Ring')).toHaveCount(0)
+    await expect(tile(page, 'Brainstorm')).toHaveCount(0)
+    await expect(tile(page, 'Forest')).toContainText('×3')
+    await expect(page.getByTestId('browser-summary')).toContainText('6 cards')
+
+    await page.getByLabel('Search cards').fill('counter')
+    await expect(page.getByTestId('card-tile')).toHaveCount(1)
+    await page.getByRole('button', { name: 'More' }).last().click()
+    await page.getByRole('menuitem', { name: 'Export' }).click()
+    await expect(page.getByTestId('export-text')).toHaveValue('2 Counterspell (FDC) 61\n')
+  })
+})
