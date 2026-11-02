@@ -98,6 +98,7 @@ class CardSearchResultSerializer(serializers.Serializer):
     oracle_id = serializers.UUIDField()
     name = serializers.CharField()
     image_small = serializers.CharField()
+    image_normal = serializers.CharField()
 
 
 class SetSerializer(serializers.ModelSerializer):

@@ -47,12 +47,12 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
 
 ## Phase 2: Shared UI
 
-- [ ] **T5 shadcn components and mana symbols**
+- [x] **T5 shadcn components and mana symbols**
   - Add `context-menu` and `hover-card`.
   - Copy Scryfall's W, U, B, R, G and C SVGs into `src/assets/mana/`.
   - Done: `pnpm build` passes and the six files open as images.
 
-- [ ] **T6 Price, toasts and confirm dialog** (AC-1 to AC-5)
+- [x] **T6 Price, toasts and confirm dialog** (AC-1 to AC-5)
   - `Price.vue`, and no "≈" in `formatMoney`.
   - `<Toaster rich-colors>`.
   - `ConfirmDialog.vue` and `useConfirm()`, mounted once in `App.vue`.
@@ -63,37 +63,37 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
   - Done: `pnpm build` passes, and a screenshot shows a price tooltip and a
     green toast.
 
-- [ ] **T7 IconButton, CardPreview, ManaSymbol, usePreference** (AC-6, AC-9, AC-20)
+- [x] **T7 IconButton, CardPreview, ManaSymbol, usePreference** (AC-6, AC-9, AC-20)
   - Replace every icon-only button with `IconButton`.
   - Done: `pnpm build` passes, and grep finds no `size="icon"` button
     without a tooltip.
 
 ## Phase 3: Add card
 
-- [ ] **T8 Result views and sizes** (AC-7 to AC-9)
-- [ ] **T9 Finish and location toggles** (AC-10, AC-11)
+- [x] **T8 Result views and sizes** (AC-7 to AC-9)
+- [x] **T9 Finish and location toggles** (AC-10, AC-11)
 
 Done for T8 and T9: by hand, with 3 and with 8 locations.
 
 ## Phase 4: Card browser
 
-- [ ] **T10 Selection without a mode** (AC-12 to AC-15)
+- [x] **T10 Selection without a mode** (AC-12 to AC-15)
   - `useSelection` without `active`. Grid and table checkboxes, the Select
     all checkbox in the toolbar, and the bulk bar shown while
     `count > 0`.
-- [ ] **T11 Tiles and click rules** (AC-16, AC-17)
-- [ ] **T12 Context menu and EditItemDialog** (AC-18, AC-38)
-- [ ] **T13 Toolbar: More menu, tooltips, summary** (AC-19, AC-22, AC-23)
-- [ ] **T14 Filters: mana symbols, Clear, no chips** (AC-20, AC-21)
+- [x] **T11 Tiles and click rules** (AC-16, AC-17)
+- [x] **T12 Context menu and EditItemDialog** (AC-18, AC-38)
+- [x] **T13 Toolbar: More menu, tooltips, summary** (AC-19, AC-22, AC-23)
+- [x] **T14 Filters: mana symbols, Clear, no chips** (AC-20, AC-21)
 
 Done for T10 to T14: by hand on All cards, a location page and a public
 location page.
 
 ## Phase 5: Card detail
 
-- [ ] **T15 New layout and copies block** (AC-24, AC-25, AC-37)
-- [ ] **T16 Reprints strip with switch** (AC-26, AC-27)
-- [ ] **T17 EDHREC tabs and card stack** (AC-28 to AC-34, AC-36)
+- [x] **T15 New layout and copies block** (AC-24, AC-25, AC-37)
+- [x] **T16 Reprints strip with switch** (AC-26, AC-27)
+- [x] **T17 EDHREC tabs and card stack** (AC-28 to AC-34, AC-36)
 
 Done for T15 to T17: by hand with Sol Ring (fixture data) and a card with
 no EDHREC data.

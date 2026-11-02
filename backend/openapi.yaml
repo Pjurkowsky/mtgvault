@@ -1016,7 +1016,10 @@ components:
           type: string
         image_small:
           type: string
+        image_normal:
+          type: string
       required:
+      - image_normal
       - image_small
       - name
       - oracle_id

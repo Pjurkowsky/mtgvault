@@ -2,6 +2,7 @@
 import 'vue-sonner/style.css'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppLayout from '@/layouts/AppLayout.vue'
@@ -16,6 +17,8 @@ const layout = computed(() => (route.meta.layout === 'auth' ? AuthLayout : AppLa
     <component :is="layout" v-if="route.matched.length">
       <RouterView />
     </component>
+    <ConfirmDialog />
   </TooltipProvider>
-  <Toaster position="top-center" />
+  <!-- Green success, red errors (AC-4). -->
+  <Toaster position="top-center" rich-colors />
 </template>

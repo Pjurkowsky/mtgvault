@@ -1,24 +1,35 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { ArrowLeftIcon } from '@lucide/vue'
+import { ArrowLeftIcon, LayoutGridIcon, ListIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
+import CardPreview from '@/components/CardPreview.vue'
+import IconButton from '@/components/IconButton.vue'
+import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { usePreference } from '@/composables/usePreference'
 import type { Finish } from '@/lib/cards'
-import { formatMoney } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
 import { useLocationsStore } from '@/stores/locations'
 import ItemFields, { type ItemForm } from './ItemFields.vue'
 import PrintingPicker from './PrintingPicker.vue'
 
-/** Location to preselect: an id, or null for Unfiled (AC-24). */
+/** Location to preselect: an id, or null for Unfiled. */
 const props = defineProps<{ defaultLocation: number | null }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ added: [] }>()
 const auth = useAuthStore()
 const locations = useLocationsStore()
+
+// Result layout, remembered per browser (AC-7, AC-8).
+const view = usePreference('add.view', 'grid', ['grid', 'list'] as const)
+const size = usePreference('add.size', 'md', ['sm', 'md', 'lg'] as const)
+const GRID_COLUMNS = { sm: 'grid-cols-4 sm:grid-cols-6', md: 'grid-cols-3 sm:grid-cols-4', lg: 'grid-cols-2 sm:grid-cols-3' }
 
 const query = ref('')
 const results = ref<Schemas['CardSearchResult'][]>([])
@@ -58,7 +69,6 @@ watch(open, (isOpen) => {
   if (!locations.loaded) locations.load()
 })
 
-// Search as the user types, from 2 characters (AC-21).
 let timer: ReturnType<typeof setTimeout>
 let searchId = 0
 watch(query, (q) => {
@@ -79,10 +89,9 @@ async function choose(result: Schemas['CardSearchResult']) {
   card.value = result
   const { data } = await api.GET('/api/catalog/cards/{oracle_id}/printings/', { params: { path: { oracle_id: result.oracle_id } } })
   printings.value = data ?? []
-  printingId.value = printings.value[0]?.id ?? null // newest first (AC-22)
+  printingId.value = printings.value[0]?.id ?? null
 }
 
-// Keep the finish valid for the chosen printing; nonfoil when available (AC-23).
 watch(printing, (p) => {
   if (p && !p.finishes.includes(form.value.finish)) form.value.finish = (p.finishes[0] ?? 'nonfoil') as Finish
 })
@@ -108,7 +117,6 @@ async function add() {
   if (error || !data) return (errors.value = fieldErrors(error))
   toast.success(`Added ${f.quantity} × ${data.item.printing.name}${data.merged ? ' (merged with an existing row)' : ''}.`)
   emit('added')
-  // Stay open for the next card, keeping the chosen location (AC-25).
   const keepLocation = f.location
   reset()
   form.value.location = keepLocation
@@ -119,34 +127,64 @@ async function add() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
       <DialogHeader>
         <DialogTitle>Add card</DialogTitle>
       </DialogHeader>
 
-      <Input ref="searchInput" v-model="query" placeholder="Card name" aria-label="Card name" autocomplete="off" autofocus />
+      <div class="flex gap-2">
+        <Input ref="searchInput" v-model="query" placeholder="Card name" aria-label="Card name" autocomplete="off" autofocus />
+        <template v-if="!card">
+          <ToggleGroup type="single" variant="outline" :model-value="view" @update:model-value="(v) => v && (view = v as 'grid' | 'list')">
+            <Tooltip>
+              <TooltipTrigger as-child><ToggleGroupItem value="grid" aria-label="Results as grid"><LayoutGridIcon /></ToggleGroupItem></TooltipTrigger>
+              <TooltipContent>Results as grid</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger as-child><ToggleGroupItem value="list" aria-label="Results as list"><ListIcon /></ToggleGroupItem></TooltipTrigger>
+              <TooltipContent>Results as list</TooltipContent>
+            </Tooltip>
+          </ToggleGroup>
+          <ToggleGroup v-if="view === 'grid'" type="single" variant="outline" :model-value="size" aria-label="Card size" @update:model-value="(v) => v && (size = v as 'sm' | 'md' | 'lg')">
+            <ToggleGroupItem value="sm" aria-label="Small cards">S</ToggleGroupItem>
+            <ToggleGroupItem value="md" aria-label="Medium cards">M</ToggleGroupItem>
+            <ToggleGroupItem value="lg" aria-label="Large cards">L</ToggleGroupItem>
+          </ToggleGroup>
+        </template>
+      </div>
 
-      <ul v-if="!card && results.length" class="grid max-h-80 gap-1 overflow-y-auto" data-testid="card-results">
-        <li v-for="r in results" :key="r.oracle_id">
-          <button type="button" class="flex w-full items-center gap-3 rounded-md p-1.5 text-left hover:bg-muted" @click="choose(r)">
-            <img :src="r.image_small" alt="" class="h-12 rounded-sm" loading="lazy" />
-            <span>{{ r.name }}</span>
-          </button>
-        </li>
-      </ul>
+      <template v-if="!card && results.length">
+        <ul v-if="view === 'grid'" :class="cn('grid gap-3', GRID_COLUMNS[size])" data-testid="card-results" :data-size="size">
+          <li v-for="r in results" :key="r.oracle_id">
+            <CardPreview :image="r.image_normal" :name="r.name">
+              <button type="button" class="block w-full" :aria-label="r.name" @click="choose(r)">
+                <img :src="size === 'sm' ? r.image_small : r.image_normal || r.image_small" :alt="r.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted object-cover transition hover:ring-2 hover:ring-primary" />
+              </button>
+            </CardPreview>
+          </li>
+        </ul>
+        <ul v-else class="grid max-h-96 gap-1 overflow-y-auto" data-testid="card-results">
+          <li v-for="r in results" :key="r.oracle_id">
+            <CardPreview :image="r.image_normal" :name="r.name">
+              <button type="button" class="flex w-full items-center gap-3 rounded-md p-1.5 text-left hover:bg-muted" :aria-label="r.name" @click="choose(r)">
+                <img :src="r.image_small" alt="" class="h-14 rounded-sm" loading="lazy" />
+                <span>{{ r.name }}</span>
+              </button>
+            </CardPreview>
+          </li>
+        </ul>
+      </template>
       <p v-else-if="!card && query.trim().length >= 2 && !searching" class="text-sm text-muted-foreground">No cards found.</p>
 
       <template v-if="card">
         <div class="flex items-center gap-2">
-          <Button variant="ghost" size="icon" class="size-7" aria-label="Back to results" @click="card = null">
-            <ArrowLeftIcon />
-          </Button>
+          <IconButton label="Back to results" variant="ghost" class="size-7" @click="card = null"><ArrowLeftIcon /></IconButton>
           <span class="font-medium">{{ card.name }}</span>
         </div>
         <PrintingPicker v-model="printingId" :printings="printings" />
         <p v-if="printing" class="text-sm text-muted-foreground" data-testid="printing-summary">
           {{ printing.set_name }} #{{ printing.collector_number }} ·
-          {{ formatMoney(printing.prices[form.finish], currency) }}
+          <Price :value="printing.prices[form.finish]" :values="printing.prices_all[form.finish]" :currency="currency" />
         </p>
         <ItemFields v-if="printing" v-model="form" :finishes="printing.finishes" :errors="errors" />
       </template>

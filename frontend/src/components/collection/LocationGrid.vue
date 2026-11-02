@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
 import { EllipsisIcon, GlobeIcon, InboxIcon } from '@lucide/vue'
+import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Card } from '@/components/ui/card'
 import {
   DropdownMenu,
@@ -10,15 +12,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { kindOf } from '@/lib/cards'
-import { formatMoney } from '@/lib/money'
+import type { Money } from '@/lib/money'
 
-type Tile = { id: number; name: string; kind: string; card_count: number; value: number | null; is_public?: boolean }
+type Tile = { id: number; name: string; kind: string; card_count: number; value: number | null; values?: Money; is_public?: boolean }
 
 defineProps<{
   locations: Tile[]
   currency: string
   to: (location: Tile) => RouteLocationRaw
-  unfiled?: { card_count: number; value: number | null }
+  unfiled?: { card_count: number; value: number | null; values?: Money }
   editable?: boolean
 }>()
 const emit = defineEmits<{ edit: [location: Tile]; delete: [location: Tile] }>()
@@ -37,11 +39,16 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
           </RouterLink>
           <GlobeIcon v-if="location.is_public" class="size-4 shrink-0 text-muted-foreground" aria-label="Public" />
           <DropdownMenu v-if="editable">
-            <DropdownMenuTrigger as-child>
-              <Button variant="ghost" size="icon" class="relative z-10 -mt-1 -mr-2 size-7" :aria-label="`${location.name} options`">
-                <EllipsisIcon />
-              </Button>
-            </DropdownMenuTrigger>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="ghost" size="icon" class="relative z-10 -mt-1 -mr-2 size-7" :aria-label="`${location.name} options`">
+                    <EllipsisIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Options</TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end">
               <DropdownMenuItem @select="emit('edit', location)">Edit</DropdownMenuItem>
               <DropdownMenuItem variant="destructive" @select="emit('delete', location)">Delete</DropdownMenuItem>
@@ -50,7 +57,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         </div>
         <p class="pl-8 text-sm text-muted-foreground">
           <span data-testid="location-count">{{ cards(location.card_count) }}</span> ·
-          <span data-testid="location-value">{{ formatMoney(location.value, currency) }}</span>
+          <span data-testid="location-value" class="relative z-10"><Price :value="location.value" :values="location.values" :currency="currency" /></span>
         </p>
       </Card>
     </li>
@@ -65,7 +72,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         </div>
         <p class="pl-8 text-sm text-muted-foreground">
           <span data-testid="location-count">{{ cards(unfiled.card_count) }}</span> ·
-          <span data-testid="location-value">{{ formatMoney(unfiled.value, currency) }}</span>
+          <span data-testid="location-value" class="relative z-10"><Price :value="unfiled.value" :values="unfiled.values" :currency="currency" /></span>
         </p>
       </Card>
     </li>

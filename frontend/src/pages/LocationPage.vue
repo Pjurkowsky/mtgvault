@@ -7,7 +7,7 @@ import DeleteLocationDialog from '@/components/collection/DeleteLocationDialog.v
 import LocationDialog from '@/components/collection/LocationDialog.vue'
 import { Button } from '@/components/ui/button'
 import { kindOf } from '@/lib/cards'
-import { formatMoney } from '@/lib/money'
+import Price from '@/components/Price.vue'
 import { useLocationsStore } from '@/stores/locations'
 
 const route = useRoute()
@@ -47,7 +47,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         </div>
       </div>
       <p v-if="totals" class="text-muted-foreground" data-testid="location-totals">
-        {{ cards(totals.card_count) }} · {{ formatMoney(totals.value, store.currency) }}
+        {{ cards(totals.card_count) }} · <Price :value="totals.value" :values="totals.values" :currency="store.currency" />
       </p>
     </div>
 

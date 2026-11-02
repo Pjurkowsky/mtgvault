@@ -4,12 +4,12 @@ import type { BrowserFilter } from './useBrowserQuery'
 export type Selection = { ids: number[] } | { filter: Record<string, unknown>; exclude_ids: number[] }
 
 /**
- * Picked rows, or "every row matching a filter" minus exclusions.
+ * Picked rows, or "every row matching a filter" minus exclusions. There is no
+ * selection mode: anything selected means selecting (spec 002, AC-13).
  * Select all freezes the filter that was active, so later search or filter
  * changes keep the selection (spec 001, AC-39, AC-40).
  */
 export function useSelection() {
-  const active = ref(false)
   const all = ref<{ filter: Record<string, unknown>; count: number } | null>(null)
   const ids = ref(new Set<number>())
   const excluded = ref(new Set<number>())
@@ -42,13 +42,11 @@ export function useSelection() {
     excluded.value = new Set()
   }
 
-  function stop() {
-    clear()
-    active.value = false
-  }
-
   const toSelection = (): Selection =>
     all.value ? { filter: all.value.filter, exclude_ids: [...excluded.value] } : { ids: [...ids.value] }
 
-  return { active, count, isSelected, set, toggle, selectAll, clear, stop, toSelection }
+  /** Every matching row is selected (nothing excluded). */
+  const allSelected = computed(() => !!all.value && excluded.value.size === 0)
+
+  return { count, allSelected, isSelected, set, toggle, selectAll, clear, toSelection }
 }

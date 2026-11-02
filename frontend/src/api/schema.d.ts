@@ -494,7 +494,7 @@ export interface components {
             location?: number | null;
             changes?: components["schemas"]["BulkChanges"];
             /** @default false */
-            dry_run: boolean;
+            dry_run?: boolean;
         };
         BulkResult: {
             rows: number;
@@ -515,6 +515,7 @@ export interface components {
             oracle_id: string;
             name: string;
             image_small: string;
+            image_normal: string;
         };
         /**
          * @description * `move` - move
@@ -641,9 +642,9 @@ export interface components {
             text: string;
             location?: number | null;
             /** @default NM */
-            condition: components["schemas"]["ConditionEnum"];
+            condition?: components["schemas"]["ConditionEnum"];
             /** @default en */
-            language: components["schemas"]["LanguageEnum"];
+            language?: components["schemas"]["LanguageEnum"];
             /** Format: double */
             purchase_price?: number | null;
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
@@ -706,9 +707,9 @@ export interface components {
             /** @description Location id or "unfiled" */
             location?: string;
             /** @default name */
-            sort: components["schemas"]["SortEnum"];
+            sort?: components["schemas"]["SortEnum"];
             /** @default asc */
-            dir: components["schemas"]["DirEnum"];
+            dir?: components["schemas"]["DirEnum"];
         };
         ItemPage: {
             currency: string;
@@ -735,12 +736,12 @@ export interface components {
              */
             printing: string;
             /** @default 1 */
-            quantity: number;
+            quantity?: number;
             finish: components["schemas"]["FinishEnum"];
             /** @default NM */
-            condition: components["schemas"]["ConditionEnum"];
+            condition?: components["schemas"]["ConditionEnum"];
             /** @default en */
-            language: components["schemas"]["LanguageEnum"];
+            language?: components["schemas"]["LanguageEnum"];
             /** Format: double */
             purchase_price?: number | null;
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
@@ -835,12 +836,12 @@ export interface components {
              */
             printing?: string;
             /** @default 1 */
-            quantity: number;
+            quantity?: number;
             finish?: components["schemas"]["FinishEnum"];
             /** @default NM */
-            condition: components["schemas"]["ConditionEnum"];
+            condition?: components["schemas"]["ConditionEnum"];
             /** @default en */
-            language: components["schemas"]["LanguageEnum"];
+            language?: components["schemas"]["LanguageEnum"];
             /** Format: double */
             purchase_price?: number | null;
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;

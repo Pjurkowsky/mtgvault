@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { SlidersHorizontalIcon } from '@lucide/vue'
+import ManaSymbol from '@/components/ManaSymbol.vue'
 import { api, type Schemas } from '@/api/client'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,7 +15,7 @@ import type { BrowserFilter } from '@/composables/useBrowserQuery'
 import { COLORS, CONDITIONS, FINISHES, RARITIES, TYPES } from '@/lib/cards'
 
 const props = defineProps<{ filter: BrowserFilter; activeCount: number; currency: string }>()
-const emit = defineEmits<{ update: [patch: Record<string, string | string[] | undefined>] }>()
+const emit = defineEmits<{ update: [patch: Record<string, string | string[] | undefined>]; clear: [] }>()
 
 type ListKey = 'color' | 'type' | 'rarity' | 'set' | 'finish' | 'condition'
 
@@ -56,6 +57,10 @@ watch(setQuery, (q) => {
       </Button>
     </PopoverTrigger>
     <PopoverContent align="start" class="grid max-h-[70vh] w-80 gap-4 overflow-y-auto" data-testid="filter-panel">
+      <div class="flex items-center justify-between">
+        <span class="font-medium">Filters</span>
+        <Button variant="ghost" size="sm" :disabled="!activeCount" @click="emit('clear')">Clear</Button>
+      </div>
       <section class="grid gap-2">
         <Label>Color</Label>
         <div class="flex flex-wrap gap-1">
@@ -63,7 +68,7 @@ watch(setQuery, (q) => {
             v-for="c in COLORS" :key="c.value" size="sm" variant="outline"
             :model-value="has('color', c.value)" :aria-label="c.label"
             @update:model-value="(on: boolean) => toggle('color', c.value, on)"
-          >{{ c.value }}</Toggle>
+          ><ManaSymbol :symbol="c.value" /></Toggle>
         </div>
       </section>
       <Separator />

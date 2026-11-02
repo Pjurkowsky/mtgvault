@@ -232,7 +232,7 @@ class ItemDetailView(APIView):
     def get(self, request, pk):
         return Response(ItemListView._serialize(self.get_row(request, pk), price_context(request)))
 
-    @extend_schema(request=ItemWriteSerializer, responses=ItemSaveResultSerializer)
+    @extend_schema(request=ItemWriteSerializer(partial=True), responses=ItemSaveResultSerializer)
     def patch(self, request, pk):
         row = self.get_row(request, pk)
         data = ItemWriteSerializer(data=request.data, partial=True, context={'request': request})

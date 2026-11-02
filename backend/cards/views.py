@@ -44,7 +44,7 @@ class CardSearchView(APIView):
             Printing.objects.filter(Q(name__icontains=q) | Q(front_name__icontains=q))
             .order_by('oracle_id', '-released_at')
             .distinct('oracle_id')
-            .values('oracle_id', 'name', 'front_name', 'image_small')[:200]
+            .values('oracle_id', 'name', 'front_name', 'image_small', 'image_normal')[:200]
         )
         lowered = q.lower()
 

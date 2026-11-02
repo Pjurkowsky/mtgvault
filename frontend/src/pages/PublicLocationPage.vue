@@ -5,7 +5,7 @@ import { ArrowLeftIcon } from '@lucide/vue'
 import { api, type Schemas } from '@/api/client'
 import CardBrowser from '@/components/browser/CardBrowser.vue'
 import { kindOf } from '@/lib/cards'
-import { formatMoney } from '@/lib/money'
+import Price from '@/components/Price.vue'
 
 const route = useRoute()
 const username = computed(() => String(route.params.username))
@@ -43,7 +43,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         <component :is="kindOf(location.kind)?.icon" class="size-6 text-muted-foreground" />
         <h1 class="text-2xl font-semibold" data-testid="location-name">{{ location.name }}</h1>
       </div>
-      <p class="text-muted-foreground" data-testid="location-totals">{{ cards(location.card_count) }} · {{ formatMoney(location.value, currency) }}</p>
+      <p class="text-muted-foreground" data-testid="location-totals">{{ cards(location.card_count) }} · <Price :value="location.value" :values="location.values" :currency="currency" /></p>
     </div>
     <CardBrowser :key="`${username}/${id}`" :source="{ kind: 'public', username, locationId: id }" readonly />
   </div>
