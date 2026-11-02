@@ -123,7 +123,7 @@ non-timing tests pass twice in a row.
     under 1 ms. Every card on five pages matched our catalog after partner
     pairs ("Frodo, Adventurous Hobbit // Sam, Loyal Attendant") started
     matching by their first card.
-- [ ] **T25 Verify and close the spec**
+- [x] **T25 Verify and close the spec**
   - `pnpm e2e` and `scripts/check-api.sh` pass, and the Docker images build.
   - Update READMEs (EDHREC proxy, `EDHREC_FIXTURE_DIR`).
   - Set spec status to "Done".

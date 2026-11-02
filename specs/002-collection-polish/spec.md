@@ -1,6 +1,6 @@
 # Spec 002: Collection polish
 
-Status: Approved
+Status: Done
 Depends on: 001-collection
 Followed by: 003-binder-view
 

@@ -36,9 +36,11 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET/PATCH /api/me/` | bearer | Your account. PATCH changes `currency` only. |
 | `POST /api/me/password/` | bearer | `{current_password, new_password}` |
 | `GET /api/users/<username>/` | public | Public profile |
-| `GET /api/catalog/cards/?q=` | bearer | Card search, one entry per card |
-| `GET /api/catalog/cards/<oracle_id>/printings/` | bearer | Printings, newest first, with prices |
-| `GET /api/catalog/sets/?q=`, `GET /api/catalog/status/` | bearer | Set search; last price update |
+| `GET /api/catalog/cards/?q=` | public | Card search, one entry per card |
+| `GET /api/catalog/cards/<oracle_id>/` | public | Card with printings and how many the viewer owns |
+| `GET /api/catalog/cards/<oracle_id>/printings/` | public | Printings, newest first, with prices |
+| `GET /api/catalog/cards/<oracle_id>/edhrec/` | public | EDHREC commanders, played-with groups, similar cards |
+| `GET /api/catalog/sets/?q=`, `GET /api/catalog/status/` | public | Set search; last price update |
 | `GET/POST /api/locations/` | bearer | Locations with totals (plus Unfiled) / create |
 | `GET/PATCH /api/locations/<id>/`, `POST .../delete/` | bearer | Detail, edit, delete with move/unfile/delete |
 | `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
@@ -74,3 +76,18 @@ A failed sync rolls back and keeps the previous data.
 
 `manage.py seed_items --username <u> --rows 20000` fills a collection for
 performance checks (only with `DEBUG` on).
+
+## EDHREC
+
+The card detail's tabs come from EDHREC's public page data (no official API).
+`cards/edhrec.py` fetches `json.edhrec.com/pages/cards/<slug>.json`, keeps
+commanders, played-with groups and similar cards, matches the names to our
+catalog, and caches the result in Redis for 24 hours ("no page" for 1 hour).
+Any failure or unexpected format returns `available: false`, and the tabs show
+"No EDHREC data".
+
+Tests set `EDHREC_FIXTURE_DIR=cards/fixtures/edhrec` so nothing calls EDHREC;
+only `sol-ring.json` exists there.
+
+Every price in the API also comes in all three currencies (`unit_prices`,
+`values`, `prices_all`, …) so the frontend can show the others in a tooltip.

@@ -22,7 +22,10 @@ src/
   layouts/    AppLayout (top bar) and AuthLayout (centered card)
   pages/      one component per route
   components/browser/     the shared card browser (spec 001, principle P-2)
-  components/collection/  locations, add card, card detail, import
+  components/collection/  locations, add card, edit, card detail with EDHREC tabs, import
+  components/             shared: Price (tooltip with other currencies), ConfirmDialog
+                          (useConfirm), IconButton (tooltip), CardPreview (hover),
+                          ExpandButton + FullscreenCard, ManaSymbol
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
 e2e/          Playwright tests, one file per area, named by acceptance criterion
 ```
