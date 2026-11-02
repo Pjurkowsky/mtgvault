@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'users',
     'cards',
     'collection',
+    'scanner',
 ]
 
 MIDDLEWARE = [
@@ -222,4 +223,8 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {
     # NBP publishes around noon Warsaw time; Scryfall refreshes prices daily.
     'sync-cards-daily': {'task': 'cards.tasks.sync_cards', 'schedule': crontab(hour=13, minute=0)},
+    'sync-scanner-bundle-daily': {'task': 'scanner.tasks.sync_scanner_bundle', 'schedule': crontab(hour=4, minute=0)},
 }
+
+# Installed recognition model bundles (spec 003). Shared by backend and worker.
+SCANNER_DIR = env('SCANNER_DIR', default=str(BASE_DIR / 'var' / 'scanner'))

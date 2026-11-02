@@ -365,6 +365,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/scanner/bundle/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scanner_bundle_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/bundles/{version}/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Model files are public (they are on GitHub too) and never change per version. */
+        get: operations["scanner_bundles_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/locked-illustrations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Artwork printed in the locked sets: only these may be logged (AC-8). */
+        get: operations["scanner_locked_illustrations_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/scans/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Log a recognized card into the cart (AC-5, AC-9, AC-10, AC-17). */
+        post: operations["scanner_scans_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/scans/{id}/undo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Remove one copy from a cart row (AC-11). */
+        post: operations["scanner_scans_undo_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scanner_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["scanner_settings_partial_update"];
+        trace?: never;
+    };
     "/api/users/": {
         parameters: {
             query?: never;
@@ -501,6 +601,22 @@ export interface components {
             cards: number;
             /** @description Rows left unchanged (e.g. finish not available) */
             skipped: number;
+        };
+        BundleInfo: {
+            version: string;
+            created: string;
+            gallery: {
+                [key: string]: unknown;
+            };
+            constants: {
+                [key: string]: unknown;
+            };
+            files: {
+                [key: string]: string;
+            };
+            sizes: {
+                [key: string]: number;
+            };
         };
         CardDetail: {
             /** Format: uuid */
@@ -803,6 +919,10 @@ export interface components {
             cart: components["schemas"]["Totals"];
             locations: components["schemas"]["Location"][];
         };
+        LockedIllustrations: {
+            sets: string[];
+            illustration_ids: string[];
+        };
         Login: {
             /** @description Username or email */
             login: string;
@@ -872,6 +992,17 @@ export interface components {
             currency?: components["schemas"]["CurrencyEnum"];
             /** Format: date-time */
             readonly date_joined?: string;
+        };
+        PatchedScannerSettings: {
+            /** @description Multi-threaded recognition (cross-origin isolated page) */
+            fast?: boolean;
+            sounds?: boolean;
+            /** Format: double */
+            ding_low?: number;
+            /** Format: double */
+            ding_high?: number;
+            show_total?: boolean;
+            locked_sets?: string[];
         };
         /** @description Price per copy for each finish, in the viewer's currency. Null = no price. */
         Prices: {
@@ -1011,6 +1142,36 @@ export interface components {
             password: string;
             currency: components["schemas"]["CurrencyEnum"];
         };
+        ScanRequest: {
+            /** @description Gallery art id from arts.json */
+            gallery_id: string;
+            /** Format: uuid */
+            illustration_id?: string | null;
+        };
+        ScanResult: {
+            item: components["schemas"]["Item"];
+            merged: boolean;
+            cart: components["schemas"]["Totals"];
+            /**
+             * @description Which sound fits the price
+             *
+             *     * `click` - click
+             *     * `ding` - ding
+             *     * `big_ding` - big_ding
+             */
+            sound: components["schemas"]["SoundEnum"];
+        };
+        ScannerSettings: {
+            /** @description Multi-threaded recognition (cross-origin isolated page) */
+            fast?: boolean;
+            sounds?: boolean;
+            /** Format: double */
+            ding_low?: number;
+            /** Format: double */
+            ding_high?: number;
+            show_total?: boolean;
+            locked_sets?: string[];
+        };
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {
             ids?: number[];
@@ -1033,6 +1194,13 @@ export interface components {
          * @enum {string}
          */
         SortEnum: "name" | "set" | "rarity" | "price" | "quantity" | "added" | "color" | "mana_value";
+        /**
+         * @description * `click` - click
+         *     * `ding` - ding
+         *     * `big_ding` - big_ding
+         * @enum {string}
+         */
+        SoundEnum: "click" | "ding" | "big_ding";
         Totals: {
             card_count: number;
             /** Format: double */
@@ -1053,6 +1221,11 @@ export interface components {
          * @enum {string}
          */
         TypeEnum: "Artifact" | "Battle" | "Creature" | "Enchantment" | "Instant" | "Kindred" | "Land" | "Planeswalker" | "Sorcery" | "Tribal";
+        UndoResult: {
+            /** @description Copies left in the row (0 = removed) */
+            remaining: number;
+            cart: components["schemas"]["Totals"];
+        };
     };
     responses: never;
     parameters: never;
@@ -1716,6 +1889,163 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    scanner_bundle_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BundleInfo"];
+                };
+            };
+            /** @description No bundle installed */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    scanner_bundles_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    scanner_locked_illustrations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LockedIllustrations"];
+                };
+            };
+        };
+    };
+    scanner_scans_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScanRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ScanRequest"];
+                "multipart/form-data": components["schemas"]["ScanRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScanResult"];
+                };
+            };
+        };
+    };
+    scanner_scans_undo_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UndoResult"];
+                };
+            };
+        };
+    };
+    scanner_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerSettings"];
+                };
+            };
+        };
+    };
+    scanner_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedScannerSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedScannerSettings"];
+                "multipart/form-data": components["schemas"]["PatchedScannerSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerSettings"];
+                };
             };
         };
     };

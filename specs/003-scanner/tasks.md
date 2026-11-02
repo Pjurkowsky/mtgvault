@@ -21,20 +21,20 @@ API change, run `scripts/check-api.sh` and commit the regenerated files.
 
 ## Phase 2: Scanner backend
 
-- [ ] **T3 `scanner` app, settings endpoint** (AC-12, AC-15, AC-16)
-- [ ] **T4 Bundle install** (AC-23)
+- [x] **T3 `scanner` app, settings endpoint** (AC-12, AC-15, AC-16)
+- [x] **T4 Bundle install** (AC-23)
   - `bundles.py`, `sync_scanner_bundle` command (`--from-dir`), Celery beat
     task, `SCANNER_DIR`, compose volume.
   - Done: the real newest bundle installs. A copy with one changed byte is
     rejected and leaves `current` untouched.
-- [ ] **T5 Bundle info and file endpoints** (AC-3, AC-24)
-- [ ] **T6 Resolve, scan and undo endpoints, locked illustrations** (AC-5 to AC-11, AC-13, AC-14, AC-17)
+- [x] **T5 Bundle info and file endpoints** (AC-3, AC-24)
+- [x] **T6 Resolve, scan and undo endpoints, locked illustrations** (AC-5 to AC-11, AC-13, AC-14, AC-17)
   - Done: shell checks for the ranking order, merging into the cart, undo to
     zero, threshold flags.
-- [ ] **T7 `/scan/fast` isolation headers** (AC-16)
+- [x] **T7 `/scan/fast` isolation headers** (AC-16)
   - nginx and a Vite dev plugin.
   - Done: curl shows the headers on `/scan/fast` and not on `/scan`.
-- [ ] **T8 API types**
+- [x] **T8 API types**
 
 ## Phase 3: Recognition port
 

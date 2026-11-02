@@ -34,6 +34,9 @@ services:
       # Explicit, so a mounted backend/.env (pointing at localhost) never wins.
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
+      SCANNER_DIR: /data/scanner
+    volumes:
+      - scanner:/data/scanner  # recognition models (spec 003)
     depends_on:
       db:
         condition: service_healthy
@@ -49,7 +52,10 @@ services:
       # Explicit, so a mounted backend/.env (pointing at localhost) never wins.
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
+      SCANNER_DIR: /data/scanner
     restart: unless-stopped
+    volumes:
+      - scanner:/data/scanner  # recognition models (spec 003)
     depends_on:
       db:
         condition: service_healthy
@@ -84,3 +90,4 @@ services:
 
 volumes:
   pgdata:
+  scanner:

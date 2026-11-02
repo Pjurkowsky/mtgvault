@@ -690,6 +690,151 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/scanner/bundle/:
+    get:
+      operationId: scanner_bundle_retrieve
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BundleInfo'
+          description: ''
+        '503':
+          description: No bundle installed
+  /api/scanner/bundles/{version}/{name}:
+    get:
+      operationId: scanner_bundles_retrieve
+      description: Model files are public (they are on GitHub too) and never change
+        per version.
+      parameters:
+      - in: path
+        name: name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: version
+        schema:
+          type: string
+        required: true
+      tags:
+      - scanner
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/scanner/locked-illustrations/:
+    get:
+      operationId: scanner_locked_illustrations_retrieve
+      description: 'Artwork printed in the locked sets: only these may be logged (AC-8).'
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LockedIllustrations'
+          description: ''
+  /api/scanner/scans/:
+    post:
+      operationId: scanner_scans_create
+      description: Log a recognized card into the cart (AC-5, AC-9, AC-10, AC-17).
+      tags:
+      - scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResult'
+          description: ''
+  /api/scanner/scans/{id}/undo/:
+    post:
+      operationId: scanner_scans_undo_create
+      description: Remove one copy from a cart row (AC-11).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndoResult'
+          description: ''
+  /api/scanner/settings/:
+    get:
+      operationId: scanner_settings_retrieve
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerSettings'
+          description: ''
+    patch:
+      operationId: scanner_settings_partial_update
+      tags:
+      - scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScannerSettings'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerSettings'
+          description: ''
   /api/users/:
     get:
       operationId: users_list
@@ -986,6 +1131,34 @@ components:
       - cards
       - rows
       - skipped
+    BundleInfo:
+      type: object
+      properties:
+        version:
+          type: string
+        created:
+          type: string
+        gallery:
+          type: object
+          additionalProperties: {}
+        constants:
+          type: object
+          additionalProperties: {}
+        files:
+          type: object
+          additionalProperties:
+            type: string
+        sizes:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - constants
+      - created
+      - files
+      - gallery
+      - sizes
+      - version
     CardDetail:
       type: object
       properties:
@@ -1685,6 +1858,21 @@ components:
       - currency
       - locations
       - unfiled
+    LockedIllustrations:
+      type: object
+      properties:
+        sets:
+          type: array
+          items:
+            type: string
+        illustration_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - illustration_ids
+      - sets
     Login:
       type: object
       properties:
@@ -1852,6 +2040,35 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedScannerSettings:
+      type: object
+      properties:
+        fast:
+          type: boolean
+          description: Multi-threaded recognition (cross-origin isolated page)
+        sounds:
+          type: boolean
+        ding_low:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        ding_high:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        show_total:
+          type: boolean
+        locked_sets:
+          type: array
+          items:
+            type: string
+            maxLength: 10
     Prices:
       type: object
       description: Price per copy for each finish, in the viewer's currency. Null
@@ -2232,6 +2449,71 @@ components:
       - email
       - password
       - username
+    ScanRequest:
+      type: object
+      properties:
+        gallery_id:
+          type: string
+          description: Gallery art id from arts.json
+          maxLength: 60
+        illustration_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - gallery_id
+    ScanResult:
+      type: object
+      properties:
+        item:
+          $ref: '#/components/schemas/Item'
+        merged:
+          type: boolean
+        cart:
+          $ref: '#/components/schemas/Totals'
+        sound:
+          allOf:
+          - $ref: '#/components/schemas/SoundEnum'
+          description: |-
+            Which sound fits the price
+
+            * `click` - click
+            * `ding` - ding
+            * `big_ding` - big_ding
+      required:
+      - cart
+      - item
+      - merged
+      - sound
+    ScannerSettings:
+      type: object
+      properties:
+        fast:
+          type: boolean
+          description: Multi-threaded recognition (cross-origin isolated page)
+        sounds:
+          type: boolean
+        ding_low:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        ding_high:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        show_total:
+          type: boolean
+        locked_sets:
+          type: array
+          items:
+            type: string
+            maxLength: 10
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions
@@ -2279,6 +2561,16 @@ components:
         * `added` - added
         * `color` - color
         * `mana_value` - mana_value
+    SoundEnum:
+      enum:
+      - click
+      - ding
+      - big_ding
+      type: string
+      description: |-
+        * `click` - click
+        * `ding` - ding
+        * `big_ding` - big_ding
     Totals:
       type: object
       properties:
@@ -2322,6 +2614,17 @@ components:
         * `Planeswalker` - Planeswalker
         * `Sorcery` - Sorcery
         * `Tribal` - Tribal
+    UndoResult:
+      type: object
+      properties:
+        remaining:
+          type: integer
+          description: Copies left in the row (0 = removed)
+        cart:
+          $ref: '#/components/schemas/Totals'
+      required:
+      - cart
+      - remaining
   securitySchemes:
     jwtAuth:
       type: http
