@@ -38,10 +38,12 @@ API change, run `scripts/check-api.sh` and commit the regenerated files.
 
 ## Phase 3: Recognition port
 
-- [ ] **T9 onnxruntime-web and ported recognition files** (AC-25)
-- [ ] **T10 Smoke test against the real bundle**
+- [x] **T9 onnxruntime-web and ported recognition files** (AC-25)
+- [x] **T10 Smoke test against the real bundle**
   - A Playwright script loads the worker in a page and identifies the fixture
     Sol Ring image. Done: top candidate is Sol Ring.
+  - Result (2026-11-02): Sol Ring scored 0.946 (runner-up 0.59), 131-189 ms
+    per frame on one thread in headless Chromium, model load 1.4 s.
 
 ## Phase 4: Scanner UI
 

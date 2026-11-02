@@ -24,6 +24,10 @@ function scanIsolation(): Plugin {
 
 export default defineConfig({
   plugins: [vue(), tailwindcss(), scanIsolation()],
+  // onnxruntime-web ships its own WASM loader; pre-bundling it breaks the
+  // runtime's file URLs and triggers a dev reload on first use.
+  optimizeDeps: { exclude: ['onnxruntime-web'] },
+  worker: { format: 'es' },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),

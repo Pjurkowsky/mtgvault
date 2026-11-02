@@ -1,0 +1,3 @@
+# protobufjs (via onnxruntime-web) only prints a notice on install; skip it.
+allowBuilds:
+  protobufjs: false

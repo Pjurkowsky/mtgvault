@@ -18,6 +18,7 @@
     "@vueuse/core": "^15.0.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.1",
+    "onnxruntime-web": "1.30.0",
     "openapi-fetch": "^0.17.0",
     "pinia": "^4.1.0",
     "reka-ui": "^2.11.0",

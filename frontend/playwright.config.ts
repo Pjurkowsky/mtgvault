@@ -34,6 +34,8 @@ export default defineConfig({
       command: [
         'uv run manage.py migrate --noinput',
         `uv run manage.py sync_cards --file cards/fixtures/scryfall-sample.jsonl --eur-pln ${RATES.EUR} --usd-pln ${RATES.USD}`,
+        // Real recognition models (~50 MB, downloaded once per machine; spec 003).
+        'uv run manage.py sync_scanner_bundle --if-missing',
         `uv run manage.py runserver 127.0.0.1:${API_PORT} --noreload`,
       ].join(' && '),
       cwd: '../backend',
@@ -45,6 +47,7 @@ export default defineConfig({
         // Own Redis database, and EDHREC from a file, so tests never touch dev data or the network.
         REDIS_URL: 'redis://localhost:6379/1',
         EDHREC_FIXTURE_DIR: 'cards/fixtures/edhrec',
+        SCANNER_DIR: 'var/scanner-e2e',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
