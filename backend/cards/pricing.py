@@ -80,3 +80,14 @@ def convert(amount: Decimal | None, source: str, target: str, rates: dict) -> De
     if source not in rates or target not in rates:
         return None
     return (amount * rates[source] / rates[target]).quantize(CENT, ROUND_HALF_UP)
+
+
+def prices_in_all(printing, finish: str, rates: dict) -> dict:
+    """{'USD': .., 'EUR': .., 'PLN': ..} for one printing and finish."""
+    return {currency: price(printing, finish, currency, rates) for currency in CURRENCIES}
+
+
+def convert_to_all(amount, source: str | None, rates: dict) -> dict | None:
+    if amount is None or source is None:
+        return None
+    return {currency: convert(amount, source, currency, rates) for currency in CURRENCIES}

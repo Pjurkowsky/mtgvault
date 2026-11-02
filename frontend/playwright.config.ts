@@ -38,7 +38,14 @@ export default defineConfig({
       ].join(' && '),
       cwd: '../backend',
       url: `http://127.0.0.1:${API_PORT}/api/health/`,
-      env: { DATABASE_URL, DEBUG: 'True', AUTH_COOKIE_SECURE: 'False' },
+      env: {
+        DATABASE_URL,
+        DEBUG: 'True',
+        AUTH_COOKIE_SECURE: 'False',
+        // Own Redis database, and EDHREC from a file, so tests never touch dev data or the network.
+        REDIS_URL: 'redis://localhost:6379/1',
+        EDHREC_FIXTURE_DIR: 'cards/fixtures/edhrec',
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
     },

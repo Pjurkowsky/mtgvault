@@ -1,7 +1,23 @@
 from rest_framework import serializers
 
 from .models import Finish, Printing, Set
-from .pricing import price
+from .pricing import CURRENCIES, price, prices_in_all
+
+
+class MoneySerializer(serializers.Serializer):
+    """One amount in every currency. Null = no price."""
+
+    USD = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    EUR = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+    PLN = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
+
+
+class PricesAllSerializer(serializers.Serializer):
+    """Per finish, the price in every currency."""
+
+    nonfoil = MoneySerializer()
+    foil = MoneySerializer()
+    etched = MoneySerializer()
 
 
 class PricesSerializer(serializers.Serializer):
@@ -18,13 +34,14 @@ class PrintingSerializer(serializers.ModelSerializer):
     set_code = serializers.CharField(source='set_id')
     set_name = serializers.CharField(source='set.name')
     prices = serializers.SerializerMethodField()
+    prices_all = serializers.SerializerMethodField()
 
     class Meta:
         model = Printing
         fields = [
             'id', 'oracle_id', 'name', 'set_code', 'set_name', 'collector_number',
             'released_at', 'rarity', 'colors', 'type_line', 'mana_cost', 'finishes',
-            'image_small', 'image_normal', 'image_large', 'prices',
+            'image_small', 'image_normal', 'image_large', 'prices', 'prices_all',
         ]
         read_only_fields = fields  # output only; also marks them required in the schema
 
@@ -34,6 +51,47 @@ class PrintingSerializer(serializers.ModelSerializer):
             finish: price(printing, finish, currency, rates) if finish in printing.finishes else None
             for finish in Finish.values
         }
+
+    def get_prices_all(self, printing) -> PricesAllSerializer:
+        empty = dict.fromkeys(CURRENCIES)
+        return {
+            finish: prices_in_all(printing, finish, self.context['rates']) if finish in printing.finishes else empty
+            for finish in Finish.values
+        }
+
+
+class CardDetailSerializer(serializers.Serializer):
+    oracle_id = serializers.UUIDField()
+    name = serializers.CharField()
+    owned = serializers.IntegerField(help_text="Copies the viewer owns across printings (0 when logged out)")
+    printings = PrintingSerializer(many=True)
+
+
+class EdhrecCardSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    oracle_id = serializers.UUIDField(allow_null=True, help_text='Null when the card is not in our catalog')
+    image_small = serializers.CharField(allow_blank=True)
+    image_normal = serializers.CharField(allow_blank=True)
+
+
+class EdhrecCommanderSerializer(EdhrecCardSerializer):
+    share = serializers.FloatField(help_text="Share of this commander's decks that play the card (0-1)")
+
+
+class EdhrecSynergyCardSerializer(EdhrecCardSerializer):
+    synergy = serializers.FloatField(allow_null=True)
+
+
+class EdhrecGroupSerializer(serializers.Serializer):
+    group = serializers.CharField()
+    cards = EdhrecSynergyCardSerializer(many=True)
+
+
+class EdhrecSerializer(serializers.Serializer):
+    available = serializers.BooleanField()
+    commanders = EdhrecCommanderSerializer(many=True)
+    played_with = EdhrecGroupSerializer(many=True)
+    similar = EdhrecCardSerializer(many=True)
 
 
 class CardSearchResultSerializer(serializers.Serializer):

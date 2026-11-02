@@ -86,6 +86,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/cards/{oracle_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A card with its printings and how many copies the viewer owns. */
+        get: operations["catalog_cards_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/catalog/cards/{oracle_id}/edhrec/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description EDHREC tabs for a card, cached 24 h. Never fails: no data = available false. */
+        get: operations["catalog_cards_edhrec_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/cards/{oracle_id}/printings/": {
         parameters: {
             query?: never;
@@ -468,6 +502,14 @@ export interface components {
             /** @description Rows left unchanged (e.g. finish not available) */
             skipped: number;
         };
+        CardDetail: {
+            /** Format: uuid */
+            oracle_id: string;
+            name: string;
+            /** @description Copies the viewer owns across printings (0 when logged out) */
+            owned: number;
+            printings: components["schemas"]["Printing"][];
+        };
         CardSearchResult: {
             /** Format: uuid */
             oracle_id: string;
@@ -520,6 +562,53 @@ export interface components {
         DirectoryUser: {
             username: string;
             public_locations: number;
+        };
+        Edhrec: {
+            available: boolean;
+            commanders: components["schemas"]["EdhrecCommander"][];
+            played_with: components["schemas"]["EdhrecGroup"][];
+            similar: components["schemas"]["EdhrecCard"][];
+        };
+        EdhrecCard: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null when the card is not in our catalog
+             */
+            oracle_id: string | null;
+            image_small: string;
+            image_normal: string;
+        };
+        EdhrecCommander: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null when the card is not in our catalog
+             */
+            oracle_id: string | null;
+            image_small: string;
+            image_normal: string;
+            /**
+             * Format: double
+             * @description Share of this commander's decks that play the card (0-1)
+             */
+            share: number;
+        };
+        EdhrecGroup: {
+            group: string;
+            cards: components["schemas"]["EdhrecSynergyCard"][];
+        };
+        EdhrecSynergyCard: {
+            name: string;
+            /**
+             * Format: uuid
+             * @description Null when the card is not in our catalog
+             */
+            oracle_id: string | null;
+            image_small: string;
+            image_normal: string;
+            /** Format: double */
+            synergy: number | null;
         };
         ExportRequest: {
             selection: components["schemas"]["Selection"];
@@ -579,6 +668,8 @@ export interface components {
             language?: components["schemas"]["LanguageEnum"];
             /** Format: double */
             readonly unit_price: number | null;
+            /** @description Market price per copy in every currency */
+            readonly unit_prices: components["schemas"]["Money"];
             location: number | null;
             location_name?: string | null;
             /** Format: double */
@@ -589,11 +680,14 @@ export interface components {
              * @description Purchase price per copy in the viewer currency
              */
             readonly purchase_price_converted: number | null;
+            /** @description Purchase price converted to every currency */
+            readonly purchase_prices: components["schemas"]["Money"] | null;
             /**
              * Format: double
              * @description Market price per copy when added, viewer currency
              */
             readonly added_price: number | null;
+            readonly added_prices: components["schemas"]["Money"];
             /** Format: date-time */
             added_at?: string;
         };
@@ -626,6 +720,7 @@ export interface components {
             total_quantity: number;
             /** Format: double */
             total_value: number | null;
+            total_values: components["schemas"]["Money"];
             results: components["schemas"]["Item"][];
         };
         ItemSaveResult: {
@@ -683,6 +778,7 @@ export interface components {
             readonly card_count: number;
             /** Format: double */
             readonly value: number | null;
+            readonly values: components["schemas"]["Money"];
             /** Format: date-time */
             readonly created_at: string;
         };
@@ -716,6 +812,15 @@ export interface components {
             currency: components["schemas"]["CurrencyEnum"];
             /** Format: date-time */
             readonly date_joined: string;
+        };
+        /** @description One amount in every currency. Null = no price. */
+        Money: {
+            /** Format: double */
+            USD: number | null;
+            /** Format: double */
+            EUR: number | null;
+            /** Format: double */
+            PLN: number | null;
         };
         /** @enum {unknown} */
         NullEnum: null;
@@ -751,6 +856,7 @@ export interface components {
             readonly card_count?: number;
             /** Format: double */
             readonly value?: number | null;
+            readonly values?: components["schemas"]["Money"];
             /** Format: date-time */
             readonly created_at?: string;
         };
@@ -771,6 +877,12 @@ export interface components {
             foil: number | null;
             /** Format: double */
             etched: number | null;
+        };
+        /** @description Per finish, the price in every currency. */
+        PricesAll: {
+            nonfoil: components["schemas"]["Money"];
+            foil: components["schemas"]["Money"];
+            etched: components["schemas"]["Money"];
         };
         /** @description A printing with prices. Needs `currency` and `rates` in the context. */
         Printing: {
@@ -802,6 +914,7 @@ export interface components {
             /** Format: uri */
             readonly image_large: string;
             readonly prices: components["schemas"]["Prices"];
+            readonly prices_all: components["schemas"]["PricesAll"];
         };
         PrintingBrief: {
             /**
@@ -842,6 +955,8 @@ export interface components {
             language?: components["schemas"]["LanguageEnum"];
             /** Format: double */
             readonly unit_price: number | null;
+            /** @description Market price per copy in every currency */
+            readonly unit_prices: components["schemas"]["Money"];
         };
         PublicItemPage: {
             currency: string;
@@ -853,6 +968,7 @@ export interface components {
             total_quantity: number;
             /** Format: double */
             total_value: number | null;
+            total_values: components["schemas"]["Money"];
             results: components["schemas"]["PublicItem"][];
         };
         PublicLocation: {
@@ -862,6 +978,7 @@ export interface components {
             readonly card_count: number;
             /** Format: double */
             readonly value: number | null;
+            readonly values: components["schemas"]["Money"];
         };
         PublicLocationList: {
             currency: string;
@@ -916,6 +1033,7 @@ export interface components {
             card_count: number;
             /** Format: double */
             value: number | null;
+            values: components["schemas"]["Money"];
         };
         /**
          * @description * `Artifact` - Artifact
@@ -1058,6 +1176,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CardSearchResult"][];
+                };
+            };
+        };
+    };
+    catalog_cards_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                oracle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardDetail"];
+                };
+            };
+        };
+    };
+    catalog_cards_edhrec_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                oracle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Edhrec"];
                 };
             };
         };

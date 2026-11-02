@@ -8,7 +8,7 @@ export type Totals = Schemas['Totals']
 /** The user's locations plus Unfiled totals. Shared by pages and dialogs. */
 export const useLocationsStore = defineStore('locations', () => {
   const locations = ref<Location[]>([])
-  const unfiled = ref<Totals>({ card_count: 0, value: null })
+  const unfiled = ref<Totals>({ card_count: 0, value: null, values: { USD: null, EUR: null, PLN: null } })
   const currency = ref('USD')
   const loaded = ref(false)
 

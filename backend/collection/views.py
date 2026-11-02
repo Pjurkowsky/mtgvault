@@ -10,13 +10,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cards.pricing import latest_rates, prices_updated_at
+from cards.pricing import CURRENCIES, latest_rates, price_expression, prices_updated_at
 from cards.views import price_context
 
 from . import textlist
 from .filters import ItemFilterSerializer, apply_filters, with_unit_price
 from .models import CollectionItem, Location
 from .serializers import (
+    EMPTY_TOTALS,
     BulkRequestSerializer,
     BulkResultSerializer,
     DirectoryUserSerializer,
@@ -46,14 +47,28 @@ NOT_FOUND = 'Not found.'
 
 # ---------- helpers ----------
 
+def value_sums() -> dict:
+    """Aggregates for the total value in every currency (rows need value_<CUR>)."""
+    return {f'value_{c}': Sum(F('quantity') * F(f'price_{c}')) for c in CURRENCIES}
+
+
+def with_all_prices(items, rates):
+    return items.annotate(**{f'price_{c}': price_expression(c, rates) for c in CURRENCIES})
+
+
+def _totals_from(row: dict, currency: str) -> dict:
+    values = {c: row[f'value_{c}'] for c in CURRENCIES}
+    return {'card_count': row['card_count'] or 0, 'value': values[currency], 'values': values}
+
+
 def location_totals(items, currency, rates) -> dict:
-    """{location_id or None: {card_count, value}} for the given rows."""
+    """{location_id or None: {card_count, value, values}} for the given rows."""
     grouped = (
-        with_unit_price(items, currency, rates)
+        with_all_prices(items, rates)
         .values('location_id')
-        .annotate(card_count=Sum('quantity'), value=Sum(F('quantity') * F('unit_price')))
+        .annotate(card_count=Sum('quantity'), **value_sums())
     )
-    return {g['location_id']: {'card_count': g['card_count'], 'value': g['value']} for g in grouped}
+    return {g['location_id']: _totals_from(g, currency) for g in grouped}
 
 
 def item_page(request, items, serializer_class, ctx):
@@ -62,9 +77,8 @@ def item_page(request, items, serializer_class, ctx):
     params.is_valid(raise_exception=True)
     rows = apply_filters(items.select_related('printing__set', 'location'), params.validated_data,
                          ctx['currency'], ctx['rates'])
-    totals = rows.aggregate(
-        count=Count('id'), total_quantity=Sum('quantity'), total_value=Sum(F('quantity') * F('unit_price')),
-    )
+    totals = with_all_prices(rows, ctx['rates']).aggregate(count=Count('id'), card_count=Sum('quantity'), **value_sums())
+    money = _totals_from(totals, ctx['currency'])
     try:
         offset = max(int(request.query_params.get('offset', 0)), 0)
         limit = min(max(int(request.query_params.get('limit', PAGE_DEFAULT)), 1), PAGE_MAX)
@@ -74,8 +88,9 @@ def item_page(request, items, serializer_class, ctx):
         'currency': ctx['currency'],
         'prices_updated_at': prices_updated_at(),
         'count': totals['count'],
-        'total_quantity': totals['total_quantity'] or 0,
-        'total_value': totals['total_value'],
+        'total_quantity': money['card_count'],
+        'total_value': money['value'],
+        'total_values': money['values'],
         'results': serializer_class(rows[offset:offset + limit], many=True, context=ctx).data,
     })
 
@@ -117,7 +132,7 @@ class LocationListView(APIView):
         locations = Location.objects.filter(user=request.user).order_by(F('name').asc())
         return Response({
             'currency': ctx['currency'],
-            'unfiled': totals.get(None, {'card_count': 0, 'value': None}),
+            'unfiled': totals.get(None, EMPTY_TOTALS),
             'locations': LocationSerializer(locations, many=True, context={**ctx, 'totals': totals, 'request': request}).data,
         })
 

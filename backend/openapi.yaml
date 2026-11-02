@@ -98,6 +98,7 @@ paths:
       - catalog
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -106,6 +107,53 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CardSearchResult'
+          description: ''
+  /api/catalog/cards/{oracle_id}/:
+    get:
+      operationId: catalog_cards_retrieve
+      description: A card with its printings and how many copies the viewer owns.
+      parameters:
+      - in: path
+        name: oracle_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardDetail'
+          description: ''
+  /api/catalog/cards/{oracle_id}/edhrec/:
+    get:
+      operationId: catalog_cards_edhrec_retrieve
+      description: 'EDHREC tabs for a card, cached 24 h. Never fails: no data = available
+        false.'
+      parameters:
+      - in: path
+        name: oracle_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edhrec'
           description: ''
   /api/catalog/cards/{oracle_id}/printings/:
     get:
@@ -121,6 +169,7 @@ paths:
       - catalog
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -142,6 +191,7 @@ paths:
       - catalog
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -158,6 +208,7 @@ paths:
       - catalog
       security:
       - jwtAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -935,6 +986,26 @@ components:
       - cards
       - rows
       - skipped
+    CardDetail:
+      type: object
+      properties:
+        oracle_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        owned:
+          type: integer
+          description: Copies the viewer owns across printings (0 when logged out)
+        printings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Printing'
+      required:
+      - name
+      - oracle_id
+      - owned
+      - printings
     CardSearchResult:
       type: object
       properties:
@@ -1026,6 +1097,107 @@ components:
       required:
       - public_locations
       - username
+    Edhrec:
+      type: object
+      properties:
+        available:
+          type: boolean
+        commanders:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdhrecCommander'
+        played_with:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdhrecGroup'
+        similar:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdhrecCard'
+      required:
+      - available
+      - commanders
+      - played_with
+      - similar
+    EdhrecCard:
+      type: object
+      properties:
+        name:
+          type: string
+        oracle_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null when the card is not in our catalog
+        image_small:
+          type: string
+        image_normal:
+          type: string
+      required:
+      - image_normal
+      - image_small
+      - name
+      - oracle_id
+    EdhrecCommander:
+      type: object
+      properties:
+        name:
+          type: string
+        oracle_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null when the card is not in our catalog
+        image_small:
+          type: string
+        image_normal:
+          type: string
+        share:
+          type: number
+          format: double
+          description: Share of this commander's decks that play the card (0-1)
+      required:
+      - image_normal
+      - image_small
+      - name
+      - oracle_id
+      - share
+    EdhrecGroup:
+      type: object
+      properties:
+        group:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdhrecSynergyCard'
+      required:
+      - cards
+      - group
+    EdhrecSynergyCard:
+      type: object
+      properties:
+        name:
+          type: string
+        oracle_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null when the card is not in our catalog
+        image_small:
+          type: string
+        image_normal:
+          type: string
+        synergy:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - image_normal
+      - image_small
+      - name
+      - oracle_id
+      - synergy
     ExportRequest:
       type: object
       properties:
@@ -1174,6 +1346,11 @@ components:
           exclusiveMinimum: true
           readOnly: true
           nullable: true
+        unit_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
+          description: Market price per copy in every currency
         location:
           type: integer
           nullable: true
@@ -1204,6 +1381,12 @@ components:
           nullable: true
           readOnly: true
           description: Purchase price per copy in the viewer currency
+        purchase_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          nullable: true
+          readOnly: true
+          description: Purchase price converted to every currency
         added_price:
           type: number
           format: double
@@ -1214,18 +1397,25 @@ components:
           nullable: true
           readOnly: true
           description: Market price per copy when added, viewer currency
+        added_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
         added_at:
           type: string
           format: date-time
       required:
       - added_price
+      - added_prices
       - finish
       - id
       - location
       - printing
       - purchase_price_converted
+      - purchase_prices
       - quantity
       - unit_price
+      - unit_prices
     ItemFilter:
       type: object
       properties:
@@ -1302,6 +1492,8 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           nullable: true
+        total_values:
+          $ref: '#/components/schemas/Money'
         results:
           type: array
           items:
@@ -1313,6 +1505,7 @@ components:
       - results
       - total_quantity
       - total_value
+      - total_values
     ItemSaveResult:
       type: object
       properties:
@@ -1431,6 +1624,10 @@ components:
           exclusiveMinimum: true
           nullable: true
           readOnly: true
+        values:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -1442,6 +1639,7 @@ components:
       - kind
       - name
       - value
+      - values
     LocationDelete:
       type: object
       properties:
@@ -1508,6 +1706,38 @@ components:
       - date_joined
       - email
       - username
+    Money:
+      type: object
+      description: One amount in every currency. Null = no price.
+      properties:
+        USD:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        EUR:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        PLN:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+      required:
+      - EUR
+      - PLN
+      - USD
     NullEnum:
       enum:
       - null
@@ -1585,6 +1815,10 @@ components:
           exclusiveMinimum: true
           nullable: true
           readOnly: true
+        values:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -1635,6 +1869,20 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           nullable: true
+      required:
+      - etched
+      - foil
+      - nonfoil
+    PricesAll:
+      type: object
+      description: Per finish, the price in every currency.
+      properties:
+        nonfoil:
+          $ref: '#/components/schemas/Money'
+        foil:
+          $ref: '#/components/schemas/Money'
+        etched:
+          $ref: '#/components/schemas/Money'
       required:
       - etched
       - foil
@@ -1704,6 +1952,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/Prices'
           readOnly: true
+        prices_all:
+          allOf:
+          - $ref: '#/components/schemas/PricesAll'
+          readOnly: true
       required:
       - collector_number
       - colors
@@ -1716,6 +1968,7 @@ components:
       - name
       - oracle_id
       - prices
+      - prices_all
       - rarity
       - released_at
       - set_code
@@ -1822,12 +2075,18 @@ components:
           exclusiveMinimum: true
           readOnly: true
           nullable: true
+        unit_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
+          description: Market price per copy in every currency
       required:
       - finish
       - id
       - printing
       - quantity
       - unit_price
+      - unit_prices
     PublicItemPage:
       type: object
       properties:
@@ -1851,6 +2110,8 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           nullable: true
+        total_values:
+          $ref: '#/components/schemas/Money'
         results:
           type: array
           items:
@@ -1862,6 +2123,7 @@ components:
       - results
       - total_quantity
       - total_value
+      - total_values
     PublicLocation:
       type: object
       properties:
@@ -1885,12 +2147,17 @@ components:
           exclusiveMinimum: true
           nullable: true
           readOnly: true
+        values:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
       required:
       - card_count
       - id
       - kind
       - name
       - value
+      - values
     PublicLocationList:
       type: object
       properties:
@@ -2013,9 +2280,12 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           nullable: true
+        values:
+          $ref: '#/components/schemas/Money'
       required:
       - card_count
       - value
+      - values
     TypeEnum:
       enum:
       - Artifact

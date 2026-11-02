@@ -214,6 +214,8 @@ SPECTACULAR_SETTINGS = {
 REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_BROKER_URL = REDIS_URL
 # Shared by all workers (e.g. the refresh-token rotation grace window).
+# Tests point this at cards/fixtures/edhrec so they never call EDHREC.
+EDHREC_FIXTURE_DIR = env('EDHREC_FIXTURE_DIR', default='')
 CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}}
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TIMEZONE = 'UTC'

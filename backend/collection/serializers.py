@@ -1,13 +1,15 @@
 from rest_framework import serializers
 
 from cards.models import Finish, Printing
-from cards.pricing import convert
+from cards.pricing import CURRENCIES, convert, convert_to_all, prices_in_all
+from cards.serializers import MoneySerializer
 from users.models import Currency
 
 from .filters import ItemFilterSerializer
 from .models import CollectionItem, Condition, Language, Location
 
 MONEY = dict(max_digits=12, decimal_places=2, allow_null=True)
+EMPTY_TOTALS = {'card_count': 0, 'value': None, 'values': dict.fromkeys(CURRENCIES)}
 
 
 # ---------- Locations ----------
@@ -15,6 +17,7 @@ MONEY = dict(max_digits=12, decimal_places=2, allow_null=True)
 class TotalsSerializer(serializers.Serializer):
     card_count = serializers.IntegerField()
     value = serializers.DecimalField(**MONEY)
+    values = MoneySerializer()
 
 
 class LocationSerializer(serializers.ModelSerializer):
@@ -22,20 +25,24 @@ class LocationSerializer(serializers.ModelSerializer):
 
     card_count = serializers.SerializerMethodField()
     value = serializers.SerializerMethodField()
+    values = serializers.SerializerMethodField()
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'kind', 'is_public', 'card_count', 'value', 'created_at']
+        fields = ['id', 'name', 'kind', 'is_public', 'card_count', 'value', 'values', 'created_at']
         read_only_fields = ['id', 'created_at']
 
     def _totals(self, location):
-        return self.context.get('totals', {}).get(location.id, {'card_count': 0, 'value': None})
+        return self.context.get('totals', {}).get(location.id, EMPTY_TOTALS)
 
     def get_card_count(self, location) -> int:
         return self._totals(location)['card_count']
 
     def get_value(self, location) -> serializers.DecimalField(**MONEY):
         return self._totals(location)['value']
+
+    def get_values(self, location) -> MoneySerializer:
+        return self._totals(location)['values']
 
     def validate_name(self, value):
         value = value.strip()
@@ -79,10 +86,14 @@ class PublicItemSerializer(serializers.ModelSerializer):
 
     printing = PrintingBriefSerializer()
     unit_price = serializers.DecimalField(**MONEY, read_only=True)
+    unit_prices = serializers.SerializerMethodField(help_text='Market price per copy in every currency')
 
     class Meta:
         model = CollectionItem
-        fields = ['id', 'printing', 'quantity', 'finish', 'condition', 'language', 'unit_price']
+        fields = ['id', 'printing', 'quantity', 'finish', 'condition', 'language', 'unit_price', 'unit_prices']
+
+    def get_unit_prices(self, item) -> MoneySerializer:
+        return prices_in_all(item.printing, item.finish, self.context['rates'])
 
 
 class ItemSerializer(PublicItemSerializer):
@@ -93,11 +104,13 @@ class ItemSerializer(PublicItemSerializer):
     purchase_price_converted = serializers.SerializerMethodField(
         help_text='Purchase price per copy in the viewer currency')
     added_price = serializers.SerializerMethodField(help_text='Market price per copy when added, viewer currency')
+    added_prices = serializers.SerializerMethodField()
+    purchase_prices = serializers.SerializerMethodField(help_text='Purchase price converted to every currency')
 
     class Meta(PublicItemSerializer.Meta):
         fields = PublicItemSerializer.Meta.fields + [
             'location', 'location_name', 'purchase_price', 'purchase_currency',
-            'purchase_price_converted', 'added_price', 'added_at',
+            'purchase_price_converted', 'purchase_prices', 'added_price', 'added_prices', 'added_at',
         ]
 
     def get_purchase_price_converted(self, item) -> serializers.DecimalField(**MONEY):
@@ -106,6 +119,12 @@ class ItemSerializer(PublicItemSerializer):
     def get_added_price(self, item) -> serializers.DecimalField(**MONEY):
         return getattr(item, f"added_{self.context['currency'].lower()}")
 
+    def get_added_prices(self, item) -> MoneySerializer:
+        return {currency: getattr(item, f'added_{currency.lower()}') for currency in CURRENCIES}
+
+    def get_purchase_prices(self, item) -> MoneySerializer(allow_null=True):
+        return convert_to_all(item.purchase_price, item.purchase_currency, self.context['rates'])
+
 
 class ItemPageSerializer(serializers.Serializer):
     currency = serializers.CharField()
@@ -113,6 +132,7 @@ class ItemPageSerializer(serializers.Serializer):
     count = serializers.IntegerField(help_text='Matching rows')
     total_quantity = serializers.IntegerField(help_text='Cards in matching rows')
     total_value = serializers.DecimalField(**MONEY)
+    total_values = MoneySerializer()
     results = ItemSerializer(many=True)
 
 
@@ -243,13 +263,15 @@ class DirectoryUserSerializer(serializers.Serializer):
 class PublicLocationSerializer(serializers.ModelSerializer):
     card_count = serializers.SerializerMethodField()
     value = serializers.SerializerMethodField()
+    values = serializers.SerializerMethodField()
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'kind', 'card_count', 'value']
+        fields = ['id', 'name', 'kind', 'card_count', 'value', 'values']
 
     get_card_count = LocationSerializer.get_card_count
     get_value = LocationSerializer.get_value
+    get_values = LocationSerializer.get_values
     _totals = LocationSerializer._totals
 
 

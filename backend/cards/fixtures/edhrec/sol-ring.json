@@ -1,0 +1,995 @@
+{
+ "container": {
+  "json_dict": {
+   "cardlists": [
+    {
+     "header": "New Commanders",
+     "tag": "newcommanders",
+     "cardviews": [
+      {
+       "name": "Jace, Multiverse Architect",
+       "num_decks": 13404,
+       "potential_decks": 14309
+      },
+      {
+       "name": "Tam, the Possibility",
+       "num_decks": 6931,
+       "potential_decks": 8329
+      },
+      {
+       "name": "Vraska, Soul of Stone",
+       "num_decks": 6880,
+       "potential_decks": 7812
+      },
+      {
+       "name": "The Ur-Sphinx",
+       "num_decks": 5516,
+       "potential_decks": 6163
+      },
+      {
+       "name": "Whtz, the Bibliophile",
+       "num_decks": 5098,
+       "potential_decks": 7132
+      }
+     ]
+    },
+    {
+     "header": "Top Commanders",
+     "tag": "topcommanders",
+     "cardviews": [
+      {
+       "name": "Y'shtola, Night's Blessed",
+       "num_decks": 55059,
+       "potential_decks": 58631
+      },
+      {
+       "name": "Edgar Markov",
+       "num_decks": 48156,
+       "potential_decks": 52441
+      },
+      {
+       "name": "The Ur-Dragon",
+       "num_decks": 46114,
+       "potential_decks": 51621
+      },
+      {
+       "name": "Vivi Ornitier",
+       "num_decks": 39800,
+       "potential_decks": 43368
+      },
+      {
+       "name": "Atraxa, Praetors' Voice",
+       "num_decks": 39175,
+       "potential_decks": 46080
+      },
+      {
+       "name": "Sauron, the Dark Lord",
+       "num_decks": 39044,
+       "potential_decks": 41235
+      },
+      {
+       "name": "Krenko, Mob Boss",
+       "num_decks": 38440,
+       "potential_decks": 45048
+      },
+      {
+       "name": "Kaalia of the Vast",
+       "num_decks": 38005,
+       "potential_decks": 40762
+      },
+      {
+       "name": "Giada, Font of Hope",
+       "num_decks": 35781,
+       "potential_decks": 39027
+      },
+      {
+       "name": "Pantlaza, Sun-Favored",
+       "num_decks": 35061,
+       "potential_decks": 37883
+      },
+      {
+       "name": "Fire Lord Azula",
+       "num_decks": 34920,
+       "potential_decks": 39762
+      },
+      {
+       "name": "Teval, the Balanced Scale",
+       "num_decks": 34298,
+       "potential_decks": 40778
+      }
+     ]
+    },
+    {
+     "header": "New Cards",
+     "tag": "newcards",
+     "cardviews": [
+      {
+       "name": "Nissa, Leyline Tamer",
+       "num_decks": 9526,
+       "potential_decks": 98216,
+       "lift": 1.1456334948854041
+      },
+      {
+       "name": "Turbulent Shore",
+       "num_decks": 21705,
+       "potential_decks": 284944,
+       "lift": 1.0487158655357547
+      },
+      {
+       "name": "Turbulent Wetlands",
+       "num_decks": 21581,
+       "potential_decks": 291897,
+       "lift": 1.0459234542396247
+      },
+      {
+       "name": "Turbulent Crater",
+       "num_decks": 19943,
+       "potential_decks": 277008,
+       "lift": 1.0532400797760733
+      },
+      {
+       "name": "Geist of Saint Thalia",
+       "num_decks": 31786,
+       "potential_decks": 605884,
+       "lift": 1.0211229385165872
+      }
+     ]
+    },
+    {
+     "header": "Top Cards",
+     "tag": "topcards",
+     "cardviews": [
+      {
+       "name": "Swords to Plowshares",
+       "num_decks": 2668705,
+       "potential_decks": 4083043,
+       "lift": 1.0702386010165494
+      },
+      {
+       "name": "Path to Exile",
+       "num_decks": 2093930,
+       "potential_decks": 4083043,
+       "lift": 1.0691111948138148
+      },
+      {
+       "name": "Counterspell",
+       "num_decks": 1947961,
+       "potential_decks": 4351656,
+       "lift": 1.0638433307497148
+      },
+      {
+       "name": "Cultivate",
+       "num_decks": 1689783,
+       "potential_decks": 3804915,
+       "lift": 1.074113824737881
+      },
+      {
+       "name": "Farseek",
+       "num_decks": 1471857,
+       "potential_decks": 3804915,
+       "lift": 1.0779554388106132
+      },
+      {
+       "name": "Blasphemous Act",
+       "num_decks": 1583209,
+       "potential_decks": 4371086,
+       "lift": 1.0681808998081312
+      },
+      {
+       "name": "Beast Within",
+       "num_decks": 1310300,
+       "potential_decks": 3804915,
+       "lift": 1.0567508849681297
+      },
+      {
+       "name": "Nature's Lore",
+       "num_decks": 1300771,
+       "potential_decks": 3804915,
+       "lift": 1.0680259817618232
+      },
+      {
+       "name": "Heroic Intervention",
+       "num_decks": 1293187,
+       "potential_decks": 3804915,
+       "lift": 1.0805528261611808
+      },
+      {
+       "name": "Assassin's Trophy",
+       "num_decks": 604641,
+       "potential_decks": 1779736,
+       "lift": 1.054040361704566
+      }
+     ]
+    },
+    {
+     "header": "Creatures",
+     "tag": "creatures",
+     "cardviews": [
+      {
+       "name": "Birds of Paradise",
+       "num_decks": 1181305,
+       "potential_decks": 3804915,
+       "lift": 1.0887887468745356
+      },
+      {
+       "name": "Ignoble Hierarch",
+       "num_decks": 222568,
+       "potential_decks": 829391,
+       "lift": 1.0793329431219696
+      },
+      {
+       "name": "Llanowar Elves",
+       "num_decks": 840399,
+       "potential_decks": 3804915,
+       "lift": 1.0155082277516856
+      },
+      {
+       "name": "Esper Sentinel",
+       "num_decks": 827438,
+       "potential_decks": 4083043,
+       "lift": 1.094572420426491
+      },
+      {
+       "name": "Noble Hierarch",
+       "num_decks": 163816,
+       "potential_decks": 960442,
+       "lift": 1.0779721713305854
+      },
+      {
+       "name": "Elvish Mystic",
+       "num_decks": 636866,
+       "potential_decks": 3804915,
+       "lift": 1.0141358482045866
+      },
+      {
+       "name": "Eternal Witness",
+       "num_decks": 589906,
+       "potential_decks": 3804915,
+       "lift": 1.0314190003686505
+      },
+      {
+       "name": "Sakura-Tribe Elder",
+       "num_decks": 578422,
+       "potential_decks": 3804915,
+       "lift": 0.9879568571702443
+      },
+      {
+       "name": "Kutzil, Malamet Exemplar",
+       "num_decks": 260180,
+       "potential_decks": 1753992,
+       "lift": 1.0513126737709253
+      },
+      {
+       "name": "Lotho, Corrupt Shirriff",
+       "num_decks": 276925,
+       "potential_decks": 1992733,
+       "lift": 1.0788346294583446
+      },
+      {
+       "name": "Delighted Halfling",
+       "num_decks": 519602,
+       "potential_decks": 3804915,
+       "lift": 1.088953775661176
+      },
+      {
+       "name": "Morophon, the Boundless",
+       "num_decks": 76898,
+       "potential_decks": 563166,
+       "lift": 1.1074621654373442
+      }
+     ]
+    },
+    {
+     "header": "Instants",
+     "tag": "instants",
+     "cardviews": [
+      {
+       "name": "Chaos Warp",
+       "num_decks": 1337079,
+       "potential_decks": 4371086,
+       "lift": 1.0610446177294872
+      },
+      {
+       "name": "Dark Ritual",
+       "num_decks": 1281938,
+       "potential_decks": 4462121,
+       "lift": 1.1044823752947612
+      },
+      {
+       "name": "An Offer You Can't Refuse",
+       "num_decks": 1247806,
+       "potential_decks": 4351656,
+       "lift": 1.0710804069402515
+      },
+      {
+       "name": "Anguished Unmaking",
+       "num_decks": 523974,
+       "potential_decks": 1992733,
+       "lift": 1.049992817208843
+      },
+      {
+       "name": "Boros Charm",
+       "num_decks": 462938,
+       "potential_decks": 2053931,
+       "lift": 1.0478880973816873
+      },
+      {
+       "name": "Cyclonic Rift",
+       "num_decks": 953920,
+       "potential_decks": 4351656,
+       "lift": 1.0994400848095853
+      },
+      {
+       "name": "Arcane Denial",
+       "num_decks": 950422,
+       "potential_decks": 4351656,
+       "lift": 1.0522529800988285
+      },
+      {
+       "name": "Generous Gift",
+       "num_decks": 854645,
+       "potential_decks": 4083043,
+       "lift": 1.0451043236517865
+      },
+      {
+       "name": "Swan Song",
+       "num_decks": 892624,
+       "potential_decks": 4351656,
+       "lift": 1.0898036232392756
+      },
+      {
+       "name": "Negate",
+       "num_decks": 889251,
+       "potential_decks": 4351656,
+       "lift": 1.0188003944207487
+      },
+      {
+       "name": "Dovin's Veto",
+       "num_decks": 409156,
+       "potential_decks": 2034373,
+       "lift": 1.0535954727762358
+      },
+      {
+       "name": "Terminate",
+       "num_decks": 408947,
+       "potential_decks": 2059199,
+       "lift": 1.0488791459118014
+      }
+     ]
+    },
+    {
+     "header": "Sorceries",
+     "tag": "sorceries",
+     "cardviews": [
+      {
+       "name": "Rampant Growth",
+       "num_decks": 1256110,
+       "potential_decks": 3804915,
+       "lift": 1.048473853022914
+      },
+      {
+       "name": "Three Visits",
+       "num_decks": 1006915,
+       "potential_decks": 3804915,
+       "lift": 1.067772201415199
+      },
+      {
+       "name": "Kodama's Reach",
+       "num_decks": 1003695,
+       "potential_decks": 3804915,
+       "lift": 1.0630489902530853
+      },
+      {
+       "name": "Reanimate",
+       "num_decks": 956616,
+       "potential_decks": 4462121,
+       "lift": 1.0732122016668872
+      },
+      {
+       "name": "Demonic Tutor",
+       "num_decks": 908279,
+       "potential_decks": 4462121,
+       "lift": 1.1075832743263307
+      },
+      {
+       "name": "Toxic Deluge",
+       "num_decks": 870814,
+       "potential_decks": 4462121,
+       "lift": 1.069391797749046
+      },
+      {
+       "name": "Ruinous Ultimatum",
+       "num_decks": 186632,
+       "potential_decks": 992787,
+       "lift": 1.0553051532872244
+      },
+      {
+       "name": "Feed the Swarm",
+       "num_decks": 743800,
+       "potential_decks": 4462121,
+       "lift": 1.0583653536640205
+      },
+      {
+       "name": "Jeska's Will",
+       "num_decks": 727087,
+       "potential_decks": 4371086,
+       "lift": 1.1133116169818926
+      },
+      {
+       "name": "Vandalblast",
+       "num_decks": 717033,
+       "potential_decks": 4371086,
+       "lift": 1.0705405616716528
+      },
+      {
+       "name": "Faithless Looting",
+       "num_decks": 704868,
+       "potential_decks": 4371086,
+       "lift": 1.0438704729152097
+      },
+      {
+       "name": "Damn",
+       "num_decks": 304213,
+       "potential_decks": 1992733,
+       "lift": 1.0592057418189749
+      }
+     ]
+    },
+    {
+     "header": "Utility Artifacts",
+     "tag": "utilityartifacts",
+     "cardviews": [
+      {
+       "name": "Swiftfoot Boots",
+       "num_decks": 2510334,
+       "potential_decks": 8713904,
+       "lift": 1.077714367510434
+      },
+      {
+       "name": "Lightning Greaves",
+       "num_decks": 2343455,
+       "potential_decks": 8713904,
+       "lift": 1.0943730261016162
+      },
+      {
+       "name": "Skullclamp",
+       "num_decks": 1054899,
+       "potential_decks": 8713904,
+       "lift": 1.0635304956145586
+      },
+      {
+       "name": "The Great Henge",
+       "num_decks": 385874,
+       "potential_decks": 3804915,
+       "lift": 1.0592076665585446
+      },
+      {
+       "name": "Cauldron of Essence",
+       "num_decks": 68368,
+       "potential_decks": 738359,
+       "lift": 1.0081635151876314
+      },
+      {
+       "name": "The One Ring",
+       "num_decks": 775280,
+       "potential_decks": 8713904,
+       "lift": 1.1392410300839972
+      },
+      {
+       "name": "Bolas's Citadel",
+       "num_decks": 372925,
+       "potential_decks": 4462121,
+       "lift": 1.098884437439171
+      },
+      {
+       "name": "Wayfarer's Bauble",
+       "num_decks": 583479,
+       "potential_decks": 8713904,
+       "lift": 1.0181943958768636
+      },
+      {
+       "name": "Ashnod's Altar",
+       "num_decks": 575068,
+       "potential_decks": 8713904,
+       "lift": 1.0810515474245925
+      },
+      {
+       "name": "Herald's Horn",
+       "num_decks": 535300,
+       "potential_decks": 8713904,
+       "lift": 1.0860703752858458
+      },
+      {
+       "name": "Bident of Thassa",
+       "num_decks": 250349,
+       "potential_decks": 4351656,
+       "lift": 1.0216465958938168
+      },
+      {
+       "name": "The Earth Crystal",
+       "num_decks": 175817,
+       "potential_decks": 3086779,
+       "lift": 1.0506261663799463
+      }
+     ]
+    },
+    {
+     "header": "Enchantments",
+     "tag": "enchantments",
+     "cardviews": [
+      {
+       "name": "Rhystic Study",
+       "num_decks": 1067019,
+       "potential_decks": 4351656,
+       "lift": 1.1169520253428435
+      },
+      {
+       "name": "Rhythm of the Wild",
+       "num_decks": 401924,
+       "potential_decks": 1803318,
+       "lift": 1.0790442253846795
+      },
+      {
+       "name": "Smothering Tithe",
+       "num_decks": 897593,
+       "potential_decks": 4083043,
+       "lift": 1.1176913878013572
+      },
+      {
+       "name": "Garruk's Uprising",
+       "num_decks": 700932,
+       "potential_decks": 3804915,
+       "lift": 1.0523780963529838
+      },
+      {
+       "name": "Mystic Remora",
+       "num_decks": 749027,
+       "potential_decks": 4351656,
+       "lift": 1.1162872689104586
+      },
+      {
+       "name": "Temur Ascendancy",
+       "num_decks": 147393,
+       "potential_decks": 914412,
+       "lift": 1.0869599613255756
+      },
+      {
+       "name": "Phyrexian Arena",
+       "num_decks": 702960,
+       "potential_decks": 4462121,
+       "lift": 1.0629505851478107
+      },
+      {
+       "name": "Propaganda",
+       "num_decks": 678790,
+       "potential_decks": 4351656,
+       "lift": 1.0657078217605118
+      },
+      {
+       "name": "Black Market Connections",
+       "num_decks": 611819,
+       "potential_decks": 4462121,
+       "lift": 1.0649771709434679
+      },
+      {
+       "name": "Leyline of the Guildpact",
+       "num_decks": 77129,
+       "potential_decks": 563166,
+       "lift": 1.0004018497658236
+      },
+      {
+       "name": "Annie Joins Up",
+       "num_decks": 129462,
+       "potential_decks": 989803,
+       "lift": 1.0231771301456944
+      },
+      {
+       "name": "Ghostly Prison",
+       "num_decks": 512222,
+       "potential_decks": 4083043,
+       "lift": 1.0575328339930778
+      }
+     ]
+    },
+    {
+     "header": "Battles",
+     "tag": "battles",
+     "cardviews": [
+      {
+       "name": "Invasion of Ikoria",
+       "num_decks": 100739,
+       "potential_decks": 3804915,
+       "lift": 1.1096716249547978
+      },
+      {
+       "name": "Invasion of Alara",
+       "num_decks": 5966,
+       "potential_decks": 563166,
+       "lift": 0.7643470605857732
+      },
+      {
+       "name": "Invasion of Zendikar",
+       "num_decks": 27783,
+       "potential_decks": 3804915,
+       "lift": 0.7566886774427921
+      },
+      {
+       "name": "Invasion of Theros",
+       "num_decks": 14709,
+       "potential_decks": 2034373,
+       "lift": 0.8924101788115486
+      },
+      {
+       "name": "Invasion of Amonkhet",
+       "num_decks": 12477,
+       "potential_decks": 2204580,
+       "lift": 0.90771513549981
+      },
+      {
+       "name": "Invasion of Segovia",
+       "num_decks": 22249,
+       "potential_decks": 4351656,
+       "lift": 0.9331221615502556
+      },
+      {
+       "name": "Invasion of New Capenna",
+       "num_decks": 9602,
+       "potential_decks": 1992733,
+       "lift": 0.9271084337381575
+      },
+      {
+       "name": "Invasion of New Phyrexia",
+       "num_decks": 9747,
+       "potential_decks": 2034373,
+       "lift": 0.9958684404955507
+      },
+      {
+       "name": "Invasion of Tolvada",
+       "num_decks": 9127,
+       "potential_decks": 1992733,
+       "lift": 0.8709835832490286
+      },
+      {
+       "name": "Invasion of Fiora",
+       "num_decks": 16674,
+       "potential_decks": 4462121,
+       "lift": 0.8710137247690642
+      },
+      {
+       "name": "Invasion of Tarkir",
+       "num_decks": 14424,
+       "potential_decks": 4371086,
+       "lift": 1.0026447646317966
+      },
+      {
+       "name": "Invasion of Shandalar",
+       "num_decks": 12140,
+       "potential_decks": 3804915,
+       "lift": 0.9387020937953268
+      }
+     ]
+    },
+    {
+     "header": "Planeswalkers",
+     "tag": "planeswalkers",
+     "cardviews": [
+      {
+       "name": "Teferi, Time Raveler",
+       "num_decks": 131550,
+       "potential_decks": 2034373,
+       "lift": 1.1007567063149106
+      },
+      {
+       "name": "Tamiyo, Field Researcher",
+       "num_decks": 53230,
+       "potential_decks": 960442,
+       "lift": 1.089919219363509
+      },
+      {
+       "name": "Elspeth, Storm Slayer",
+       "num_decks": 187819,
+       "potential_decks": 3630681,
+       "lift": 1.0374490694907068
+      },
+      {
+       "name": "Jace, Multiverse Architect",
+       "num_decks": 4741,
+       "potential_decks": 98216,
+       "lift": 1.0452267689862442
+      },
+      {
+       "name": "Elspeth, Sun's Champion",
+       "num_decks": 164685,
+       "potential_decks": 4083043,
+       "lift": 1.03720637130382
+      },
+      {
+       "name": "Nicol Bolas, Dragon-God",
+       "num_decks": 39965,
+       "potential_decks": 1069841,
+       "lift": 1.0369272147566277
+      },
+      {
+       "name": "Liliana, Dreadhorde General",
+       "num_decks": 166172,
+       "potential_decks": 4462121,
+       "lift": 1.037641913626951
+      },
+      {
+       "name": "Oko, Thief of Crowns",
+       "num_decks": 67782,
+       "potential_decks": 1861799,
+       "lift": 1.0503561143410665
+      },
+      {
+       "name": "Tyvar, Jubilant Brawler",
+       "num_decks": 60467,
+       "potential_decks": 1779736,
+       "lift": 1.0075274166725787
+      },
+      {
+       "name": "Narset, Parter of Veils",
+       "num_decks": 145056,
+       "potential_decks": 4351656,
+       "lift": 1.0818969863620702
+      },
+      {
+       "name": "Dihada, Binder of Wills",
+       "num_decks": 32265,
+       "potential_decks": 992787,
+       "lift": 1.037176011829239
+      },
+      {
+       "name": "Grist, the Hunger Tide",
+       "num_decks": 57220,
+       "potential_decks": 1779736,
+       "lift": 0.9760260195923429
+      }
+     ]
+    },
+    {
+     "header": "Utility Lands",
+     "tag": "utilitylands",
+     "cardviews": [
+      {
+       "name": "Reliquary Tower",
+       "num_decks": 2722963,
+       "potential_decks": 8713904,
+       "lift": 1.0693716592480735
+      },
+      {
+       "name": "Bojuka Bog",
+       "num_decks": 1394304,
+       "potential_decks": 4462121,
+       "lift": 1.0405938351532056
+      },
+      {
+       "name": "Rogue's Passage",
+       "num_decks": 1828452,
+       "potential_decks": 8713904,
+       "lift": 1.0489693649829774
+      },
+      {
+       "name": "Boseiju, Who Endures",
+       "num_decks": 749638,
+       "potential_decks": 3804915,
+       "lift": 1.041115752925742
+      },
+      {
+       "name": "Otawara, Soaring City",
+       "num_decks": 752400,
+       "potential_decks": 4351656,
+       "lift": 1.0559465681494233
+      },
+      {
+       "name": "Kessig Wolf Run",
+       "num_decks": 250476,
+       "potential_decks": 1803318,
+       "lift": 1.0154307135394876
+      },
+      {
+       "name": "Vault of the Archangel",
+       "num_decks": 246709,
+       "potential_decks": 1992733,
+       "lift": 1.0413797093594843
+      },
+      {
+       "name": "Mystic Sanctuary",
+       "num_decks": 462360,
+       "potential_decks": 4351656,
+       "lift": 1.0207902276504686
+      },
+      {
+       "name": "Ancient Tomb",
+       "num_decks": 912075,
+       "potential_decks": 8713904,
+       "lift": 1.1489069149961026
+      },
+      {
+       "name": "Mosswort Bridge",
+       "num_decks": 394970,
+       "potential_decks": 3804915,
+       "lift": 1.0160538808029402
+      },
+      {
+       "name": "Cabal Coffers",
+       "num_decks": 432454,
+       "potential_decks": 4462121,
+       "lift": 1.0522009233142162
+      },
+      {
+       "name": "Phyrexian Tower",
+       "num_decks": 431694,
+       "potential_decks": 4462121,
+       "lift": 1.0392771045462303
+      }
+     ]
+    },
+    {
+     "header": "Mana Artifacts",
+     "tag": "manaartifacts",
+     "cardviews": [
+      {
+       "name": "Arcane Signet",
+       "num_decks": 6979599,
+       "potential_decks": 8713904,
+       "lift": 1.117177331066884
+      },
+      {
+       "name": "Talisman of Dominance",
+       "num_decks": 785523,
+       "potential_decks": 2204580,
+       "lift": 1.0986196133439474
+      },
+      {
+       "name": "Talisman of Creativity",
+       "num_decks": 650277,
+       "potential_decks": 2095302,
+       "lift": 1.1000507617992978
+      },
+      {
+       "name": "Talisman of Indulgence",
+       "num_decks": 637604,
+       "potential_decks": 2059199,
+       "lift": 1.1019322471211492
+      },
+      {
+       "name": "Talisman of Hierarchy",
+       "num_decks": 591104,
+       "potential_decks": 1992733,
+       "lift": 1.101509538818523
+      },
+      {
+       "name": "Talisman of Progress",
+       "num_decks": 586475,
+       "potential_decks": 2034373,
+       "lift": 1.1013235899300953
+      },
+      {
+       "name": "Talisman of Conviction",
+       "num_decks": 546435,
+       "potential_decks": 2053931,
+       "lift": 1.094719288197648
+      },
+      {
+       "name": "Rakdos Signet",
+       "num_decks": 500219,
+       "potential_decks": 2059199,
+       "lift": 1.079561886622928
+      },
+      {
+       "name": "Dimir Signet",
+       "num_decks": 532359,
+       "potential_decks": 2204580,
+       "lift": 1.0734148238098946
+      },
+      {
+       "name": "Izzet Signet",
+       "num_decks": 491609,
+       "potential_decks": 2095302,
+       "lift": 1.0720773422597678
+      },
+      {
+       "name": "Fellwar Stone",
+       "num_decks": 1989408,
+       "potential_decks": 8713904,
+       "lift": 1.1172829283982344
+      },
+      {
+       "name": "Orzhov Signet",
+       "num_decks": 453787,
+       "potential_decks": 1992733,
+       "lift": 1.078645287399944
+      }
+     ]
+    },
+    {
+     "header": "Lands",
+     "tag": "lands",
+     "cardviews": [
+      {
+       "name": "Command Tower",
+       "num_decks": 6660602,
+       "potential_decks": 8713904,
+       "lift": 1.0379180576982487
+      },
+      {
+       "name": "Breeding Pool",
+       "num_decks": 835639,
+       "potential_decks": 1861799,
+       "lift": 1.0370739962482212
+      },
+      {
+       "name": "Watery Grave",
+       "num_decks": 977599,
+       "potential_decks": 2204580,
+       "lift": 1.0416269902739448
+      },
+      {
+       "name": "Godless Shrine",
+       "num_decks": 873707,
+       "potential_decks": 1992733,
+       "lift": 1.034019931652303
+      },
+      {
+       "name": "Overgrown Tomb",
+       "num_decks": 777498,
+       "potential_decks": 1779736,
+       "lift": 1.0292852330870812
+      },
+      {
+       "name": "Stomping Ground",
+       "num_decks": 787316,
+       "potential_decks": 1803318,
+       "lift": 1.0318890968780967
+      },
+      {
+       "name": "Hallowed Fountain",
+       "num_decks": 874698,
+       "potential_decks": 2034373,
+       "lift": 1.0368059650779402
+      },
+      {
+       "name": "Temple Garden",
+       "num_decks": 736143,
+       "potential_decks": 1753992,
+       "lift": 1.0257643450206575
+      },
+      {
+       "name": "Steam Vents",
+       "num_decks": 868125,
+       "potential_decks": 2095302,
+       "lift": 1.04175823271761
+      },
+      {
+       "name": "Blood Crypt",
+       "num_decks": 846765,
+       "potential_decks": 2059199,
+       "lift": 1.0413117214430607
+      },
+      {
+       "name": "Cinder Glade",
+       "num_decks": 711081,
+       "potential_decks": 1803318,
+       "lift": 1.042863142021283
+      },
+      {
+       "name": "Clifftop Retreat",
+       "num_decks": 809700,
+       "potential_decks": 2053931,
+       "lift": 1.0580486484506293
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "similar": [
+  "Mana Vault",
+  "Grim Monolith",
+  "Worn Powerstone",
+  "Thran Dynamo",
+  "Basalt Monolith",
+  "Mind Stone"
+ ]
+}

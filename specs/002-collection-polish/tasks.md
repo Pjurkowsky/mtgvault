@@ -10,7 +10,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
 
 ## Phase 1: Backend
 
-- [ ] **T1 Prices in all three currencies** (AC-1 to AC-3)
+- [x] **T1 Prices in all three currencies** (AC-1 to AC-3)
   - `MoneySerializer` (`USD`, `EUR`, `PLN`).
   - Items: `unit_prices`, `added_prices`, `purchase_prices`. Printings:
     `prices_all`. Pages: `total_values`. Locations and totals: `values`.
@@ -20,7 +20,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     EUR and PLN, page and location totals match the per-currency sums, and
     public responses still have no `purchase` or `added` keys.
 
-- [ ] **T2 Card detail endpoint and public catalog** (AC-25, AC-26, AC-33, AC-34, AC-37)
+- [x] **T2 Card detail endpoint and public catalog** (AC-25, AC-26, AC-33, AC-34, AC-37)
   - `GET /api/catalog/cards/{oracle_id}/`: name, printings newest first,
     `owned` for the viewer.
   - Catalog read endpoints allow anonymous visitors (USD prices).
@@ -28,7 +28,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     printings, is 0 for another user and 0 when logged out, and anonymous
     calls get 200 with USD prices.
 
-- [ ] **T3 EDHREC proxy** (AC-28 to AC-31, AC-35, AC-36)
+- [x] **T3 EDHREC proxy** (AC-28 to AC-31, AC-35, AC-36)
   - `cards/edhrec.py`: slug, fetch (403/404 = no page), convert, match names
     to the catalog, Redis cache (24 h, "no page" 1 h, errors uncached).
   - `GET /api/catalog/cards/{oracle_id}/edhrec/`.
@@ -41,7 +41,7 @@ Prerequisite: `docker compose -f docker-compose.dev.yml up -d db redis`.
     no fixture returns `available: false`. A second call is served from the
     cache.
 
-- [ ] **T4 API types**
+- [x] **T4 API types**
   - Regenerate `openapi.yaml` and `schema.d.ts`.
   - Done: `scripts/check-api.sh` passes and `pnpm build` passes.
 
