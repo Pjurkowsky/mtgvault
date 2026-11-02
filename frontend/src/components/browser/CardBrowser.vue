@@ -16,6 +16,7 @@ import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
 import { api } from '@/api/client'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
+import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
 import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import ImportDialog from '@/components/collection/ImportDialog.vue'
@@ -32,7 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useBrowserQuery, type View } from '@/composables/useBrowserQuery'
 import { useConfirm } from '@/composables/useConfirm'
 import { useInfiniteItems, type Page } from '@/composables/useInfiniteItems'
-import { useSelection } from '@/composables/useSelection'
+import { useSelection, type Selection } from '@/composables/useSelection'
 import { SORTS } from '@/lib/cards'
 import type { Money } from '@/lib/money'
 import BulkDialog, { type BulkAction } from './BulkDialog.vue'
@@ -51,6 +52,8 @@ const props = defineProps<{
   source: BrowserSource
   /** Fixed location: an id, or 'unfiled'. Omit for all cards. */
   location?: string
+  /** Only the deck's cards (spec 004, AC-16). */
+  deck?: number
   readonly?: boolean
 }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -62,11 +65,17 @@ const router = useRouter()
 const editable = computed(() => props.source.kind === 'own' && !props.readonly)
 // The cart (spec 003): scanned cards waiting to be moved into the collection.
 const isCart = computed(() => props.location === 'cart')
+// Adding and importing don't fit the cart or a deck's Owned tab.
+const canAdd = computed(() => editable.value && !isCart.value && !props.deck)
 const selecting = computed(() => selection.count.value > 0)
 const defaultLocation = computed(() => (props.location && props.location !== 'unfiled' ? Number(props.location) : null))
 
 // ----- data -----
-const query = computed(() => ({ ...filter.value, ...(props.location ? { location: props.location } : {}) }))
+const query = computed(() => ({
+  ...filter.value,
+  ...(props.location ? { location: props.location } : {}),
+  ...(props.deck ? { deck: String(props.deck) } : {}),
+}))
 
 type BrowserPage = Page<BrowserRow> & { total_values?: Money }
 
@@ -74,6 +83,9 @@ async function fetchPage(offset: number, limit: number): Promise<BrowserPage | u
   const pageQuery = { ...query.value, offset: String(offset), limit: String(limit) }
   if (props.source.kind === 'own') {
     return (await api.GET('/api/items/', { params: { query: pageQuery } })).data
+  }
+  if (props.source.kind === 'deck-missing') {
+    return (await api.GET('/api/decks/{id}/missing/', { params: { path: { id: props.source.deckId }, query: pageQuery } })).data
   }
   const { username, locationId } = props.source
   return (await api.GET('/api/users/{username}/locations/{id}/items/', {
@@ -150,6 +162,14 @@ const exportOpen = ref(false)
 const exportSelection = ref(false)
 const bulkOpen = ref(false)
 const bulkAction = ref<BulkAction | null>(null)
+const deckOpen = ref(false)
+const deckSelection = ref<() => Selection>(() => selection.toSelection())
+
+/** Add to deck from the menu (one card) or the bulk bar (the selection) (spec 004, AC-10). */
+function openAddToDeck(row?: BrowserRow) {
+  deckSelection.value = row ? () => ({ ids: [row.id] }) : selection.toSelection
+  deckOpen.value = true
+}
 
 function openDetail(row: BrowserRow) {
   detailRow.value = row
@@ -197,6 +217,12 @@ function openExport(onlySelection: boolean) {
 }
 
 async function loadExport() {
+  if (props.source.kind === 'deck-missing') {
+    const { data } = await api.POST('/api/decks/{id}/missing/export/', {
+      params: { path: { id: props.source.deckId } }, body: { filter: query.value as never },
+    })
+    return data
+  }
   if (props.source.kind === 'public') {
     const { username, locationId } = props.source
     const { data } = await api.POST('/api/users/{username}/locations/{id}/export/', {
@@ -220,6 +246,8 @@ const pricesUpdated = computed(() => {
   return at ? new Date(at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : null
 })
 const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
+const exportName = computed(() =>
+  props.source.kind === 'deck-missing' ? `deck-${props.source.deckId}-missing` : props.location ? `location-${props.location}` : 'collection')
 </script>
 
 <template>
@@ -261,12 +289,12 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
             <IconButton label="More"><EllipsisIcon /></IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem v-if="editable && !isCart" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
+            <DropdownMenuItem v-if="canAdd" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <IconButton v-if="editable" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
-        <Button v-if="editable && !isCart" @click="addOpen = true"><PlusIcon /> Add card</Button>
+        <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>
 
@@ -281,13 +309,13 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
     <CardGrid
       v-if="view === 'grid' && rows.length"
       :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
-      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow"
+      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
     />
     <CardTable
       v-else-if="rows.length"
       :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
       :show-location="source.kind === 'own' && !location" :select-all-state="selectAllState"
-      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow"
+      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
       @select-all="toggleSelectAll"
     />
     <p v-else-if="!loading && page" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
@@ -317,6 +345,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
           <Button size="sm" variant="outline" @click="openBulk('move')">{{ isCart ? 'Move to' : 'Move' }}</Button>
           <Button v-if="isCart" size="sm" variant="outline" disabled>Move to want list</Button>
           <Button size="sm" variant="outline" @click="openBulk('edit')">Edit</Button>
+          <Button v-if="!isCart" size="sm" variant="outline" @click="openAddToDeck()">Add to deck</Button>
           <Button size="sm" variant="outline" @click="openExport(true)">Export</Button>
           <Button size="sm" variant="outline" class="text-destructive" @click="openBulk('delete')">Delete</Button>
         </div>
@@ -331,8 +360,9 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
       <EditItemDialog v-model:open="editOpen" :row="editRow" @saved="onSaved" />
       <AddCardDialog v-model:open="addOpen" :default-location="defaultLocation" @added="refresh" />
       <ImportDialog v-model:open="importOpen" :default-location="defaultLocation" @imported="refresh" />
+      <AddToDeckDialog v-model:open="deckOpen" :selection="deckSelection" @done="selection.clear()" />
       <BulkDialog v-model:open="bulkOpen" :action="bulkAction" :selection="selection.toSelection" @done="afterBulk" />
     </template>
-    <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="location ? `location-${location}` : 'collection'" />
+    <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="exportName" />
   </div>
 </template>

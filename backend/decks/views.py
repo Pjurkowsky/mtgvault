@@ -66,7 +66,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
     data = {
         'id': deck.id, 'name': deck.name, 'format': deck.format, 'is_public': deck.is_public,
         'location': deck.location_id, 'location_name': deck.location.name if deck.location_id else None,
-        'image': image_card.printing.image_normal if image_card else '',
+        'image': image_card.printing.image_normal.replace('/normal/', '/art_crop/') if image_card else '',
         'counts': {**by_zone, 'size': by_zone['commander'] + by_zone['main'], 'target': FORMATS[deck.format].size,
                    'owned': owned, 'missing': missing},
         'value': st['value']['total'], 'values': st['values']['total'],

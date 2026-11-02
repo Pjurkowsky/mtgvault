@@ -17,6 +17,7 @@ const emit = defineEmits<{
   click: [row: BrowserRow, index: number, event: MouseEvent]
   check: [row: BrowserRow, index: number, event: MouseEvent]
   open: [row: BrowserRow]
+  deck: [row: BrowserRow]
   edit: [row: BrowserRow]
   delete: [row: BrowserRow]
 }>()
@@ -28,7 +29,7 @@ const selected = (row: BrowserRow) => props.selecting && props.isSelected(row.id
 <template>
   <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" data-testid="card-grid">
     <li v-for="(row, index) in rows" :key="row.id" class="group relative">
-      <CardMenu :editable="editable" @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)">
+      <CardMenu :editable="editable" @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)" @deck="emit('deck', row)">
         <button
           type="button"
           class="relative block w-full overflow-hidden rounded-[4.75%/3.5%] text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

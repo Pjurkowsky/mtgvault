@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EyeIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
+import { EyeIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -10,7 +10,7 @@ import {
 
 /** Right-click (long-press on touch) menu for a card (spec 002, AC-18). */
 defineProps<{ editable: boolean }>()
-const emit = defineEmits<{ open: []; edit: []; delete: [] }>()
+const emit = defineEmits<{ open: []; edit: []; delete: []; deck: [] }>()
 </script>
 
 <template>
@@ -20,6 +20,7 @@ const emit = defineEmits<{ open: []; edit: []; delete: [] }>()
       <ContextMenuItem @select="emit('open')"><EyeIcon /> Open</ContextMenuItem>
       <template v-if="editable">
         <ContextMenuItem @select="emit('edit')"><PencilIcon /> Edit</ContextMenuItem>
+        <ContextMenuItem @select="emit('deck')"><LayersIcon /> Add to deck</ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" @select="emit('delete')"><Trash2Icon /> Delete</ContextMenuItem>
       </template>

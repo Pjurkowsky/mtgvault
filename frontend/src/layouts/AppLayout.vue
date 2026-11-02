@@ -26,6 +26,7 @@ async function logout() {
       <div class="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         <nav class="flex items-center gap-6">
           <RouterLink to="/" class="font-semibold">MTG Vault</RouterLink>
+          <RouterLink v-if="auth.user" :to="{ name: 'decks' }" class="text-sm text-muted-foreground hover:text-foreground" active-class="text-foreground">Decks</RouterLink>
           <RouterLink :to="{ name: 'directory' }" class="text-sm text-muted-foreground hover:text-foreground" active-class="text-foreground">Users</RouterLink>
         </nav>
 

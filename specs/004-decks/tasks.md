@@ -28,12 +28,12 @@ Done for T4-T7: shell checks against the real catalog.
 
 ## Phase 4: Frontend
 
-- [ ] **T11 Mana symbols and ManaCost**
-- [ ] **T12 Decks page, New deck, Import deck** (AC-1 to AC-3, AC-26)
-- [ ] **T13 Deck page: header, list/visual, grouping, hover image** (AC-18, AC-19, AC-21)
-- [ ] **T14 Card dialog, add dialog, mark owned, create box, delete** (AC-5, AC-6, AC-10, AC-11, AC-15, AC-20)
-- [ ] **T15 Owned/Missing tabs, Stats, legality panel, export** (AC-16, AC-17, AC-22, AC-24, AC-27)
-- [ ] **T16 Add to deck from the collection; profile; public deck page** (AC-10, AC-28)
+- [x] **T11 Mana symbols and ManaCost**
+- [x] **T12 Decks page, New deck, Import deck** (AC-1 to AC-3, AC-26)
+- [x] **T13 Deck page: header, list/visual, grouping, hover image** (AC-18, AC-19, AC-21)
+- [x] **T14 Card dialog, add dialog, mark owned, create box, delete** (AC-5, AC-6, AC-10, AC-11, AC-15, AC-20)
+- [x] **T15 Owned/Missing tabs, Stats, legality panel, export** (AC-16, AC-17, AC-22, AC-24, AC-27)
+- [x] **T16 Add to deck from the collection; profile; public deck page** (AC-10, AC-28)
 
 ## Phase 5: Tests and wrap up
 

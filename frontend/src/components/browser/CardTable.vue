@@ -19,6 +19,7 @@ const emit = defineEmits<{
   click: [row: BrowserRow, index: number, event: MouseEvent]
   check: [row: BrowserRow, index: number, event: MouseEvent]
   open: [row: BrowserRow]
+  deck: [row: BrowserRow]
   edit: [row: BrowserRow]
   delete: [row: BrowserRow]
   selectAll: []
@@ -48,7 +49,7 @@ const emit = defineEmits<{
       <TableBody>
         <CardMenu
           v-for="(row, index) in rows" :key="row.id" :editable="editable"
-          @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)"
+          @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)" @deck="emit('deck', row)"
         >
           <TableRow
             class="cursor-pointer" :data-state="selecting && isSelected(row.id) ? 'selected' : undefined"
