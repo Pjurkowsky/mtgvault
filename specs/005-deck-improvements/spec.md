@@ -109,6 +109,8 @@ principle P-2). A deck page differs only where it has deck-only data.
   stays in List view (AC-6).
 - Delete from the menu removes the card from the deck, not copies from the
   collection (AC-7).
+- Apply gives the candidate the old card's quantity, so 4 copies swap for 4;
+  other candidates for the old card move to the new one (AC-11).
 - A swap candidate counts toward nothing, like any Maybeboard card (spec 004
   AC-14).
 - Shared visibility applies from now on; existing decks whose box differs take

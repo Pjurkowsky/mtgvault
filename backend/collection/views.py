@@ -95,10 +95,10 @@ def item_page(request, items, serializer_class, ctx):
     })
 
 
-def sync_deck(location):
-    """Deck box locations are decks (spec 004, AC-4). Imported here: decks depends on collection."""
+def sync_deck(location, deck_format=None):
+    """Deck box locations are decks (spec 004 AC-4, spec 005 AC-18). Imported here: decks depends on collection."""
     from decks.services import sync_location
-    sync_location(location)
+    sync_location(location, deck_format)
 
 
 def own_location(user, location_id):
@@ -137,7 +137,7 @@ class LocationListView(APIView):
         rows = CollectionItem.objects.filter(user=request.user)
         totals = location_totals(rows.filter(in_cart=False), ctx['currency'], ctx['rates'])
         cart = location_totals(rows.filter(in_cart=True), ctx['currency'], ctx['rates'])
-        locations = Location.objects.filter(user=request.user).order_by(F('name').asc())
+        locations = Location.objects.filter(user=request.user).select_related('deck').order_by(F('name').asc())
         return Response({
             'currency': ctx['currency'],
             'unfiled': totals.get(None, EMPTY_TOTALS),
@@ -150,7 +150,7 @@ class LocationListView(APIView):
         serializer = LocationSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         location = serializer.save(user=request.user)
-        sync_deck(location)
+        sync_deck(location, serializer.deck_format)
         return Response(LocationSerializer(location, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -170,7 +170,8 @@ class LocationDetailView(APIView):
         location = self.get_location(request, pk)
         serializer = LocationSerializer(location, data=request.data, partial=True, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        sync_deck(serializer.save())
+        location = serializer.save()
+        sync_deck(location, serializer.deck_format)
         return self.get(request, pk)
 
 

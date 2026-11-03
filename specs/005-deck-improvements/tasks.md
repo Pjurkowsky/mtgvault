@@ -7,8 +7,8 @@ after API changes.
 
 ## Phase 1: Data and rules
 
-- [ ] **T1 `DeckCard.swap_for`, swap services** (AC-9, AC-11, AC-12)
-- [ ] **T2 Shared visibility, box format in `sync_location`, data migration** (AC-18, AC-19)
+- [x] **T1 `DeckCard.swap_for`, swap services** (AC-9, AC-11, AC-12)
+- [x] **T2 Shared visibility, box format in `sync_location`, data migration** (AC-18, AC-19)
 
 Done for T1-T2: shell checks (propose, apply and undo, unlink on remove and
 on zone change, visibility both ways, format both ways).

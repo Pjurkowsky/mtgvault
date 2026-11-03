@@ -104,18 +104,8 @@ def import_text(deck, text):
     rows, errors = textlist.parse(text)
     with transaction.atomic():
         for zone, row in rows:
-            services.add_card(deck, row.printing, row.quantity, fit_zone(deck, zone))
+            services.add_card(deck, row.printing, row.quantity, services.fit_zone(deck, zone))
     return rows, errors
-
-
-def fit_zone(deck, zone):
-    """A list's zone that this format lacks lands in the closest one."""
-    rules = FORMATS[deck.format]
-    if zone == 'commander' and not rules.commander:
-        return 'main'
-    if zone == 'side' and rules.commander:
-        return 'maybe'
-    return zone
 
 
 class DeckListView(APIView):
@@ -150,15 +140,12 @@ class DeckDetailView(APIView):
         deck = own_deck(request, pk)
         data = DeckWriteSerializer(deck, data=request.data, partial=True)
         data.is_valid(raise_exception=True)
+        new_format = data.validated_data.pop('format', None)
         with transaction.atomic():
             data.save()
-            # A new format may lack the commander zone or the sideboard: move those cards over.
-            for card in list(deck.cards.all()):
-                zone = fit_zone(deck, card.zone)
-                if zone != card.zone:
-                    printing, quantity = card.printing, card.quantity
-                    card.delete()
-                    services.add_card(deck, printing, quantity, zone)
+            if new_format and new_format != deck.format:
+                services.set_format(deck, new_format)  # cards in zones it lacks move over
+            services.share_visibility(deck)
         return detail_response(request, deck)
 
 
@@ -200,11 +187,8 @@ class DeckCardDetailView(APIView):
             if 'quantity' in d:
                 card.quantity = d['quantity']
             card.save()
-            if 'zone' in d and d['zone'] != card.zone:
-                services.check_zone(deck, d['zone'])
-                printing, quantity = card.printing, card.quantity
-                card.delete()
-                services.add_card(deck, printing, quantity, d['zone'])  # merges with that zone
+            if 'zone' in d:
+                services.move_zone(card, d['zone'])  # merges with that zone
         return detail_response(request, deck)
 
     @extend_schema(responses=DeckDetailSerializer)

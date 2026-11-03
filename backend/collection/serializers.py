@@ -20,17 +20,42 @@ class TotalsSerializer(serializers.Serializer):
     values = MoneySerializer()
 
 
+class DeckFormatField(serializers.ChoiceField):
+    """A Deck box's deck format (spec 005, AC-18): read from the linked deck, written through the view."""
+
+    def get_attribute(self, instance):
+        deck = getattr(instance, 'deck', None)
+        return deck.format if deck else None
+
+    def to_representation(self, value):
+        return value
+
+
 class LocationSerializer(serializers.ModelSerializer):
     """Owner view of a location. Totals come from the view (context['totals'])."""
 
+    deck_format = DeckFormatField(
+        choices=[], required=False, allow_null=True,
+        help_text="Deck box only: the deck's format (new deck boxes default to Commander)",
+    )
     card_count = serializers.SerializerMethodField()
     value = serializers.SerializerMethodField()
     values = serializers.SerializerMethodField()
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'kind', 'is_public', 'card_count', 'value', 'values', 'created_at']
+        fields = ['id', 'name', 'kind', 'is_public', 'deck_format', 'card_count', 'value', 'values', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from decks.models import Deck  # decks builds on collection
+        self.fields['deck_format'].choices = Deck.Format.choices
+
+    def save(self, **kwargs):
+        # Not a Location field: the view hands it to the deck.
+        self.deck_format = self.validated_data.pop('deck_format', None)
+        return super().save(**kwargs)
 
     def _totals(self, location):
         return self.context.get('totals', {}).get(location.id, EMPTY_TOTALS)

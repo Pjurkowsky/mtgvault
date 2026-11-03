@@ -44,6 +44,8 @@ class DeckCard(models.Model):
     oracle_id = models.UUIDField(db_index=True)
     zone = models.CharField(max_length=10, choices=Zone.choices, default=Zone.MAIN)
     quantity = models.PositiveSmallIntegerField(default=1)
+    # A Maybeboard card proposed to replace another card of the deck (spec 005, AC-9).
+    swap_for = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
