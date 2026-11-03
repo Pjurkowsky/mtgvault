@@ -6,7 +6,7 @@ Spec: [spec.md](spec.md)
 
 | Topic | Choice |
 | --- | --- |
-| Reuse | The collection's Add card, card detail dialog, card menu and add fields grow options instead of decks getting copies. `DeckAddDialog` and `DeckCardDialog` go away. |
+| Reuse | Decks build on the collection's pieces: the search step, `PrintingPicker`, `ItemFields`, the card detail dialog and the card menu. `DeckAddDialog` stays, rebuilt from those pieces; the collection's Add card is unchanged apart from using the extracted search step. `DeckCardDialog` goes away (AC-3 asks for the collection's dialog). |
 | Card search | The search step of `AddCardDialog` (input, grid/list results, size, hover and fullscreen) moves into `CardSearch.vue`, used by Add card, the deck's Add card and Propose swap. |
 | Swap link | `DeckCard.swap_for`: nullable FK to another `DeckCard` of the same deck, `SET_NULL`. Only Maybeboard cards may have it. |
 | Commander zone | Printings carry `can_command: {commander, brawl}` from `legality.can_be_commander`; the frontend offers the zone from that. |
@@ -60,8 +60,9 @@ by the services, not the frontend.
 
 ```
 components/collection/CardSearch.vue    search step, extracted from AddCardDialog
-components/collection/AddCardDialog.vue props: card (skip search), defaultLocation,
-                                        deck mode: deck step + "Also add to my collection"
+components/collection/AddCardDialog.vue uses CardSearch; prop card (skip search) for AC-4
+components/decks/DeckAddDialog.vue      CardSearch, then PrintingPicker, quantity, zone and
+                                        "Also add to my collection" showing ItemFields
 components/collection/CardDetailDialog.vue  open by oracle id too; #deck slot at the top
 components/browser/CardMenu.vue          items as props (Open/Edit/Add to deck/Propose swap/Delete)
 components/collection/LocationDialog.vue Format when kind is Deck box
@@ -99,7 +100,7 @@ them.
 
 1. Model, migrations, services for swaps, visibility, box format.
 2. Endpoints, `can_command`, public lists, scanner target, API types.
-3. CardSearch, AddCardDialog modes, CardDetailDialog with the deck section.
+3. CardSearch, DeckAddDialog from shared pieces, AddCardDialog with a fixed card, CardDetailDialog with the deck section.
 4. Views, menus, display options, Swaps tab.
 5. Scan target, location format, Missing tab, Owned tab.
 6. Tests, full suite, READMEs, spec status.
