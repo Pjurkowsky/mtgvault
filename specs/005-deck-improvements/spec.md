@@ -1,6 +1,6 @@
 # Spec 005: Deck improvements
 
-Status: Draft
+Status: Approved
 Depends on: 002-collection-polish, 003-scanner, 004-decks
 Followed by: 006-binder-view
 
