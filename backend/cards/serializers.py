@@ -28,6 +28,17 @@ class PricesSerializer(serializers.Serializer):
     etched = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
 
 
+class CanCommandSerializer(serializers.Serializer):
+    commander = serializers.BooleanField()
+    brawl = serializers.BooleanField()
+
+
+def can_command(printing) -> dict:
+    """Formats this card may lead (spec 005, AC-5). The rules live with deck legality."""
+    from decks.legality import FORMATS, can_be_commander
+    return {key: can_be_commander(printing, FORMATS[key]) for key in ('commander', 'brawl')}
+
+
 class PrintingSerializer(serializers.ModelSerializer):
     """A printing with prices. Needs `currency` and `rates` in the context."""
 
@@ -35,15 +46,19 @@ class PrintingSerializer(serializers.ModelSerializer):
     set_name = serializers.CharField(source='set.name')
     prices = serializers.SerializerMethodField()
     prices_all = serializers.SerializerMethodField()
+    can_command = serializers.SerializerMethodField()
 
     class Meta:
         model = Printing
         fields = [
             'id', 'oracle_id', 'name', 'set_code', 'set_name', 'collector_number',
             'released_at', 'rarity', 'colors', 'type_line', 'mana_cost', 'finishes',
-            'image_small', 'image_normal', 'image_large', 'prices', 'prices_all',
+            'image_small', 'image_normal', 'image_large', 'prices', 'prices_all', 'can_command',
         ]
         read_only_fields = fields  # output only; also marks them required in the schema
+
+    def get_can_command(self, printing) -> CanCommandSerializer:
+        return can_command(printing)
 
     def get_prices(self, printing) -> PricesSerializer:
         currency, rates = self.context['currency'], self.context['rates']

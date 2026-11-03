@@ -37,6 +37,7 @@ from .serializers import (
     DeckWriteSerializer,
     MarkOwnedSerializer,
     MissingExportSerializer,
+    SwapProposalSerializer,
 )
 
 PAGE_DEFAULT, PAGE_MAX = 60, 200
@@ -86,6 +87,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'price': price(c.printing, finish, ctx['currency'], ctx['rates']),
             'prices': prices_in_all(c.printing, finish, ctx['rates']),
             'ownership': ownership,
+            'swap_for': c.swap_for_id,
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st}
@@ -226,6 +228,29 @@ class MarkOwnedView(APIView):
                     condition=new['condition'], language=new['language'], location=deck.location,
                     copies=Copies(d['quantity']),
                 )
+        return detail_response(request, deck)
+
+
+class ProposeSwapView(APIView):
+    """Spec 005, AC-9: a Maybeboard candidate to replace this card."""
+
+    @extend_schema(request=SwapProposalSerializer, responses={201: DeckDetailSerializer})
+    def post(self, request, pk, card_id):
+        deck = own_deck(request, pk)
+        card = get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        data = SwapProposalSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        services.propose_swap(card, data.validated_data['printing'])
+        return detail_response(request, deck, status.HTTP_201_CREATED)
+
+
+class ApplySwapView(APIView):
+    """Spec 005, AC-11: the candidate goes in, the old card becomes its candidate."""
+
+    @extend_schema(request=None, responses=DeckDetailSerializer)
+    def post(self, request, pk, card_id):
+        deck = own_deck(request, pk)
+        services.apply_swap(get_object_or_404(DeckCard.objects.select_related('swap_for'), pk=card_id, deck=deck))
         return detail_response(request, deck)
 
 

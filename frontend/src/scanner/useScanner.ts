@@ -142,8 +142,9 @@ export function useScanner() {
       status.value = { kind: 'steady', name: candidate.name }
       return
     }
+    if (!data.item) return
     lastScan.value = data.item
-    cart.value = data.cart
+    cart.value = data.totals
     status.value = { kind: 'logged', name: data.item.printing.name }
     if (settings.value?.sounds) playSound(data.sound)
   }
@@ -174,7 +175,7 @@ export function useScanner() {
     if (!row) return
     const { data } = await api.POST('/api/scanner/scans/{id}/undo/', { params: { path: { id: row.id } } })
     if (!data) return
-    cart.value = data.cart
+    cart.value = data.totals
     tracker = forgetLastLogged(tracker) // the same card may be scanned again
     if (data.remaining === 0) {
       lastScan.value = null

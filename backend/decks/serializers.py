@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from cards.models import Finish, Printing
-from cards.serializers import MoneySerializer
+from cards.serializers import CanCommandSerializer, MoneySerializer, can_command
 from collection.filters import ItemFilterSerializer
 from collection.models import Condition, Language
 from collection.serializers import ImportErrorSerializer, PrintingBriefSerializer, SelectionSerializer
@@ -12,9 +12,14 @@ MONEY = dict(max_digits=12, decimal_places=2, allow_null=True)
 
 
 class DeckPrintingSerializer(PrintingBriefSerializer):
+    can_command = serializers.SerializerMethodField()
+
     class Meta(PrintingBriefSerializer.Meta):
-        fields = PrintingBriefSerializer.Meta.fields + ['mana_cost', 'cmc', 'types', 'color_identity']
+        fields = PrintingBriefSerializer.Meta.fields + ['mana_cost', 'cmc', 'types', 'color_identity', 'can_command']
         read_only_fields = fields
+
+    def get_can_command(self, printing) -> CanCommandSerializer:
+        return can_command(printing)
 
 
 class FreeCopySerializer(serializers.Serializer):
@@ -51,6 +56,7 @@ class DeckCardSerializer(serializers.Serializer):
     price = serializers.DecimalField(**MONEY)
     prices = MoneySerializer()
     ownership = OwnershipSerializer()
+    swap_for = serializers.IntegerField(allow_null=True, help_text='Deck card this Maybeboard card could replace')
 
 
 class IssueSerializer(serializers.Serializer):
@@ -152,6 +158,10 @@ class NewCopySerializer(serializers.Serializer):
     finish = serializers.ChoiceField(Finish.choices, required=False)
     condition = serializers.ChoiceField(Condition.choices, default=Condition.NEAR_MINT)
     language = serializers.ChoiceField(Language.choices, default=Language.ENGLISH)
+
+
+class SwapProposalSerializer(serializers.Serializer):
+    printing = serializers.PrimaryKeyRelatedField(queryset=Printing.objects.all(), help_text='The card to propose')
 
 
 class MarkOwnedSerializer(serializers.Serializer):

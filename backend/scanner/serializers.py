@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from cards.models import Set
+from cards.serializers import PrintingSerializer
 from collection.serializers import ItemSerializer, TotalsSerializer
 
 from .models import ScannerSettings
@@ -35,21 +36,44 @@ class BundleInfoSerializer(serializers.Serializer):
     sizes = serializers.DictField(child=serializers.IntegerField())
 
 
+class ScanTargetSerializer(serializers.Serializer):
+    """Where scans go (spec 005, AC-16). Without one they go to the cart (spec 003)."""
+
+    kind = serializers.ChoiceField(['cart', 'location', 'deck'])
+    location = serializers.IntegerField(required=False, allow_null=True, help_text='kind=location: id, or null for Unfiled')
+    deck = serializers.IntegerField(required=False, help_text='kind=deck: the decklist (no copy is added)')
+
+    def validate(self, data):
+        if data['kind'] == 'deck' and not data.get('deck'):
+            raise serializers.ValidationError({'deck': ['Choose a deck.']})
+        return data
+
+
 class ScanRequestSerializer(serializers.Serializer):
     gallery_id = serializers.CharField(max_length=60, help_text='Gallery art id from arts.json')
     illustration_id = serializers.UUIDField(required=False, allow_null=True)
+    target = ScanTargetSerializer(required=False)
+
+
+class ScannedDeckCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    deck = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    printing = PrintingSerializer()
+    price = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
 
 
 class ScanResultSerializer(serializers.Serializer):
-    item = ItemSerializer()
+    item = ItemSerializer(allow_null=True, help_text='The collection row (null for a decklist-only scan)')
+    deck_card = ScannedDeckCardSerializer(allow_null=True, help_text='Decklist-only scans: the deck card')
     merged = serializers.BooleanField()
-    cart = TotalsSerializer()
+    totals = TotalsSerializer(help_text='Totals of where the card went: cart, location or deck')
     sound = serializers.ChoiceField(['click', 'ding', 'big_ding'], help_text='Which sound fits the price')
 
 
 class UndoResultSerializer(serializers.Serializer):
     remaining = serializers.IntegerField(help_text='Copies left in the row (0 = removed)')
-    cart = TotalsSerializer()
+    totals = TotalsSerializer(help_text="Totals of the row's cart or location")
 
 
 class LockedIllustrationsSerializer(serializers.Serializer):

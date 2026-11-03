@@ -248,6 +248,23 @@ export interface paths {
         patch: operations["decks_cards_partial_update"];
         trace?: never;
     };
+    "/api/decks/{id}/cards/{card_id}/apply-swap/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Spec 005, AC-11: the candidate goes in, the old card becomes its candidate. */
+        post: operations["decks_cards_apply_swap_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/cards/{card_id}/own/": {
         parameters: {
             query?: never;
@@ -259,6 +276,23 @@ export interface paths {
         put?: never;
         /** @description AC-15: move a free copy into the deck box, or record a new copy. */
         post: operations["decks_cards_own_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/cards/{card_id}/swaps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Spec 005, AC-9: a Maybeboard candidate to replace this card. */
+        post: operations["decks_cards_swaps_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -634,7 +668,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Log a recognized card into the cart (AC-5, AC-9, AC-10, AC-17). */
+        /**
+         * @description Log a recognized card (spec 003 AC-5, AC-9, AC-10, AC-17): into the cart, or the
+         *     chosen location or decklist (spec 005, AC-16, AC-17).
+         */
         post: operations["scanner_scans_create"];
         delete?: never;
         options?: never;
@@ -651,7 +688,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Remove one copy from a cart row (AC-11). */
+        /** @description Remove one copy from the row a scan logged into: cart or location (spec 003 AC-11, spec 005 AC-17). */
         post: operations["scanner_scans_undo_create"];
         delete?: never;
         options?: never;
@@ -882,6 +919,10 @@ export interface components {
                 [key: string]: number;
             };
         };
+        CanCommand: {
+            commander: boolean;
+            brawl: boolean;
+        };
         CardDetail: {
             /** Format: uuid */
             oracle_id: string;
@@ -958,6 +999,8 @@ export interface components {
             price: number | null;
             prices: components["schemas"]["Money"];
             ownership: components["schemas"]["Ownership"];
+            /** @description Deck card this Maybeboard card could replace */
+            swap_for: number | null;
         };
         DeckCardWrite: {
             /**
@@ -1036,6 +1079,7 @@ export interface components {
             readonly cmc: number;
             readonly types: string[];
             readonly color_identity: string[];
+            readonly can_command: components["schemas"]["CanCommand"];
         };
         DeckSummary: {
             id: number;
@@ -1319,6 +1363,20 @@ export interface components {
             name: string;
             kind: components["schemas"]["LocationKindEnum"];
             is_public?: boolean;
+            /**
+             * @description Deck box only: the deck's format (new deck boxes default to Commander)
+             *
+             *     * `commander` - Commander
+             *     * `brawl` - Brawl
+             *     * `standard` - Standard
+             *     * `pioneer` - Pioneer
+             *     * `modern` - Modern
+             *     * `legacy` - Legacy
+             *     * `vintage` - Vintage
+             *     * `pauper` - Pauper
+             *     * `casual` - Casual
+             */
+            deck_format?: (components["schemas"]["FormatEnum"] | components["schemas"]["NullEnum"]) | null;
             readonly card_count: number;
             /** Format: double */
             readonly value: number | null;
@@ -1460,6 +1518,20 @@ export interface components {
             name?: string;
             kind?: components["schemas"]["LocationKindEnum"];
             is_public?: boolean;
+            /**
+             * @description Deck box only: the deck's format (new deck boxes default to Commander)
+             *
+             *     * `commander` - Commander
+             *     * `brawl` - Brawl
+             *     * `standard` - Standard
+             *     * `pioneer` - Pioneer
+             *     * `modern` - Modern
+             *     * `legacy` - Legacy
+             *     * `vintage` - Vintage
+             *     * `pauper` - Pauper
+             *     * `casual` - Casual
+             */
+            deck_format?: (components["schemas"]["FormatEnum"] | components["schemas"]["NullEnum"]) | null;
             readonly card_count?: number;
             /** Format: double */
             readonly value?: number | null;
@@ -1533,6 +1605,7 @@ export interface components {
             readonly image_large: string;
             readonly prices: components["schemas"]["Prices"];
             readonly prices_all: components["schemas"]["PricesAll"];
+            readonly can_command: components["schemas"]["CanCommand"];
         };
         PrintingBrief: {
             /**
@@ -1630,11 +1703,16 @@ export interface components {
             gallery_id: string;
             /** Format: uuid */
             illustration_id?: string | null;
+            target?: components["schemas"]["ScanTarget"];
         };
         ScanResult: {
-            item: components["schemas"]["Item"];
+            /** @description The collection row (null for a decklist-only scan) */
+            item: components["schemas"]["Item"] | null;
+            /** @description Decklist-only scans: the deck card */
+            deck_card: components["schemas"]["ScannedDeckCard"] | null;
             merged: boolean;
-            cart: components["schemas"]["Totals"];
+            /** @description Totals of where the card went: cart, location or deck */
+            totals: components["schemas"]["Totals"];
             /**
              * @description Which sound fits the price
              *
@@ -1643,6 +1721,29 @@ export interface components {
              *     * `big_ding` - big_ding
              */
             sound: components["schemas"]["SoundEnum"];
+        };
+        /** @description Where scans go (spec 005, AC-16). Without one they go to the cart (spec 003). */
+        ScanTarget: {
+            kind: components["schemas"]["ScanTargetKindEnum"];
+            /** @description kind=location: id, or null for Unfiled */
+            location?: number | null;
+            /** @description kind=deck: the decklist (no copy is added) */
+            deck?: number;
+        };
+        /**
+         * @description * `cart` - cart
+         *     * `location` - location
+         *     * `deck` - deck
+         * @enum {string}
+         */
+        ScanTargetKindEnum: "cart" | "location" | "deck";
+        ScannedDeckCard: {
+            id: number;
+            deck: number;
+            quantity: number;
+            printing: components["schemas"]["Printing"];
+            /** Format: double */
+            price: number | null;
         };
         ScannerSettings: {
             /** @description Multi-threaded recognition (cross-origin isolated page) */
@@ -1707,6 +1808,13 @@ export interface components {
             value: components["schemas"]["ValueSplit"];
             values: components["schemas"]["ValuesSplit"];
         };
+        SwapProposal: {
+            /**
+             * Format: uuid
+             * @description The card to propose
+             */
+            printing: string;
+        };
         Totals: {
             card_count: number;
             /** Format: double */
@@ -1730,7 +1838,8 @@ export interface components {
         UndoResult: {
             /** @description Copies left in the row (0 = removed) */
             remaining: number;
-            cart: components["schemas"]["Totals"];
+            /** @description Totals of the row's cart or location */
+            totals: components["schemas"]["Totals"];
         };
         ValueSplit: {
             /** Format: double */
@@ -2182,6 +2291,28 @@ export interface operations {
             };
         };
     };
+    decks_cards_apply_swap_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
     decks_cards_own_create: {
         parameters: {
             query?: never;
@@ -2201,6 +2332,34 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_cards_swaps_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwapProposal"];
+                "application/x-www-form-urlencoded": components["schemas"]["SwapProposal"];
+                "multipart/form-data": components["schemas"]["SwapProposal"];
+            };
+        };
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

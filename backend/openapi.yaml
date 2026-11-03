@@ -424,6 +424,33 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/decks/{id}/cards/{card_id}/apply-swap/:
+    post:
+      operationId: decks_cards_apply_swap_create
+      description: 'Spec 005, AC-11: the candidate goes in, the old card becomes its
+        candidate.'
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
   /api/decks/{id}/cards/{card_id}/own/:
     post:
       operationId: decks_cards_own_create
@@ -456,6 +483,44 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/cards/{card_id}/swaps/:
+    post:
+      operationId: decks_cards_swaps_create
+      description: 'Spec 005, AC-9: a Maybeboard candidate to replace this card.'
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapProposal'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SwapProposal'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SwapProposal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
           content:
             application/json:
               schema:
@@ -1256,7 +1321,9 @@ paths:
   /api/scanner/scans/:
     post:
       operationId: scanner_scans_create
-      description: Log a recognized card into the cart (AC-5, AC-9, AC-10, AC-17).
+      description: |-
+        Log a recognized card (spec 003 AC-5, AC-9, AC-10, AC-17): into the cart, or the
+        chosen location or decklist (spec 005, AC-16, AC-17).
       tags:
       - scanner
       requestBody:
@@ -1283,7 +1350,8 @@ paths:
   /api/scanner/scans/{id}/undo/:
     post:
       operationId: scanner_scans_undo_create
-      description: Remove one copy from a cart row (AC-11).
+      description: 'Remove one copy from the row a scan logged into: cart or location
+        (spec 003 AC-11, spec 005 AC-17).'
       parameters:
       - in: path
         name: id
@@ -1759,6 +1827,16 @@ components:
       - gallery
       - sizes
       - version
+    CanCommand:
+      type: object
+      properties:
+        commander:
+          type: boolean
+        brawl:
+          type: boolean
+      required:
+      - brawl
+      - commander
     CardDetail:
       type: object
       properties:
@@ -1916,6 +1994,10 @@ components:
           $ref: '#/components/schemas/Money'
         ownership:
           $ref: '#/components/schemas/Ownership'
+        swap_for:
+          type: integer
+          nullable: true
+          description: Deck card this Maybeboard card could replace
       required:
       - id
       - ownership
@@ -1923,6 +2005,7 @@ components:
       - prices
       - printing
       - quantity
+      - swap_for
       - zone
     DeckCardWrite:
       type: object
@@ -2127,7 +2210,12 @@ components:
             type: string
             maxLength: 1
           readOnly: true
+        can_command:
+          allOf:
+          - $ref: '#/components/schemas/CanCommand'
+          readOnly: true
       required:
+      - can_command
       - cmc
       - collector_number
       - color_identity
@@ -2832,6 +2920,23 @@ components:
           $ref: '#/components/schemas/LocationKindEnum'
         is_public:
           type: boolean
+        deck_format:
+          nullable: true
+          description: |-
+            Deck box only: the deck's format (new deck boxes default to Commander)
+
+            * `commander` - Commander
+            * `brawl` - Brawl
+            * `standard` - Standard
+            * `pioneer` - Pioneer
+            * `modern` - Modern
+            * `legacy` - Legacy
+            * `vintage` - Vintage
+            * `pauper` - Pauper
+            * `casual` - Casual
+          oneOf:
+          - $ref: '#/components/schemas/FormatEnum'
+          - $ref: '#/components/schemas/NullEnum'
         card_count:
           type: integer
           readOnly: true
@@ -3155,6 +3260,23 @@ components:
           $ref: '#/components/schemas/LocationKindEnum'
         is_public:
           type: boolean
+        deck_format:
+          nullable: true
+          description: |-
+            Deck box only: the deck's format (new deck boxes default to Commander)
+
+            * `commander` - Commander
+            * `brawl` - Brawl
+            * `standard` - Standard
+            * `pioneer` - Pioneer
+            * `modern` - Modern
+            * `legacy` - Legacy
+            * `vintage` - Vintage
+            * `pauper` - Pauper
+            * `casual` - Casual
+          oneOf:
+          - $ref: '#/components/schemas/FormatEnum'
+          - $ref: '#/components/schemas/NullEnum'
         card_count:
           type: integer
           readOnly: true
@@ -3337,7 +3459,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/PricesAll'
           readOnly: true
+        can_command:
+          allOf:
+          - $ref: '#/components/schemas/CanCommand'
+          readOnly: true
       required:
+      - can_command
       - collector_number
       - colors
       - finishes
@@ -3612,17 +3739,29 @@ components:
           type: string
           format: uuid
           nullable: true
+        target:
+          $ref: '#/components/schemas/ScanTarget'
       required:
       - gallery_id
     ScanResult:
       type: object
       properties:
         item:
-          $ref: '#/components/schemas/Item'
+          allOf:
+          - $ref: '#/components/schemas/Item'
+          nullable: true
+          description: The collection row (null for a decklist-only scan)
+        deck_card:
+          allOf:
+          - $ref: '#/components/schemas/ScannedDeckCard'
+          nullable: true
+          description: 'Decklist-only scans: the deck card'
         merged:
           type: boolean
-        cart:
-          $ref: '#/components/schemas/Totals'
+        totals:
+          allOf:
+          - $ref: '#/components/schemas/Totals'
+          description: 'Totals of where the card went: cart, location or deck'
         sound:
           allOf:
           - $ref: '#/components/schemas/SoundEnum'
@@ -3633,10 +3772,62 @@ components:
             * `ding` - ding
             * `big_ding` - big_ding
       required:
-      - cart
+      - deck_card
       - item
       - merged
       - sound
+      - totals
+    ScanTarget:
+      type: object
+      description: Where scans go (spec 005, AC-16). Without one they go to the cart
+        (spec 003).
+      properties:
+        kind:
+          $ref: '#/components/schemas/ScanTargetKindEnum'
+        location:
+          type: integer
+          nullable: true
+          description: 'kind=location: id, or null for Unfiled'
+        deck:
+          type: integer
+          description: 'kind=deck: the decklist (no copy is added)'
+      required:
+      - kind
+    ScanTargetKindEnum:
+      enum:
+      - cart
+      - location
+      - deck
+      type: string
+      description: |-
+        * `cart` - cart
+        * `location` - location
+        * `deck` - deck
+    ScannedDeckCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        deck:
+          type: integer
+        quantity:
+          type: integer
+        printing:
+          $ref: '#/components/schemas/Printing'
+        price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+      required:
+      - deck
+      - id
+      - price
+      - printing
+      - quantity
     ScannerSettings:
       type: object
       properties:
@@ -3764,6 +3955,15 @@ components:
       - types
       - value
       - values
+    SwapProposal:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: The card to propose
+      required:
+      - printing
     Totals:
       type: object
       properties:
@@ -3813,11 +4013,13 @@ components:
         remaining:
           type: integer
           description: Copies left in the row (0 = removed)
-        cart:
-          $ref: '#/components/schemas/Totals'
+        totals:
+          allOf:
+          - $ref: '#/components/schemas/Totals'
+          description: Totals of the row's cart or location
       required:
-      - cart
       - remaining
+      - totals
     ValueSplit:
       type: object
       properties:

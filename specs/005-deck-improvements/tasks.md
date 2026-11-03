@@ -15,10 +15,10 @@ on zone change, visibility both ways, format both ways).
 
 ## Phase 2: API
 
-- [ ] **T3 `can_command` on printings and deck cards** (AC-5)
-- [ ] **T4 Swap endpoints, deck and location endpoint changes** (AC-9 to AC-11, AC-18, AC-19)
-- [ ] **T5 Public lists and directory leave out deck boxes; public deck shows its box** (AC-20)
-- [ ] **T6 Scan target and undo for any logged row, API types** (AC-16, AC-17)
+- [x] **T3 `can_command` on printings and deck cards** (AC-5)
+- [x] **T4 Swap endpoints, deck and location endpoint changes** (AC-9 to AC-11, AC-18, AC-19)
+- [x] **T5 Public lists and directory leave out deck boxes; public deck shows its box** (AC-20)
+- [x] **T6 Scan target and undo for any logged row, API types** (AC-16, AC-17)
 
 ## Phase 3: Shared components
 

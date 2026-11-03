@@ -208,6 +208,7 @@ SPECTACULAR_SETTINGS = {
         'ConditionEnum': 'collection.models.Condition',
         'LanguageEnum': 'collection.models.Language',
         'LocationKindEnum': 'collection.models.Location.Kind',
+        'FormatEnum': 'decks.models.Deck.Format',
     },
 }
 

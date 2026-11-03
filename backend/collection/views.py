@@ -359,7 +359,9 @@ class DirectoryView(APIView):
     def get(self, request):
         users = (
             get_user_model().objects
-            .annotate(public_locations=Count('locations', filter=Q(locations__is_public=True), distinct=True),
+            # A deck box counts once, as its deck (spec 005, AC-20).
+            .annotate(public_locations=Count('locations', filter=Q(locations__is_public=True, locations__deck__isnull=True),
+                                             distinct=True),
                       public_decks=Count('decks', filter=Q(decks__is_public=True), distinct=True))
             .filter(Q(public_locations__gt=0) | Q(public_decks__gt=0))
             .order_by('username')
@@ -376,7 +378,8 @@ class PublicLocationListView(APIView):
     def get(self, request, username):
         user = get_object_or_404(get_user_model(), username__iexact=username)
         ctx = price_context(request)
-        locations = Location.objects.filter(user=user, is_public=True).order_by('name')
+        # Deck boxes show through their decks (spec 005, AC-20).
+        locations = Location.objects.filter(user=user, is_public=True, deck__isnull=True).order_by('name')
         totals = location_totals(CollectionItem.objects.filter(location__in=locations), ctx['currency'], ctx['rates'])
         return Response({
             'currency': ctx['currency'],
