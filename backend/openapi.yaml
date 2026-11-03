@@ -3153,12 +3153,18 @@ components:
           items:
             $ref: '#/components/schemas/FreeCopy'
           description: Empty for visitors
+        box_copies:
+          type: array
+          items:
+            $ref: '#/components/schemas/FreeCopy'
+          description: Rows in this deck's box; empty for visitors
         other_decks:
           type: array
           items:
             $ref: '#/components/schemas/OtherDeck'
           description: Empty for visitors
       required:
+      - box_copies
       - free
       - free_copies
       - in_box

@@ -1,49 +1,78 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { ArrowLeftIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
-import CardPreview from '@/components/CardPreview.vue'
+import CardSearch from '@/components/collection/CardSearch.vue'
+import ItemFields, { type ItemForm } from '@/components/collection/ItemFields.vue'
 import PrintingPicker from '@/components/collection/PrintingPicker.vue'
 import IconButton from '@/components/IconButton.vue'
+import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { ZONE_LABELS, zonesFor, type DeckDetail, type Zone } from '@/lib/decks'
+import type { Finish } from '@/lib/cards'
+import { ZONE_LABELS, zonesForCard, type DeckDetail, type Zone } from '@/lib/decks'
+import { useAuthStore } from '@/stores/auth'
+import { useLocationsStore } from '@/stores/locations'
 
-/** Search the catalog and add to a deck; stays open for the next card (spec 004, AC-10). */
+/**
+ * Add to a deck: the collection's search, then printing, quantity and zone, and
+ * optionally copies for the collection (spec 005, AC-1, AC-2). Stays open for the next card.
+ */
 const props = defineProps<{ deck: DeckDetail }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ changed: [deck: DeckDetail] }>()
+const auth = useAuthStore()
+const locations = useLocationsStore()
 const ACTIVE = 'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground'
 
 const query = ref('')
-const results = ref<Schemas['CardSearchResult'][]>([])
 const card = ref<Schemas['CardSearchResult'] | null>(null)
 const printings = ref<Schemas['Printing'][]>([])
 const printingId = ref<string | null>(null)
 const quantity = ref(1)
 const zone = ref<Zone>('main')
+const alsoOwn = ref(false)
+const form = ref<ItemForm>(blankForm())
+const errors = ref<Record<string, string>>({})
 const busy = ref(false)
+const search = ref<InstanceType<typeof CardSearch> | null>(null)
 
-watch(open, (isOpen) => {
-  if (!isOpen) return
+const printing = computed(() => printings.value.find((p) => p.id === printingId.value) ?? null)
+const zones = computed(() => zonesForCard(props.deck.format, printing.value))
+const currency = computed(() => auth.user?.currency ?? 'USD')
+
+/** Copies start in the deck box; without one the user picks (AC-2). */
+function blankForm(): ItemForm {
+  return {
+    quantity: 1, finish: 'nonfoil', condition: 'NM', language: 'en', purchase_price: '',
+    purchase_currency: auth.user?.currency ?? 'USD', location: props.deck.location ? String(props.deck.location) : '',
+  }
+}
+
+function reset() {
   query.value = ''
   card.value = null
   quantity.value = 1
+  errors.value = {}
+}
+
+watch(open, (isOpen) => {
+  if (!isOpen) return
+  reset()
   zone.value = 'main'
+  alsoOwn.value = false
+  form.value = blankForm()
+  if (!locations.loaded) locations.load()
 })
-let timer: ReturnType<typeof setTimeout>
-watch(query, (q) => {
-  clearTimeout(timer)
-  card.value = null
-  if (q.trim().length < 2) return (results.value = [])
-  timer = setTimeout(async () => {
-    const { data } = await api.GET('/api/catalog/cards/', { params: { query: { q } } })
-    results.value = data ?? []
-  }, 200)
+watch(query, () => (card.value = null))
+watch(zones, (list) => !list.includes(zone.value) && (zone.value = 'main'))
+watch(printing, (p) => {
+  if (p && !p.finishes.includes(form.value.finish)) form.value.finish = (p.finishes[0] ?? 'nonfoil') as Finish
 })
 
 async function choose(result: Schemas['CardSearchResult']) {
@@ -54,53 +83,77 @@ async function choose(result: Schemas['CardSearchResult']) {
 }
 
 async function add() {
-  if (!printingId.value || !card.value) return
+  if (!printing.value || !card.value) return
+  const f = form.value
+  if (alsoOwn.value && f.location === '') return (errors.value = { location: 'Choose a location.' })
   busy.value = true
-  const { data, error } = await api.POST('/api/decks/{id}/cards/', {
+  errors.value = {}
+  // The decklist first: copies landing in the deck box then find the card already listed (spec 004, AC-29).
+  const added = await api.POST('/api/decks/{id}/cards/', {
     params: { path: { id: props.deck.id } },
-    body: { printing: printingId.value, quantity: quantity.value, zone: zone.value },
+    body: { printing: printing.value.id, quantity: quantity.value, zone: zone.value },
   })
+  if (!added.data) {
+    busy.value = false
+    return (errors.value = fieldErrors(added.error as unknown))
+  }
+  let deck = added.data
+  if (alsoOwn.value) {
+    const owned = await api.POST('/api/items/', {
+      body: {
+        printing: printing.value.id, quantity: quantity.value, finish: f.finish, condition: f.condition, language: f.language,
+        purchase_price: f.purchase_price === '' ? null : Number(f.purchase_price),
+        purchase_currency: f.purchase_price === '' ? null : f.purchase_currency,
+        location: f.location === 'unfiled' ? null : Number(f.location),
+      },
+    })
+    if (!owned.data) toast.error(Object.values(fieldErrors(owned.error as unknown)).join(' ') || 'Could not add the copies.')
+    const fresh = await api.GET('/api/decks/{id}/', { params: { path: { id: props.deck.id } } })
+    deck = fresh.data ?? deck
+    void locations.load()
+  }
   busy.value = false
-  if (error || !data) return toast.error(Object.values(fieldErrors(error)).join(' '))
-  toast.success(`Added ${quantity.value} × ${card.value.name} to ${ZONE_LABELS[zone.value]}.`)
-  emit('changed', data)
-  query.value = ''
-  quantity.value = 1
+  toast.success(`Added ${quantity.value} × ${card.value.name} to ${ZONE_LABELS[zone.value]}${alsoOwn.value ? ' and your collection' : ''}.`)
+  emit('changed', deck)
+  reset()
+  await nextTick()
+  search.value?.focus()
 }
 </script>
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
       <DialogHeader><DialogTitle>Add to {{ deck.name }}</DialogTitle></DialogHeader>
-      <Input v-model="query" placeholder="Card name" aria-label="Card name" autocomplete="off" autofocus />
-      <ul v-if="!card && results.length" class="grid max-h-80 gap-1 overflow-y-auto" data-testid="card-results">
-        <li v-for="r in results" :key="r.oracle_id">
-          <CardPreview :image="r.image_normal" :name="r.name">
-            <button type="button" class="flex w-full items-center gap-3 rounded-md p-1.5 text-left hover:bg-muted" :aria-label="r.name" @click="choose(r)">
-              <img :src="r.image_small" alt="" class="h-12 rounded-sm" loading="lazy" />
-              <span>{{ r.name }}</span>
-            </button>
-          </CardPreview>
-        </li>
-      </ul>
+      <CardSearch ref="search" v-model:query="query" :picked="!!card" @choose="choose" />
+
       <template v-if="card">
         <div class="flex items-center gap-2">
           <IconButton label="Back to results" variant="ghost" class="size-7" @click="card = null"><ArrowLeftIcon /></IconButton>
           <span class="font-medium">{{ card.name }}</span>
         </div>
         <PrintingPicker v-model="printingId" :printings="printings" />
+        <p v-if="printing" class="text-sm text-muted-foreground" data-testid="printing-summary">
+          {{ printing.set_name }} #{{ printing.collector_number }} ·
+          <Price :value="printing.prices[form.finish]" :values="printing.prices_all[form.finish]" :currency="currency" />
+        </p>
         <div class="grid grid-cols-[6rem_1fr] items-center gap-3">
           <Label for="deck-add-qty">Quantity</Label>
           <Input id="deck-add-qty" v-model.number="quantity" type="number" min="1" max="999" class="w-24" />
           <Label id="deck-add-zone">Zone</Label>
           <ToggleGroup type="single" variant="outline" :model-value="zone" aria-labelledby="deck-add-zone" class="flex-wrap justify-start" @update:model-value="(v) => v && (zone = v as Zone)">
-            <ToggleGroupItem v-for="z in zonesFor(deck.format)" :key="z" :value="z" :class="ACTIVE" class="px-3">{{ ZONE_LABELS[z] }}</ToggleGroupItem>
+            <ToggleGroupItem v-for="z in zones" :key="z" :value="z" :class="ACTIVE" class="px-3">{{ ZONE_LABELS[z] }}</ToggleGroupItem>
           </ToggleGroup>
         </div>
+        <label class="flex w-fit items-center gap-2 text-sm">
+          <Checkbox v-model="alsoOwn" /> Also add to my collection
+        </label>
+        <ItemFields v-if="alsoOwn && printing" v-model="form" :finishes="printing.finishes" :errors="errors" hide-quantity />
+        <p v-if="errors.zone || errors.printing" class="text-sm text-destructive">{{ errors.zone ?? errors.printing }}</p>
       </template>
+
       <DialogFooter>
-        <Button :disabled="!card || busy" @click="add">Add</Button>
+        <Button :disabled="!printing || busy" @click="add">Add</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

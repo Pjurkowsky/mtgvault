@@ -21,9 +21,22 @@ import { cn } from '@/lib/utils'
  * Card detail (spec 002, AC-24 to AC-38): big image, reprints, your copies,
  * and EDHREC tabs. Cards opened from a tab stack up; the back arrow returns.
  */
-const props = defineProps<{ row: BrowserRow | null; currency: string; readonly?: boolean }>()
+const props = defineProps<{
+  row: BrowserRow | null
+  currency: string
+  readonly?: boolean
+  /** Open a card without a collection row (spec 005, AC-3): a deck card. */
+  oracleId?: string | null
+  /** With `oracleId`: the printing to show. */
+  printingId?: string | null
+  /** Reprints pick a printing (emits choose-printing) instead of switching the row's. */
+  choosePrinting?: boolean
+}>()
 const open = defineModel<boolean>('open', { required: true })
-const emit = defineEmits<{ changed: []; edit: [row: BrowserRow]; delete: [row: BrowserRow] }>()
+const emit = defineEmits<{
+  changed: []; edit: [row: BrowserRow]; delete: [row: BrowserRow]; 'choose-printing': [printing: Schemas['Printing']]
+}>()
+defineSlots<{ deck?: () => unknown }>()
 const confirm = useConfirm()
 
 type Entry = { oracleId: string; row: BrowserRow | null }
@@ -43,9 +56,13 @@ watch(tab, (next) => {
 const current = computed(() => stack.value.at(-1) ?? null)
 const row = computed(() => current.value?.row ?? null)
 const ownRow = computed(() => !!row.value && !props.readonly)
+// The card the dialog opened on, before any EDHREC card was stacked on top.
+const atRoot = computed(() => stack.value.length === 1)
+const picking = computed(() => !!props.choosePrinting && atRoot.value && !props.readonly)
 const shown = computed(() => {
   const printings = card.value?.printings ?? []
-  return printings.find((p) => p.id === row.value?.printing.id) ?? printings[0] ?? null
+  const wanted = row.value?.printing.id ?? (atRoot.value ? props.printingId : null)
+  return printings.find((p) => p.id === wanted) ?? printings[0] ?? null
 })
 
 async function load() {
@@ -68,8 +85,10 @@ async function load() {
 }
 
 watch(open, (isOpen) => {
-  if (!isOpen || !props.row) return
-  stack.value = [{ oracleId: props.row.printing.oracle_id, row: props.row }]
+  if (!isOpen) return
+  if (props.row) stack.value = [{ oracleId: props.row.printing.oracle_id, row: props.row }]
+  else if (props.oracleId) stack.value = [{ oracleId: props.oracleId, row: null }]
+  else return
   load()
 })
 // After an edit the browser hands us the saved row.
@@ -89,6 +108,7 @@ function back() {
 
 // Switch the row to another printing (AC-27).
 async function switchTo(printing: Schemas['Printing']) {
+  if (picking.value) return emit('choose-printing', printing)
   const r = row.value
   if (!ownRow.value || !r || printing.id === r.printing.id) return
   const copies = `${r.quantity} ${r.quantity === 1 ? 'copy' : 'copies'}`
@@ -135,13 +155,13 @@ const tabs = computed(() => [
             <div v-for="p in card.printings" :key="p.id" class="group relative shrink-0">
             <ExpandButton :image="p.image_large || p.image_normal" :name="`${p.name} (${p.set_name})`" />
             <component
-              :is="ownRow ? 'button' : 'div'"
-              :type="ownRow ? 'button' : undefined"
+              :is="ownRow || picking ? 'button' : 'div'"
+              :type="ownRow || picking ? 'button' : undefined"
               role="radio" :aria-checked="p.id === shown?.id" :aria-label="`${p.set_name} #${p.collector_number}`"
               class="block w-16 text-left"
               @click="switchTo(p)"
             >
-              <img :src="p.image_small" alt="" loading="lazy" :class="cn('rounded-[4.75%/3.5%] bg-muted', p.id === shown?.id ? 'ring-2 ring-primary ring-offset-2' : ownRow && 'opacity-70 hover:opacity-100')" />
+              <img :src="p.image_small" alt="" loading="lazy" :class="cn('rounded-[4.75%/3.5%] bg-muted', p.id === shown?.id ? 'ring-2 ring-primary ring-offset-2' : (ownRow || picking) && 'opacity-70 hover:opacity-100')" />
               <span class="mt-1 block truncate text-[10px] uppercase">{{ p.set_code }} #{{ p.collector_number }}</span>
             </component>
             </div>
@@ -149,8 +169,10 @@ const tabs = computed(() => [
         </div>
 
         <div class="grid content-start gap-6">
+          <!-- A deck card: the deck section (spec 005, AC-3) -->
+          <slot v-if="$slots.deck && atRoot" name="deck" />
           <!-- Your copies (AC-25), or what you own of a card from a tab (AC-33, AC-34) -->
-          <section v-if="row" class="grid gap-4" data-testid="copies">
+          <section v-else-if="row" class="grid gap-4" data-testid="copies">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
               <div><dt class="text-muted-foreground">Quantity</dt><dd data-testid="detail-quantity">{{ row.quantity }}</dd></div>
               <div><dt class="text-muted-foreground">Finish</dt><dd>{{ labelOf(FINISHES, row.finish) }}</dd></div>

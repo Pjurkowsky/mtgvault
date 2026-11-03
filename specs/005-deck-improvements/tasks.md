@@ -22,9 +22,9 @@ on zone change, visibility both ways, format both ways).
 
 ## Phase 3: Shared components
 
-- [ ] **T7 `CardSearch` extracted; DeckAddDialog rebuilt from shared pieces; AddCardDialog with a fixed card** (AC-1, AC-2, AC-4)
-- [ ] **T8 CardDetailDialog by oracle id with the deck section; DeckCardDialog removed** (AC-3, AC-5)
-- [ ] **T9 `CardMenu` with item props** (AC-7)
+- [x] **T7 `CardSearch` extracted; DeckAddDialog rebuilt from shared pieces; AddCardDialog with a fixed card** (AC-1, AC-2, AC-4)
+- [x] **T8 CardDetailDialog by oracle id with the deck section; DeckCardDialog removed** (AC-3, AC-5)
+- [x] **T9 `CardMenu` with item props** (AC-7)
 
 ## Phase 4: Deck page
 

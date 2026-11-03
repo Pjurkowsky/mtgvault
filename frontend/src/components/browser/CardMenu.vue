@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { EyeIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
+import { computed } from 'vue'
+import { ArrowLeftRightIcon, EyeIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -8,21 +9,35 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
-/** Right-click (long-press on touch) menu for a card (spec 002, AC-18). */
-defineProps<{ editable: boolean }>()
-const emit = defineEmits<{ open: []; edit: []; delete: []; deck: [] }>()
+export type MenuItem = 'open' | 'edit' | 'deck' | 'swap' | 'delete'
+
+/**
+ * Right-click (long-press on touch) menu for a card (spec 002, AC-18). The card
+ * browser shows Open, Edit, Add to deck, Delete; a deck shows Edit, Propose swap,
+ * Delete (spec 005, AC-7).
+ */
+const props = defineProps<{ editable: boolean; items?: MenuItem[] }>()
+const emit = defineEmits<{ open: []; edit: []; delete: []; deck: []; swap: [] }>()
+
+const LABELS: Record<MenuItem, { label: string; icon: unknown }> = {
+  open: { label: 'Open', icon: EyeIcon },
+  edit: { label: 'Edit', icon: PencilIcon },
+  deck: { label: 'Add to deck', icon: LayersIcon },
+  swap: { label: 'Propose swap', icon: ArrowLeftRightIcon },
+  delete: { label: 'Delete', icon: Trash2Icon },
+}
+const shown = computed<MenuItem[]>(() => props.items ?? (props.editable ? ['open', 'edit', 'deck', 'delete'] : ['open']))
 </script>
 
 <template>
   <ContextMenu>
     <ContextMenuTrigger as-child><slot /></ContextMenuTrigger>
     <ContextMenuContent data-testid="card-menu">
-      <ContextMenuItem @select="emit('open')"><EyeIcon /> Open</ContextMenuItem>
-      <template v-if="editable">
-        <ContextMenuItem @select="emit('edit')"><PencilIcon /> Edit</ContextMenuItem>
-        <ContextMenuItem @select="emit('deck')"><LayersIcon /> Add to deck</ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem variant="destructive" @select="emit('delete')"><Trash2Icon /> Delete</ContextMenuItem>
+      <template v-for="item in shown" :key="item">
+        <ContextMenuSeparator v-if="item === 'delete' && shown.length > 1" />
+        <ContextMenuItem :variant="item === 'delete' ? 'destructive' : 'default'" @select="emit(item as 'open')">
+          <component :is="LABELS[item].icon" /> {{ LABELS[item].label }}
+        </ContextMenuItem>
       </template>
     </ContextMenuContent>
   </ContextMenu>

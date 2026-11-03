@@ -10,7 +10,7 @@ import CardBrowser from '@/components/browser/CardBrowser.vue'
 import ExportDialog from '@/components/browser/ExportDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
-import DeckCardDialog from '@/components/decks/DeckCardDialog.vue'
+import DeckCardDetail from '@/components/decks/DeckCardDetail.vue'
 import DeckImportDialog from '@/components/decks/DeckImportDialog.vue'
 import DeckList from '@/components/decks/DeckList.vue'
 import DeckStats from '@/components/decks/DeckStats.vue'
@@ -207,7 +207,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       </TabsContent>
     </Tabs>
 
-    <DeckCardDialog v-model:open="cardOpen" :deck="deck" :card="openCard" :readonly="!isOwner" @changed="changed" />
+    <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :readonly="!isOwner" @changed="changed" />
     <template v-if="isOwner">
       <DeckAddDialog v-model:open="addOpen" :deck="deck" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />

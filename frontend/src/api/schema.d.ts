@@ -1468,6 +1468,8 @@ export interface components {
             missing: number;
             /** @description Empty for visitors */
             free_copies: components["schemas"]["FreeCopy"][];
+            /** @description Rows in this deck's box; empty for visitors */
+            box_copies: components["schemas"]["FreeCopy"][];
             /** @description Empty for visitors */
             other_decks: components["schemas"]["OtherDeck"][];
         };

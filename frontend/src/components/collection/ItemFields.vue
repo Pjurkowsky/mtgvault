@@ -20,7 +20,7 @@ export type ItemForm = {
   language: Language
   purchase_price: string
   purchase_currency: Currency
-  location: string // location id, or 'unfiled'
+  location: string // location id, 'unfiled', or '' when none is picked yet
 }
 
 /** Up to this many locations show as toggle buttons; more get a searchable list (AC-11). */
@@ -28,7 +28,7 @@ const MAX_LOCATION_TOGGLES = 6
 // The chosen toggle stands out clearly.
 const ACTIVE = 'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground'
 
-const props = defineProps<{ finishes: string[]; errors?: Record<string, string>; hideLocation?: boolean }>()
+const props = defineProps<{ finishes: string[]; errors?: Record<string, string>; hideLocation?: boolean; hideQuantity?: boolean }>()
 const form = defineModel<ItemForm>({ required: true })
 const locations = useLocationsStore()
 
@@ -38,7 +38,7 @@ const locationOptions = computed(() => [
   ...locations.locations.map((l) => ({ value: String(l.id), label: l.name })),
 ])
 const asToggles = computed(() => locations.locations.length <= MAX_LOCATION_TOGGLES)
-const locationLabel = computed(() => locationOptions.value.find((o) => o.value === form.value.location)?.label ?? 'Unfiled')
+const locationLabel = computed(() => locationOptions.value.find((o) => o.value === form.value.location)?.label ?? 'Choose a location')
 const pickerOpen = ref(false)
 
 // Toggle groups allow clicking the active item off; keep a value instead.
@@ -89,10 +89,11 @@ const setLocation = (v: unknown) => v && (form.value.location = String(v))
           </Command>
         </PopoverContent>
       </Popover>
+      <p v-if="errors?.location" class="text-sm text-destructive">{{ errors.location }}</p>
     </div>
 
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      <div class="grid gap-2">
+      <div v-if="!hideQuantity" class="grid gap-2">
         <Label for="item-quantity">Quantity</Label>
         <Input id="item-quantity" v-model.number="form.quantity" type="number" min="1" max="999" />
         <p v-if="errors?.quantity" class="text-sm text-destructive">{{ errors.quantity }}</p>

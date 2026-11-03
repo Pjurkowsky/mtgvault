@@ -81,6 +81,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
         ownership = dict(own[c.id])
         if public:  # AC-28: no location or other deck names for visitors
             ownership['free_copies'] = []
+            ownership['box_copies'] = []
             ownership['other_decks'] = []
         out_cards.append({
             'id': c.id, 'zone': c.zone, 'quantity': c.quantity, 'printing': c.printing,

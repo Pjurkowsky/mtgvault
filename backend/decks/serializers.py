@@ -45,6 +45,7 @@ class OwnershipSerializer(serializers.Serializer):
     in_other_decks = serializers.IntegerField()
     missing = serializers.IntegerField()
     free_copies = FreeCopySerializer(many=True, help_text='Empty for visitors')
+    box_copies = FreeCopySerializer(many=True, help_text="Rows in this deck's box; empty for visitors")
     other_decks = OtherDeckSerializer(many=True, help_text='Empty for visitors')
 
 

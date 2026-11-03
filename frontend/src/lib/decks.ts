@@ -27,6 +27,13 @@ export function zonesFor(format: string): Zone[] {
   return hasCommander(format) ? ['commander', 'main', 'maybe'] : format === 'casual' ? ['main', 'side', 'maybe'] : ['main', 'side', 'maybe']
 }
 
+/** Zones a card may go to: the Commander zone only for cards that can lead the format (spec 005, AC-5). */
+export function zonesForCard(format: string, printing: { can_command: { commander: boolean; brawl: boolean } } | null): Zone[] {
+  const zones = zonesFor(format)
+  const leads = format === 'commander' || format === 'brawl' ? printing?.can_command[format] : false
+  return leads ? zones : zones.filter((z) => z !== 'commander')
+}
+
 export const OWN_STATES: Record<OwnState, { label: string; dot: string }> = {
   in_box: { label: 'In deck box', dot: 'bg-emerald-500' },
   owned: { label: 'Owned', dot: 'bg-sky-500' },

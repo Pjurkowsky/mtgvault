@@ -15,21 +15,24 @@ def deck_ownership(deck, cards) -> dict[int, dict]:
         .select_related('printing', 'location__deck')
     )
     in_box = defaultdict(int)
+    box = defaultdict(list)
     other = defaultdict(lambda: defaultdict(int))
     free = defaultdict(list)
     for row in rows:
         oracle = row.printing.oracle_id
         location = row.location
+        copy = {
+            'item_id': row.id, 'quantity': row.quantity, 'location': location.name if location else 'Unfiled',
+            'location_id': location.id if location else None, 'set_code': row.printing.set_id,
+            'collector_number': row.printing.collector_number, 'finish': row.finish,
+        }
         if location is not None and location.id == deck.location_id:
             in_box[oracle] += row.quantity
+            box[oracle].append(copy)
         elif location is not None and hasattr(location, 'deck'):
             other[oracle][location.deck.name] += row.quantity
         else:
-            free[oracle].append({
-                'item_id': row.id, 'quantity': row.quantity, 'location': location.name if location else 'Unfiled',
-                'location_id': location.id if location else None, 'set_code': row.printing.set_id,
-                'collector_number': row.printing.collector_number, 'finish': row.finish,
-            })
+            free[oracle].append(copy)
 
     # Copies needed per card across Commander, Mainboard and Sideboard (Maybeboard on its own).
     needed = defaultdict(int)
@@ -59,6 +62,7 @@ def deck_ownership(deck, cards) -> dict[int, dict]:
             'in_other_decks': other_n,
             'missing': max(0, need - box_n - free_n - other_n),
             'free_copies': free[c.oracle_id],
+            'box_copies': box[c.oracle_id],
             'other_decks': [{'deck': name, 'quantity': q} for name, q in other[c.oracle_id].items()],
         }
     return result
