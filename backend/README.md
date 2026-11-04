@@ -42,28 +42,30 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/catalog/cards/<oracle_id>/edhrec/` | public | EDHREC commanders, played-with groups, similar cards |
 | `GET /api/catalog/sets/?q=`, `GET /api/catalog/status/` | public | Set search; last price update |
 | `GET/POST /api/locations/` | bearer | Locations with totals (plus Unfiled) / create |
-| `GET/PATCH /api/locations/<id>/`, `POST .../delete/` | bearer | Detail, edit, delete with move/unfile/delete |
+| `GET/PATCH /api/locations/<id>/`, `POST .../delete/` | bearer | Detail, edit (`deck_format` for a Deck box), delete with move/unfile/delete |
 | `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
 | `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
 | `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
 | `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists |
 | `GET /api/users/` | public | Directory of users with public locations or decks |
-| `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only |
+| `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only; deck boxes are left out of the list |
 | `GET/POST /api/decks/` | bearer | Deck tiles / create (`create_box`, optional `text` to import) |
 | `GET/PATCH /api/decks/<id>/`, `POST .../delete/` | bearer | Full deck (cards with ownership, legality, stats) / edit / delete with keep, unfile or delete for its box |
 | `POST /api/decks/<id>/cards/`, `PATCH/DELETE .../cards/<cid>/` | bearer | Add (merges by card and zone), change, remove |
 | `POST /api/decks/<id>/cards/<cid>/own/` | bearer | Mark owned: move a free copy into the box, or add a new copy |
+| `POST /api/decks/<id>/cards/<cid>/swaps/` | bearer | Propose a swap: `{printing}` joins the Maybeboard linked to the card |
+| `POST /api/decks/<id>/cards/<cid>/apply-swap/` | bearer | Apply a candidate: it takes the old card's zone and quantity; the old card becomes its candidate |
 | `POST /api/decks/<id>/box/` | bearer | Create the deck box and move free copies into it |
 | `POST /api/decks/add-from-collection/` | bearer | One copy of each selected card into a deck |
 | `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text |
-| `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without locations or other deck names |
+| `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
 | `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets) |
 | `GET /api/scanner/locked-illustrations/` | bearer | Artwork printed in the locked sets |
-| `POST /api/scanner/scans/` | bearer | Log recognized art into the cart |
-| `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a cart row |
+| `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
+| `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
 
@@ -113,7 +115,9 @@ The `decks` app keeps decklists (`Deck`, `DeckCard`). A deck card is a card
 (`oracle_id`) with a preferred printing for its picture and price; any owned
 printing counts. A deck may have a deck box: a `Location` of kind Deck box,
 one-to-one. The location endpoints keep the two in sync: a new Deck box
-location gets a Casual deck, and changing the kind away unlinks it. Cards
+location gets a deck (Commander unless `deck_format` says otherwise), and
+changing the kind away unlinks it. A deck and its box share format and
+visibility; the box is counted once, as the deck, in public lists. Cards
 that land in a deck box join its decklist's Mainboard when the list has fewer
 copies (`decks.services.fill_from_box`, called from `save_item` and
 `edit_item`); taking cards out never changes the list.
@@ -125,6 +129,11 @@ copies (`decks.services.fill_from_box`, called from `save_item` and
 - `decks/legality.py`: the formats table, Scryfall card legality (from
   `Printing.legalities`), size, copies, sideboard, commander pairing and
   color identity.
+- Swap candidates: Maybeboard cards with `swap_for` pointing at the card they
+  could replace (`decks.services.propose_swap`, `apply_swap`, `move_zone`).
+  Leaving the Maybeboard or removing the old card drops the link.
+- Printings carry `can_command` per commander format, so the frontend offers
+  the Commander zone only for possible commanders.
 - `decks/stats.py`, `decks/textlist.py`: curve, pips, types, values; zone-aware
   import and export.
 

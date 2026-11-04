@@ -26,9 +26,12 @@ src/
   components/             shared: Price (tooltip with other currencies), ConfirmDialog
                           (useConfirm), IconButton (tooltip), CardPreview (hover),
                           ExpandButton + FullscreenCard, ManaSymbol
-  components/decks/       deck list (Moxfield-style) and images, card actions,
-                          add/import/export, deck box, stats, legality, ManaCost
+  components/decks/       deck views (text, list, images) with card menus, swaps,
+                          add (built on CardSearch, ItemFields), the deck section of
+                          the card dialog, import/export, deck box, scan target,
+                          stats, legality, ManaCost
   lib/decks.ts            formats, zones, ownership states, grouping and sorting
+  lib/scanTarget.ts       where a deck's scans go, remembered per deck
   assets/mana/            Scryfall mana symbols
   scanner/                camera, frame loop, sounds; recognition/ is ported from
                           manavault (MPL-2.0, see the root README)
