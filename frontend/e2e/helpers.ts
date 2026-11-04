@@ -153,6 +153,13 @@ export async function selectAll(page: Page) {
 
 /** A row in a deck's list (spec 004, AC-18). */
 export const deckRow = (page: Page, name: string) => page.getByTestId('deck-row').filter({ hasText: name })
+/** The collection's card dialog, opened from a deck card with its deck section (spec 005, AC-3). */
+export const cardDialog = (page: Page) => page.getByTestId('card-detail')
+/** Close the card dialog with its button (Escape may only close a tooltip under the pointer). */
+export async function closeCardDialog(page: Page) {
+  await cardDialog(page).getByRole('button', { name: 'Close' }).last().click()
+  await cardDialog(page).waitFor({ state: 'hidden' })
+}
 
 /** Open the deck page's More (⋯) menu and pick an item. */
 export async function deckMenu(page: Page, item: 'Import' | 'Export' | 'Edit' | 'Create deck box' | 'Delete') {

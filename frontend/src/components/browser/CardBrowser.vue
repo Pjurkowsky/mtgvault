@@ -6,6 +6,7 @@ import {
   ArrowUpNarrowWideIcon,
   DownloadIcon,
   EllipsisIcon,
+  HeartIcon,
   LayoutGridIcon,
   ListIcon,
   PlusIcon,
@@ -291,9 +292,11 @@ const exportName = computed(() =>
           <DropdownMenuContent align="end">
             <DropdownMenuItem v-if="canAdd" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
+            <!-- The want list comes later (spec 005, AC-14). -->
+            <DropdownMenuItem v-if="source.kind === 'deck-missing'" disabled><HeartIcon /> Add to want list</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <IconButton v-if="editable" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
+        <IconButton v-if="editable && !deck" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
         <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>

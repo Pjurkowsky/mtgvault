@@ -7,8 +7,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { KINDS, type LocationKind } from '@/lib/cards'
+import { FORMATS } from '@/lib/decks'
 import { useLocationsStore, type Location } from '@/stores/locations'
 
 const props = defineProps<{ location?: Location | null }>()
@@ -18,6 +20,8 @@ const store = useLocationsStore()
 const name = ref('')
 const kind = ref<LocationKind>('binder')
 const isPublic = ref(false)
+// A Deck box's deck format (spec 005, AC-18).
+const deckFormat = ref<string>('commander')
 const errors = ref<Record<string, string>>({})
 const saving = ref(false)
 
@@ -26,12 +30,16 @@ watch(open, (isOpen) => {
   name.value = props.location?.name ?? ''
   kind.value = props.location?.kind ?? 'binder'
   isPublic.value = props.location?.is_public ?? false
+  deckFormat.value = props.location?.deck_format ?? 'commander'
   errors.value = {}
 })
 
 async function save() {
   saving.value = true
-  const body = { name: name.value, kind: kind.value, is_public: isPublic.value }
+  const body = {
+    name: name.value, kind: kind.value, is_public: isPublic.value,
+    ...(kind.value === 'deck_box' ? { deck_format: deckFormat.value as Location['deck_format'] } : {}),
+  }
   const { error } = props.location ? await store.update(props.location.id, body) : await store.create(body)
   saving.value = false
   if (error) return (errors.value = fieldErrors(error))
@@ -60,6 +68,13 @@ async function save() {
               <Label :for="`kind-${k.value}`" class="font-normal">{{ k.label }}</Label>
             </div>
           </RadioGroup>
+        </div>
+        <div v-if="kind === 'deck_box'" class="grid gap-2">
+          <Label for="location-format">Format</Label>
+          <Select v-model="deckFormat">
+            <SelectTrigger id="location-format" class="w-full"><SelectValue /></SelectTrigger>
+            <SelectContent><SelectItem v-for="f in FORMATS" :key="f.value" :value="f.value">{{ f.label }}</SelectItem></SelectContent>
+          </Select>
         </div>
         <div class="flex items-center gap-3">
           <Switch id="location-public" v-model="isPublic" />

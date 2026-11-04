@@ -1,30 +1,68 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { CameraOffIcon, SettingsIcon, ShoppingCartIcon, XIcon } from '@lucide/vue'
+import { useRoute, useRouter } from 'vue-router'
+import { CameraOffIcon, LayersIcon, PackageIcon, SettingsIcon, ShoppingCartIcon, XIcon } from '@lucide/vue'
+import { api } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import ResultBar from '@/components/scanner/ResultBar.vue'
 import ScannerSettingsSheet from '@/components/scanner/ScannerSettingsSheet.vue'
+import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { loadScanTarget, saveScanTarget, type ScanTarget } from '@/lib/scanTarget'
 import { CAMERA_HELP } from '@/scanner/camera'
 import { unlockAudio } from '@/scanner/sounds'
 import { useScanner, type ScanItem } from '@/scanner/useScanner'
 import { useAuthStore } from '@/stores/auth'
 
-/** Full-screen scanner (spec 003). */
+/** Full-screen scanner (spec 003). With ?deck=, scans go where that deck's choice says (spec 005, AC-16). */
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const scanner = useScanner()
-const { camera, status, settings, lastScan, cart, ready } = scanner
+const deckId = computed(() => (route.query.deck ? Number(route.query.deck) : null))
+const target = ref<ScanTarget | null>(deckId.value ? loadScanTarget(deckId.value) : null)
+const deck = ref<{ id: number; name: string; location: number | null } | null>(null)
+const locationNames = ref<Record<string, string>>({})
+const scanner = useScanner(() => target.value)
+const { camera, status, settings, lastScan, lastDeckCard, cart, ready } = scanner
 const currency = computed(() => auth.user?.currency ?? 'USD')
 const settingsOpen = ref(false)
 const editOpen = ref(false)
 
-onMounted(() => void scanner.start())
+const targetOpen = ref(false)
+
+onMounted(async () => {
+  if (deckId.value) {
+    const [d, l] = await Promise.all([
+      api.GET('/api/decks/{id}/', { params: { path: { id: deckId.value } } }),
+      api.GET('/api/locations/'),
+    ])
+    if (d.data) deck.value = { id: d.data.id, name: d.data.name, location: d.data.location }
+    locationNames.value = Object.fromEntries((l.data?.locations ?? []).map((x) => [String(x.id), x.name]))
+    if (deck.value && !target.value) target.value = deck.value.location ? { kind: 'location', location: deck.value.location } : { kind: 'cart' }
+  }
+  void scanner.start()
+})
+
+/** The destination chip: what it says and where it links. */
+const destination = computed(() => {
+  const t = target.value
+  if (t?.kind === 'deck') return { label: deck.value?.name ?? 'Decklist', icon: LayersIcon, to: { name: 'deck', params: { id: t.deck } } }
+  if (t?.kind === 'location') {
+    const id = t.location === null ? 'unfiled' : String(t.location)
+    return { label: t.location === null ? 'Unfiled' : (locationNames.value[id] ?? 'Location'), icon: PackageIcon, to: { name: 'location', params: { id } } }
+  }
+  return { label: 'Cart', icon: ShoppingCartIcon, to: { name: 'location', params: { id: 'cart' } } }
+})
+
+function changeTarget(next: ScanTarget) {
+  target.value = next
+  if (deckId.value) saveScanTarget(deckId.value, next)
+  void scanner.retarget()
+}
 
 const statusText = computed(() => {
   const s = status.value
@@ -41,7 +79,7 @@ const percent = computed(() => {
 const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
 
 function close() {
-  router.push({ name: 'collection' })
+  router.push(deckId.value ? { name: 'deck', params: { id: deckId.value } } : { name: 'collection' })
 }
 function tapToResume() {
   unlockAudio()
@@ -61,16 +99,17 @@ function onEdited(item: BrowserRow) {
     <div class="absolute inset-x-0 top-0 z-10 flex items-center gap-2 p-3" style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px))">
       <IconButton label="Close scanner" variant="secondary" @click="close"><XIcon /></IconButton>
       <RouterLink
-        :to="{ name: 'location', params: { id: 'cart' } }"
+        :to="destination.to"
         class="flex items-center gap-2 rounded-md bg-background/90 px-3 py-2 text-sm text-foreground shadow"
         data-testid="cart-link"
       >
-        <ShoppingCartIcon class="size-4" />
-        <span>Cart</span>
+        <component :is="destination.icon" class="size-4" />
+        <span data-testid="scan-destination">{{ destination.label }}</span>
         <span v-if="settings?.show_total && cart" data-testid="running-total" class="text-muted-foreground">
           {{ cards(cart.card_count) }} · <Price :value="cart.value" :values="cart.values" :currency="currency" />
         </span>
       </RouterLink>
+      <Button v-if="deck" variant="secondary" size="sm" @click="targetOpen = true">Change</Button>
       <div class="ml-auto">
         <IconButton label="Scanner settings" variant="secondary" :disabled="!settings" @click="settingsOpen = true"><SettingsIcon /></IconButton>
       </div>
@@ -111,12 +150,16 @@ function onEdited(item: BrowserRow) {
     <!-- Last logged card (AC-11) -->
     <div class="absolute inset-x-0 bottom-0 p-3 text-foreground" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
       <ResultBar
-        v-if="lastScan" class="mx-auto max-w-xl" :item="lastScan" :currency="currency"
+        v-if="lastScan || lastDeckCard" class="mx-auto max-w-xl" :item="lastScan" :deck-card="lastDeckCard" :currency="currency"
         @plus="scanner.plusOne()" @undo="scanner.undo()" @finish="scanner.setFinish" @printing="editOpen = true"
       />
     </div>
 
     <ScannerSettingsSheet v-if="settings" v-model:open="settingsOpen" :settings="settings" :currency="currency" :ready="ready" :save="scanner.saveSettings" />
     <EditItemDialog v-model:open="editOpen" :row="lastScan" @saved="onEdited" />
+    <ScanTargetDialog
+      v-if="deck" v-model:open="targetOpen" :deck-id="deck.id" :box-id="deck.location" :current="target" action="Use"
+      @confirm="changeTarget"
+    />
   </div>
 </template>

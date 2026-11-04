@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createUser, deckMenu, deckRow, logOut, signUpAndLogIn, uniqueUser } from './helpers'
+import { closeCardDialog, createUser, deckMenu, deckRow, logOut, signUpAndLogIn, uniqueUser } from './helpers'
 
 test.describe('Deck import, export and public decks', () => {
   test('AC-25, AC-26: Import deck previews zones and unrecognized lines, then creates the deck', async ({ page, request }) => {
@@ -76,8 +76,7 @@ test.describe('Deck import, export and public decks', () => {
     const binder = await api.location('Private binder')
     await api.importList('1 Sol Ring (C21) 263', binder)
     await api.importList('1 Forest (M21) 272', deck.location)
-    // The box starts public like its deck; make it private so only the deck counts.
-    await api.patch(`/api/locations/${deck.location}/`, { is_public: false })
+    // The box is public with its deck but counts once, as the deck (spec 005, AC-20).
 
     await logOut(page)
     const visitor = uniqueUser('v')
@@ -92,18 +91,18 @@ test.describe('Deck import, export and public decks', () => {
 
     await expect(page).toHaveURL(new RegExp(`/u/${user.username}/decks/${deck.id}$`))
     await expect(page.getByTestId('deck-name')).toHaveText('Shared')
-    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Stats'])
-    await expect(page.getByTestId('deck-box')).toHaveCount(0)
+    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', 'Stats'])
+    await expect(page.getByTestId('deck-box')).toHaveAttribute('href', `/u/${user.username}/locations/${deck.location}`)
     await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(0)
     await expect(deckRow(page, 'Forest').getByTestId('ownership')).toHaveAttribute('data-state', 'in_box')
     await expect(deckRow(page, 'Sol Ring').getByTestId('ownership')).toHaveAttribute('data-state', 'owned')
 
     await deckRow(page, 'Sol Ring').click()
-    const dialog = page.getByTestId('deck-card-dialog')
+    const dialog = page.getByTestId('card-detail')
     await expect(dialog.getByTestId('deck-card-ownership')).toContainText('Owned')
     await expect(dialog).not.toContainText('Private binder')
     await expect(dialog.getByRole('button', { name: 'Save' })).toHaveCount(0)
-    await page.keyboard.press('Escape')
+    await closeCardDialog(page)
     await page.getByRole('tab', { name: 'Stats' }).click()
     await expect(page.getByTestId('deck-stats')).toBeVisible()
 

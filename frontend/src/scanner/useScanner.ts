@@ -1,5 +1,6 @@
 import { onBeforeUnmount, ref, shallowRef } from 'vue'
 import { api, type Schemas } from '@/api/client'
+import type { ScanTarget } from '@/lib/scanTarget'
 import { useCamera } from './camera'
 import { evaluateFrame, FRAME_PACING, forgetLastLogged, frameInterval, INITIAL_TRACKER, type FrameOutcome, type ScanTracker } from './decision'
 import { RecognizerClient, type LoadProgress } from './recognition/client'
@@ -17,19 +18,23 @@ export type ScannerStatus =
   | { kind: 'error'; message: string }
 
 export type ScanItem = Schemas['Item']
+export type ScanDeckCard = Schemas['ScannedDeckCard']
 export type Totals = Schemas['Totals']
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
  * The scanner's frame loop (spec 003, AC-3 to AC-8): grab a frame, identify it
- * in the worker, decide (manavault's rules), and log accepted cards to the cart.
+ * in the worker, decide (manavault's rules), and log accepted cards to the cart,
+ * or where a deck's scans go (spec 005, AC-16, AC-17).
  */
-export function useScanner() {
+export function useScanner(target: () => ScanTarget | null = () => null) {
   const camera = useCamera()
   const status = ref<ScannerStatus>({ kind: 'loading', progress: null })
   const settings = ref<Schemas['ScannerSettings'] | null>(null)
   const lastScan = shallowRef<ScanItem | null>(null)
+  const lastDeckCard = shallowRef<ScanDeckCard | null>(null)
+  // Totals of where cards go: the cart, a location or a decklist.
   const cart = ref<Totals | null>(null)
   const ready = ref<{ version: string; threads: number } | null>(null)
 
@@ -48,10 +53,10 @@ export function useScanner() {
   }
 
   async function start() {
-    const [bundle, prefs, locations] = await Promise.all([
+    const [bundle, prefs] = await Promise.all([
       api.GET('/api/scanner/bundle/'),
       api.GET('/api/scanner/settings/'),
-      api.GET('/api/locations/'),
+      refreshTotals(),
       loadLocked(),
     ])
     if (!bundle.data) {
@@ -59,7 +64,6 @@ export function useScanner() {
       return
     }
     settings.value = prefs.data ?? null
-    cart.value = locations.data?.cart ?? null
 
     client = new RecognizerClient()
     // Several threads only help on the cross-origin isolated /scan/fast page (AC-16).
@@ -134,23 +138,25 @@ export function useScanner() {
   }
 
   async function log(candidate: Candidate) {
+    const to = target()
     const { data, error } = await api.POST('/api/scanner/scans/', {
-      body: { gallery_id: candidate.id, illustration_id: candidate.illustration_id ?? null },
+      body: { gallery_id: candidate.id, illustration_id: candidate.illustration_id ?? null, ...(to ? { target: to } : {}) },
     })
     if (error || !data) {
       tracker = forgetLastLogged(tracker)
       status.value = { kind: 'steady', name: candidate.name }
       return
     }
-    if (!data.item) return
     lastScan.value = data.item
+    lastDeckCard.value = data.deck_card
     cart.value = data.totals
-    status.value = { kind: 'logged', name: data.item.printing.name }
+    status.value = { kind: 'logged', name: (data.item ?? data.deck_card)?.printing.name ?? candidate.name }
     if (settings.value?.sounds) playSound(data.sound)
   }
 
   /** Result bar actions (AC-11). */
   async function plusOne() {
+    if (lastDeckCard.value) return deckPlusOne()
     const row = lastScan.value
     if (!row) return
     const { data } = await api.PATCH('/api/items/{id}/', { params: { path: { id: row.id } }, body: { quantity: row.quantity + 1 } })
@@ -170,7 +176,37 @@ export function useScanner() {
     }
   }
 
+  /** Decklist-only scans: +1 and Undo change the deck card (AC-17). */
+  async function deckPlusOne() {
+    const card = lastDeckCard.value
+    if (!card) return
+    const path = { params: { path: { id: card.deck, card_id: card.id } } }
+    const { data } = await api.PATCH('/api/decks/{id}/cards/{card_id}/', { ...path, body: { quantity: card.quantity + 1 } })
+    if (data) {
+      lastDeckCard.value = { ...card, quantity: card.quantity + 1 }
+      await refreshTotals()
+    }
+  }
+
+  async function deckUndo() {
+    const card = lastDeckCard.value
+    if (!card) return
+    const path = { params: { path: { id: card.deck, card_id: card.id } } }
+    const { data } = card.quantity > 1
+      ? await api.PATCH('/api/decks/{id}/cards/{card_id}/', { ...path, body: { quantity: card.quantity - 1 } })
+      : await api.DELETE('/api/decks/{id}/cards/{card_id}/', path)
+    if (!data) return
+    tracker = forgetLastLogged(tracker)
+    if (card.quantity > 1) lastDeckCard.value = { ...card, quantity: card.quantity - 1 }
+    else {
+      lastDeckCard.value = null
+      status.value = { kind: 'looking' }
+    }
+    await refreshTotals()
+  }
+
   async function undo() {
+    if (lastDeckCard.value) return deckUndo()
     const row = lastScan.value
     if (!row) return
     const { data } = await api.POST('/api/scanner/scans/{id}/undo/', { params: { path: { id: row.id } } })
@@ -190,9 +226,28 @@ export function useScanner() {
     void refreshCart()
   }
 
-  async function refreshCart() {
+  /** Totals of where cards go now. */
+  async function refreshTotals() {
+    const to = target()
+    if (to?.kind === 'deck') {
+      const { data } = await api.GET('/api/decks/{id}/', { params: { path: { id: to.deck } } })
+      cart.value = data ? { card_count: data.counts.size, value: data.value, values: data.values } : null
+      return
+    }
     const { data } = await api.GET('/api/locations/')
-    if (data) cart.value = data.cart
+    if (!data) return
+    if (!to || to.kind === 'cart') cart.value = data.cart
+    else if (to.location === null) cart.value = data.unfiled
+    else cart.value = data.locations.find((l) => l.id === to.location) ?? null
+  }
+  const refreshCart = refreshTotals
+
+  /** A new destination: the last card's bar no longer applies. */
+  async function retarget() {
+    lastScan.value = null
+    lastDeckCard.value = null
+    tracker = forgetLastLogged(tracker)
+    await refreshTotals()
   }
 
   async function saveSettings(patch: Partial<Schemas['ScannerSettings']>) {
@@ -222,7 +277,7 @@ export function useScanner() {
   })
 
   return {
-    camera, status, settings, lastScan, cart, ready,
-    start, resume, plusOne, setFinish, undo, replaceLast, saveSettings,
+    camera, status, settings, lastScan, lastDeckCard, cart, ready,
+    start, resume, plusOne, setFinish, undo, replaceLast, saveSettings, retarget,
   }
 }

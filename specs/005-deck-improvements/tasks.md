@@ -28,11 +28,11 @@ on zone change, visibility both ways, format both ways).
 
 ## Phase 4: Deck page
 
-- [ ] **T10 Text view, three-way switch, menus in every view** (AC-6, AC-7)
-- [ ] **T11 Display options remembered** (AC-8)
-- [ ] **T12 Propose swap and the Swaps tab, public read-only** (AC-9 to AC-13)
-- [ ] **T13 Scan button, ScanTargetDialog, scanner target on ScanPage** (AC-15 to AC-17)
-- [ ] **T14 Missing tab want list item, Owned tab without scan, location Format, box mark on public decks** (AC-14, AC-18, AC-20)
+- [x] **T10 Text view, three-way switch, menus in every view** (AC-6, AC-7)
+- [x] **T11 Display options remembered** (AC-8)
+- [x] **T12 Propose swap and the Swaps tab, public read-only** (AC-9 to AC-13)
+- [x] **T13 Scan button, ScanTargetDialog, scanner target on ScanPage** (AC-15 to AC-17)
+- [x] **T14 Missing tab want list item, Owned tab without scan, location Format, box mark on public decks** (AC-14, AC-18, AC-20)
 
 ## Phase 5: Tests and wrap up
 

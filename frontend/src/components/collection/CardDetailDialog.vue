@@ -135,7 +135,7 @@ const tabs = computed(() => [
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[92vh] overflow-y-auto sm:max-w-5xl" data-testid="card-detail">
+    <DialogContent class="max-h-[92vh] overflow-y-auto sm:max-w-5xl" data-testid="card-detail" @open-auto-focus.prevent>
       <DialogHeader>
         <div class="flex items-center gap-2">
           <IconButton v-if="stack.length > 1" label="Back" variant="ghost" class="size-7" @click="back"><ArrowLeftIcon /></IconButton>

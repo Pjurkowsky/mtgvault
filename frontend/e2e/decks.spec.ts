@@ -50,7 +50,7 @@ test.describe('Decks', () => {
     const box = await api.location('Gruul Box', 'deck_box', true)
     await page.goto('/decks')
     const gruul = deckTile(page, 'Gruul Box')
-    await expect(gruul).toContainText('Casual')
+    await expect(gruul).toContainText('Commander') // spec 005, AC-18
     await expect(gruul.getByLabel('Has a deck box')).toBeVisible()
     await expect(gruul.getByLabel('Public')).toBeVisible()
 

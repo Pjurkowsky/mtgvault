@@ -23,7 +23,7 @@ export const useLocationsStore = defineStore('locations', () => {
     loaded.value = true
   }
 
-  async function create(body: Pick<Location, 'name' | 'kind' | 'is_public'>) {
+  async function create(body: Pick<Location, 'name' | 'kind' | 'is_public'> & Partial<Pick<Location, 'deck_format'>>) {
     const { data, error } = await api.POST('/api/locations/', { body: body as Location })
     if (data) await load()
     return { data, error }
