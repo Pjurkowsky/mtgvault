@@ -23,7 +23,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/performance\.spec\.ts/, /scanner\.spec\.ts/, /\.setup\.ts/],
+      testIgnore: [/performance\.spec\.ts/, /scanner(-deck)?\.spec\.ts/, /\.setup\.ts/],
     },
     // Timing tests run alone after the rest, so parallel tests don't skew them.
     {
@@ -36,7 +36,7 @@ export default defineConfig({
     // Real recognition models with Chromium's fake camera (spec 003).
     {
       name: 'scanner',
-      testMatch: /scanner\.spec\.ts/,
+      testMatch: /scanner(-deck)?\.spec\.ts/,
       // After the timing tests: recognition is CPU-heavy and would skew them.
       dependencies: ['camera', 'performance'],
       use: {

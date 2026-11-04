@@ -36,5 +36,5 @@ on zone change, visibility both ways, format both ways).
 
 ## Phase 5: Tests and wrap up
 
-- [ ] **T15 e2e: deck-add, deck-views, deck-swaps, deck-boxes, scanner-deck; update older tests**
+- [x] **T15 e2e: deck-add, deck-views, deck-swaps, deck-boxes, scanner-deck; update older tests**
 - [ ] **T16 Full suite, Docker build, READMEs, spec status**

@@ -78,6 +78,7 @@ export async function apiAs(request: APIRequestContext, user: TestUser) {
     get: (path: string) => call('get', path),
     post: (path: string, data?: unknown) => call('post', path, data),
     patch: (path: string, data: unknown) => call('patch', path, data),
+    delete: (path: string) => call('delete', path),
     /** Create a location; returns its id. */
     location: async (name: string, kind = 'binder', isPublic = false) =>
       (await call('post', '/api/locations/', { name, kind, is_public: isPublic })).id as number,
