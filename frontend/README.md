@@ -26,11 +26,20 @@ src/
   components/             shared: Price (tooltip with other currencies), ConfirmDialog
                           (useConfirm), IconButton (tooltip), CardPreview (hover),
                           ExpandButton + FullscreenCard, ManaSymbol
-  components/decks/       deck views (text, list, images) with card menus, swaps,
-                          add (built on CardSearch, ItemFields), the deck section of
-                          the card dialog, import/export, deck box, scan target,
-                          stats, legality, ManaCost
+  components/browser/CardTile.vue  the grid tile, shared by the collection and the deck Images view
+  components/browser/filters/      filter menu pieces, shared by the collection and deck filters
+  components/decks/       deck views (text, list, images) with card menus, toolbar
+                          (search, filters, group, sort, size), swaps table,
+                          categories (CategoryInput, CategoryDialog), add (built on
+                          CardSearch, ItemFields), the deck section of the card
+                          dialog, import/export, deck box, scan target, stats
+                          (StatBars), legality, GroupHeading, ManaCost
+  components/DestructiveButton.vue  outlined red button with a trash icon
   lib/decks.ts            formats, zones, ownership states, grouping and sorting
+  lib/deckFilter.ts       deck search and filters, kept in the URL
+  lib/deckStats.ts        Stats tab numbers and chart data, computed in the browser
+  lib/categories.ts       category suggestions, loaded once
+  composables/useCardNavigation.ts  arrow keys between cards
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
   assets/mana/            Scryfall mana symbols
   scanner/                camera, frame loop, sounds; recognition/ is ported from

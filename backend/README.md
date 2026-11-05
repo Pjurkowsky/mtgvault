@@ -51,7 +51,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only; deck boxes are left out of the list |
 | `GET/POST /api/decks/` | bearer | Deck tiles / create (`create_box`, optional `text` to import) |
 | `GET/PATCH /api/decks/<id>/`, `POST .../delete/` | bearer | Full deck (cards with ownership, legality, stats) / edit / delete with keep, unfile or delete for its box |
-| `POST /api/decks/<id>/cards/`, `PATCH/DELETE .../cards/<cid>/` | bearer | Add (merges by card and zone), change, remove |
+| `POST /api/decks/<id>/cards/`, `PATCH/DELETE .../cards/<cid>/` | bearer | Add (merges by card and zone), change (quantity, zone, printing, `categories`), remove |
+| `GET /api/decks/categories/` | bearer | Category suggestions: names from your decks, most used first, then a common set |
 | `POST /api/decks/<id>/cards/<cid>/own/` | bearer | Mark owned: move a free copy into the box, or add a new copy |
 | `POST /api/decks/<id>/cards/<cid>/swaps/` | bearer | Propose a swap: `{printing}` joins the Maybeboard linked to the card |
 | `POST /api/decks/<id>/cards/<cid>/apply-swap/` | bearer | Apply a candidate: it takes the old card's zone and quantity; the old card becomes its candidate |
@@ -134,8 +135,15 @@ copies (`decks.services.fill_from_box`, called from `save_item` and
   Leaving the Maybeboard or removing the old card drops the link.
 - Printings carry `can_command` per commander format, so the frontend offers
   the Commander zone only for possible commanders.
+- Categories: `DeckCard.categories`, an ordered list (the first is primary),
+  trimmed, without case-insensitive duplicates, at most 10
+  (`decks.services.merge_categories`). Merging two entries of a card merges
+  their categories.
 - `decks/stats.py`, `decks/textlist.py`: curve, pips, types, values; zone-aware
-  import and export.
+  import and export. Categories travel as `#Tag` at the end of a line
+  (underscores for spaces; Moxfield's `#!` prefix is accepted).
+- Printings carry `produced_mana` (Scryfall's, WUBRGC only) for the deck
+  stats' mana sources.
 
 ## Scanner
 

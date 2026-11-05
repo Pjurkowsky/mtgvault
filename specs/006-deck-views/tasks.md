@@ -43,4 +43,4 @@ Done for T4-T5: the collection browser and filter specs pass unchanged.
 ## Phase 6: Tests and wrap up
 
 - [x] **T15 e2e: deck-visual, deck-filters, deck-swaps, deck-categories, deck-stats; update older tests**
-- [ ] **T16 Full suite, Docker build, READMEs, spec status**
+- [x] **T16 Full suite, Docker build, READMEs, spec status**
