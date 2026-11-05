@@ -2,12 +2,11 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeftIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon, LayoutGridIcon,
-  ListIcon, PackagePlusIcon, RowsIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon,
+  ArrowLeftIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon,
+  PackagePlusIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
-import CardBrowser from '@/components/browser/CardBrowser.vue'
 import ExportDialog from '@/components/browser/ExportDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
@@ -16,6 +15,7 @@ import DeckImportDialog from '@/components/decks/DeckImportDialog.vue'
 import DeckList from '@/components/decks/DeckList.vue'
 import DeckSwaps from '@/components/decks/DeckSwaps.vue'
 import DeckText from '@/components/decks/DeckText.vue'
+import DeckToolbar, { type DeckOption, type Layout } from '@/components/decks/DeckToolbar.vue'
 import ProposeSwapDialog from '@/components/decks/ProposeSwapDialog.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import DeckStats from '@/components/decks/DeckStats.vue'
@@ -27,13 +27,14 @@ import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useConfirm } from '@/composables/useConfirm'
+import { useCardNavigation } from '@/composables/useCardNavigation'
 import { usePreference } from '@/composables/usePreference'
+import { CARD_SIZES, type CardSize } from '@/lib/cards'
+import { clearedQuery, filterFromQuery, filterToQuery, matches, type DeckFilter } from '@/lib/deckFilter'
 import { loadScanTarget, saveScanTarget, scannerUrl, type ScanTarget } from '@/lib/scanTarget'
 import { ZONE_LABELS, formatLabel, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
 
@@ -60,8 +61,7 @@ watch([id, username], load, { immediate: true })
 
 // The tab lives in the URL. View, grouping and sort are remembered in the browser for
 // all decks; options in the URL win (spec 005, AC-8).
-type Tab = 'deck' | 'owned' | 'missing' | 'swaps' | 'stats'
-type Layout = 'text' | 'list' | 'visual'
+type Tab = 'deck' | 'swaps' | 'stats'
 const LAYOUTS = ['text', 'list', 'visual'] as const
 const GROUPS = ['type', 'mana_value', 'color'] as const
 const ORDERS = ['name', 'mana_value', 'price'] as const
@@ -70,21 +70,31 @@ const pick = <T extends string>(value: string | undefined, allowed: readonly T[]
 const savedLayout = usePreference<Layout>('deck.layout', 'text', LAYOUTS)
 const savedGroup = usePreference<GroupBy>('deck.group', 'type', GROUPS)
 const savedOrder = usePreference<SortBy>('deck.order', 'name', ORDERS)
-const tab = computed<Tab>(() => (one(route.query.tab) as Tab) || 'deck')
+const size = usePreference<CardSize>('deck.size', 'md', CARD_SIZES)
+const tab = computed<Tab>(() => pick(one(route.query.tab), ['swaps', 'stats'] as const) ?? 'deck')
 const layout = computed<Layout>(() => pick(one(route.query.layout), LAYOUTS) ?? savedLayout.value)
 const groupBy = computed<GroupBy>(() => pick(one(route.query.group), GROUPS) ?? savedGroup.value)
 const sortBy = computed<SortBy>(() => pick(one(route.query.order), ORDERS) ?? savedOrder.value)
 /** Remember the choice and drop it from the URL, so the remembered one applies. */
-function setOption(key: 'layout' | 'group' | 'order', value: string) {
+function setOption(key: DeckOption, value: string) {
+  if (key === 'size') return void (size.value = value as CardSize)
   if (key === 'layout') savedLayout.value = value as Layout
   if (key === 'group') savedGroup.value = value as GroupBy
   if (key === 'order') savedOrder.value = value as SortBy
   router.replace({ query: { ...route.query, [key]: undefined } })
 }
-/** Tabs share the browser's URL filters; switching drops them. */
 function setTab(next: Tab) {
-  router.replace({ query: { ...(next !== 'deck' ? { tab: next } : {}), layout: route.query.layout, group: route.query.group, order: route.query.order } })
+  router.replace({ query: { ...route.query, tab: next !== 'deck' ? next : undefined } })
 }
+
+const deckTab = ref<InstanceType<typeof TabsContent> | null>(null)
+const nav = useCardNavigation(computed(() => (deckTab.value?.$el as HTMLElement | undefined) ?? null))
+
+// Search and filters live in the URL (spec 006, AC-5 to AC-7).
+const filter = computed(() => filterFromQuery(route.query))
+const shown = computed(() => deck.value?.cards.filter((c) => matches(c, filter.value)) ?? [])
+const setFilter = (patch: Partial<DeckFilter>) => router.replace({ query: { ...route.query, ...filterToQuery(patch) } })
+const clearFilters = () => router.replace({ query: { ...route.query, ...clearedQuery(), q: route.query.q } })
 
 const cardOpen = ref(false)
 const openCard = ref<DeckCard | null>(null)
@@ -144,6 +154,11 @@ async function scan(target: ScanTarget) {
 async function loadExport() {
   return (await api.GET('/api/decks/{id}/export/', { params: { path: { id: id.value } } })).data
 }
+// Missing cards as a list, as the Missing tab did (spec 004 AC-17, spec 006 AC-8).
+const missingOpen = ref(false)
+async function loadMissing() {
+  return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value } }, body: {} })).data
+}
 
 const counts = computed(() => deck.value?.counts)
 const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== counts.value.target)
@@ -175,6 +190,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
             <DropdownMenuContent align="end">
               <DropdownMenuItem @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
               <DropdownMenuItem @select="exportOpen = true"><DownloadIcon /> Export</DropdownMenuItem>
+              <DropdownMenuItem @select="missingOpen = true"><DownloadIcon /> Export missing</DropdownMenuItem>
               <DropdownMenuItem @select="editOpen = true"><PencilIcon /> Edit</DropdownMenuItem>
               <DropdownMenuItem v-if="!deck.location" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -215,65 +231,28 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
     <Tabs :model-value="tab" @update:model-value="(v) => setTab(v as Tab)">
       <TabsList>
         <TabsTrigger value="deck">Deck</TabsTrigger>
-        <TabsTrigger v-if="isOwner" value="owned">Owned <span class="text-muted-foreground">{{ counts!.owned }}</span></TabsTrigger>
-        <TabsTrigger v-if="isOwner" value="missing">Missing <span class="text-muted-foreground">{{ counts!.missing }}</span></TabsTrigger>
         <TabsTrigger value="swaps">Swaps</TabsTrigger>
         <TabsTrigger value="stats">Stats</TabsTrigger>
       </TabsList>
 
-      <TabsContent value="deck" class="grid gap-4 pt-2">
-        <div v-if="deck.cards.length" class="flex flex-wrap items-center gap-2">
-          <Select :model-value="groupBy" @update:model-value="(v) => setOption('group', String(v))">
-            <SelectTrigger class="w-40" aria-label="Group by"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="type">By type</SelectItem>
-              <SelectItem value="mana_value">By mana value</SelectItem>
-              <SelectItem value="color">By color</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select :model-value="sortBy" @update:model-value="(v) => setOption('order', String(v))">
-            <SelectTrigger class="w-36" aria-label="Sort by"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
-              <SelectItem value="mana_value">Mana value</SelectItem>
-              <SelectItem value="price">Price</SelectItem>
-            </SelectContent>
-          </Select>
-          <ToggleGroup type="single" variant="outline" :model-value="layout" class="ml-auto" @update:model-value="(v) => v && setOption('layout', String(v))">
-            <Tooltip>
-              <TooltipTrigger as-child><ToggleGroupItem value="text" aria-label="Text"><RowsIcon /></ToggleGroupItem></TooltipTrigger>
-              <TooltipContent>Text</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger as-child><ToggleGroupItem value="list" aria-label="List"><ListIcon /></ToggleGroupItem></TooltipTrigger>
-              <TooltipContent>List</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger as-child><ToggleGroupItem value="visual" aria-label="Card images"><LayoutGridIcon /></ToggleGroupItem></TooltipTrigger>
-              <TooltipContent>Card images</TooltipContent>
-            </Tooltip>
-          </ToggleGroup>
-        </div>
+      <TabsContent ref="deckTab" value="deck" class="grid gap-4 pt-2" @keydown="nav.onKeydown">
+        <DeckToolbar
+          v-if="deck.cards.length" :cards="deck.cards" :filter="filter" :group-by="groupBy" :sort-by="sortBy" :layout="layout" :size="size"
+          @filter="setFilter" @clear="clearFilters" @option="setOption"
+        />
         <DeckText
-          v-if="deck.cards.length && layout === 'text'" :cards="deck.cards" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+          v-if="shown.length && layout === 'text'" :cards="shown" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
           @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckList
-          v-else-if="deck.cards.length && layout === 'list'" :cards="deck.cards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
+          v-else-if="shown.length && layout === 'list'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
           :editable="isOwner" @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckVisual
-          v-else-if="deck.cards.length" :cards="deck.cards" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+          v-else-if="shown.length" :cards="shown" :size="size" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
           @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
-        <p v-else class="py-16 text-center text-muted-foreground">No cards yet.</p>
-      </TabsContent>
-
-      <TabsContent v-if="isOwner" value="owned" class="pt-2">
-        <CardBrowser v-if="tab === 'owned'" :source="{ kind: 'own' }" :deck="deck.id" @changed="load" />
-      </TabsContent>
-      <TabsContent v-if="isOwner" value="missing" class="pt-2">
-        <CardBrowser v-if="tab === 'missing'" :source="{ kind: 'deck-missing', deckId: deck.id }" readonly />
+        <p v-else class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
       </TabsContent>
 
       <TabsContent value="swaps" class="pt-2">
@@ -296,6 +275,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :card="swapCard" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />
       <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" />
+      <ExportDialog v-model:open="missingOpen" :load="loadMissing" :filename="`${deck.name} missing`" />
       <EditDeckDialog v-model:open="editOpen" :deck="deck" @changed="changed" />
       <CreateBoxDialog v-model:open="boxOpen" :deck="deck" @changed="changed" />
       <DeleteDeckDialog v-model:open="deleteOpen" :deck="deck" @deleted="router.push({ name: 'decks' })" />

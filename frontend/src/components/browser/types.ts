@@ -7,4 +7,3 @@ export type BrowserSource =
   | { kind: 'own' }
   | { kind: 'public'; username: string; locationId: number }
   /** A deck's missing cards: read-only rows built from the decklist (spec 004, AC-17). */
-  | { kind: 'deck-missing'; deckId: number }

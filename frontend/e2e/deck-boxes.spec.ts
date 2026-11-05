@@ -5,16 +5,12 @@ import { createUser, locationTile, logOut, signUpAndLogIn, uniqueUser } from './
 const deckTile = (page: import('@playwright/test').Page, name: string) => page.getByTestId('deck-tile').filter({ hasText: name })
 
 test.describe('Deck boxes and tabs', () => {
-  test('AC-14, AC-15: want list item disabled; Scan cards in the header only, asking where cards go', async ({ page, request }) => {
+  // AC-14's want list item is in the card menu now (spec 006, AC-8; deck-filters.spec.ts).
+  test('AC-15: Scan cards in the header, asking where cards go', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const deck = await api.deck('Tabs', 'casual', { create_box: true, text: '1 Sol Ring' })
-    await page.goto(`/decks/${deck.id}?tab=missing`)
-    await page.getByRole('button', { name: 'More' }).last().click()
-    await expect(page.getByRole('menuitem', { name: 'Add to want list' })).toHaveAttribute('data-disabled', '')
-    await page.keyboard.press('Escape')
-
-    await page.getByRole('tab', { name: /Owned/ }).click()
-    await expect(page.getByRole('button', { name: 'Scan cards' })).toHaveCount(1) // the header's
+    await page.goto(`/decks/${deck.id}`)
+    await expect(page.getByRole('button', { name: 'Scan cards' })).toHaveCount(1)
     await page.getByRole('button', { name: 'Scan cards' }).click()
     const dialog = page.getByTestId('scan-target')
     await expect(dialog.getByRole('radio', { name: 'A location' })).toBeChecked()

@@ -32,7 +32,7 @@ const shown = computed(() => hovered.value ?? groups.value[0]?.cards[0] ?? null)
             <button
               type="button"
               class="flex w-full items-center gap-2 rounded px-1 py-0.5 text-left text-sm hover:bg-muted"
-              :aria-label="card.printing.name" data-testid="deck-row"
+              :aria-label="card.printing.name" data-testid="deck-row" data-deck-card
               @mouseenter="hovered = card" @focus="hovered = card" @click="emit('open', card)"
             >
               <span class="w-5 shrink-0 text-right tabular-nums text-muted-foreground">{{ card.quantity }}</span>

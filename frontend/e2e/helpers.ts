@@ -127,7 +127,7 @@ export async function choose(page: Page, select: string, option: string) {
 /** Open the browser's More (⋯) menu and pick an item (spec 002, AC-19). */
 export async function more(page: Page, item: 'Import' | 'Export') {
   await page.getByRole('button', { name: 'More' }).click()
-  await page.getByRole('menuitem', { name: item }).click()
+  await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
 /** Tick a card's checkbox (spec 002, AC-12). */
@@ -165,5 +165,5 @@ export async function closeCardDialog(page: Page) {
 /** Open the deck page's More (⋯) menu and pick an item. */
 export async function deckMenu(page: Page, item: 'Import' | 'Export' | 'Edit' | 'Create deck box' | 'Delete') {
   await page.getByRole('button', { name: 'More' }).click()
-  await page.getByRole('menuitem', { name: item }).click()
+  await page.getByRole('menuitem', { name: item, exact: true }).click()
 }

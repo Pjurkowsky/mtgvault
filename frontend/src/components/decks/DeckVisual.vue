@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { CardSize } from '@/lib/cards'
 import { computed } from 'vue'
 import { groupDeck, type DeckCard, type GroupBy, type SortBy } from '@/lib/decks'
 import DeckCardMenu from './DeckCardMenu.vue'
 import OwnershipBadge from './OwnershipBadge.vue'
 
 /** Card images grouped like the list (spec 004, AC-19). */
-const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean }>()
+const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; size?: CardSize }>()
 const emit = defineEmits<{ open: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
 const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy))
 </script>
@@ -17,7 +18,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
       <ul class="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-7">
         <li v-for="card in g.cards" :key="card.id" class="relative">
           <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
-            <button type="button" class="block w-full" :aria-label="card.printing.name" @click="emit('open', card)">
+            <button type="button" class="block w-full" :aria-label="card.printing.name" data-deck-card @click="emit('open', card)">
               <img :src="card.printing.image_normal" :alt="card.printing.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
             </button>
           </DeckCardMenu>

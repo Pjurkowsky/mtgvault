@@ -32,8 +32,7 @@ test.describe('Deck ownership', () => {
     await closeCardDialog(page)
 
     // 2 Bolt + 1 Counterspell + 1 Forest owned; 1 Sol Ring + 3 Forest missing. Brainstorm doesn't count.
-    await expect(page.getByRole('tab', { name: /Owned/ })).toContainText('4')
-    await expect(page.getByRole('tab', { name: /Missing/ })).toContainText('4')
+    expect((await api.get(`/api/decks/${deck.id}/`)).counts).toMatchObject({ owned: 4, missing: 4 })
   })
 
   test('AC-15: mark owned by moving a free copy or adding a new one', async ({ page, request }) => {
@@ -83,41 +82,5 @@ test.describe('Deck ownership', () => {
     await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in Unfiled')
     await closeCardDialog(page)
     await expect(state(page, 'Sol Ring')).toHaveAttribute('data-state', 'owned')
-  })
-
-  test('AC-16: the Owned tab shows owned copies of the deck cards in the card browser', async ({ page, request }) => {
-    const { api } = await signUpAndLogIn(page, request)
-    const binder = await api.location('Binder')
-    await api.importList('1 Sol Ring (C21) 263\n2 Lightning Bolt (FDC) 163', binder)
-    await api.importList('1 Counterspell (FDC) 61\n1 Shivan Dragon (FDN) 763')
-    const deck = await api.deck('Owned', 'casual', { text: '1 Sol Ring\n1 Lightning Bolt\n1 Counterspell\n1 Forest' })
-    await page.goto(`/decks/${deck.id}`)
-    await page.getByRole('tab', { name: /Owned/ }).click()
-    await expect(page).toHaveURL(/tab=owned/)
-    await expect(page.getByTestId('card-tile')).toHaveCount(3)
-    await expect(tile(page, 'Shivan Dragon')).toHaveCount(0)
-    await page.getByLabel('Search cards').fill('bolt')
-    await expect(page.getByTestId('card-tile')).toHaveCount(1)
-    await expect(tile(page, 'Lightning Bolt')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(1) // only the deck's own button
-  })
-
-  test('AC-17: the Missing tab lists missing copies with search and exports them', async ({ page, request }) => {
-    const { api } = await signUpAndLogIn(page, request)
-    await api.importList('1 Forest (M21) 272\n1 Sol Ring (C21) 263')
-    const deck = await api.deck('Missing', 'casual', { text: '4 Forest\n1 Sol Ring\n2 Counterspell (FDC) 61\n1 Shivan Dragon\n\nMaybeboard\n1 Brainstorm' })
-    await page.goto(`/decks/${deck.id}`)
-    await page.getByRole('tab', { name: /Missing/ }).click()
-    await expect(page.getByTestId('card-tile')).toHaveCount(3)
-    await expect(tile(page, 'Sol Ring')).toHaveCount(0)
-    await expect(tile(page, 'Brainstorm')).toHaveCount(0)
-    await expect(tile(page, 'Forest')).toContainText('×3')
-    await expect(page.getByTestId('browser-summary')).toContainText('6 cards')
-
-    await page.getByLabel('Search cards').fill('counter')
-    await expect(page.getByTestId('card-tile')).toHaveCount(1)
-    await page.getByRole('button', { name: 'More' }).last().click()
-    await page.getByRole('menuitem', { name: 'Export' }).click()
-    await expect(page.getByTestId('export-text')).toHaveValue('2 Counterspell (FDC) 61\n')
   })
 })

@@ -24,9 +24,9 @@ Done for T4-T5: the collection browser and filter specs pass unchanged.
 
 ## Phase 3: Deck tab
 
-- [ ] **T6 `lib/deckFilter.ts`, `DeckToolbar` with search, `DeckFilterPopover`, filters in the URL** (AC-5 to AC-7)
-- [ ] **T7 Owned and Missing tabs removed; Export missing in the ⋯ menu; want list item in the card menu** (AC-8)
-- [ ] **T8 Keyboard: `/`, Escape, arrows, Enter; InfoTip** (AC-9)
+- [x] **T6 `lib/deckFilter.ts`, `DeckToolbar` with search, `DeckFilterPopover`, filters in the URL** (AC-5 to AC-7)
+- [x] **T7 Owned and Missing tabs removed; Export missing in the ⋯ menu; want list item in the card menu** (AC-8)
+- [x] **T8 Keyboard: `/`, Escape, arrows, Enter; InfoTip** (AC-9)
 
 ## Phase 4: Views
 

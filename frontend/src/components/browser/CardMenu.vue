@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowLeftRightIcon, EyeIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
+import { ArrowLeftRightIcon, EyeIcon, HeartIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -9,7 +9,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
-export type MenuItem = 'open' | 'edit' | 'deck' | 'swap' | 'delete'
+export type MenuItem = 'open' | 'edit' | 'deck' | 'swap' | 'want' | 'delete'
 
 /**
  * Right-click (long-press on touch) menu for a card (spec 002, AC-18). The card
@@ -24,6 +24,8 @@ const LABELS: Record<MenuItem, { label: string; icon: unknown }> = {
   edit: { label: 'Edit', icon: PencilIcon },
   deck: { label: 'Add to deck', icon: LayersIcon },
   swap: { label: 'Propose swap', icon: ArrowLeftRightIcon },
+  // The want list comes later (spec 005 AC-14, spec 006 AC-8).
+  want: { label: 'Add to want list', icon: HeartIcon },
   delete: { label: 'Delete', icon: Trash2Icon },
 }
 const shown = computed<MenuItem[]>(() => props.items ?? (props.editable ? ['open', 'edit', 'deck', 'delete'] : ['open']))
@@ -35,7 +37,7 @@ const shown = computed<MenuItem[]>(() => props.items ?? (props.editable ? ['open
     <ContextMenuContent data-testid="card-menu">
       <template v-for="item in shown" :key="item">
         <ContextMenuSeparator v-if="item === 'delete' && shown.length > 1" />
-        <ContextMenuItem :variant="item === 'delete' ? 'destructive' : 'default'" @select="emit(item as 'open')">
+        <ContextMenuItem :variant="item === 'delete' ? 'destructive' : 'default'" :disabled="item === 'want'" @select="emit(item as 'open')">
           <component :is="LABELS[item].icon" /> {{ LABELS[item].label }}
         </ContextMenuItem>
       </template>

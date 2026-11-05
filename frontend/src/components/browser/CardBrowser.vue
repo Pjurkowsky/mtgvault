@@ -6,7 +6,6 @@ import {
   ArrowUpNarrowWideIcon,
   DownloadIcon,
   EllipsisIcon,
-  HeartIcon,
   LayoutGridIcon,
   ListIcon,
   PlusIcon,
@@ -53,8 +52,6 @@ const props = defineProps<{
   source: BrowserSource
   /** Fixed location: an id, or 'unfiled'. Omit for all cards. */
   location?: string
-  /** Only the deck's cards (spec 004, AC-16). */
-  deck?: number
   readonly?: boolean
 }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -66,8 +63,8 @@ const router = useRouter()
 const editable = computed(() => props.source.kind === 'own' && !props.readonly)
 // The cart (spec 003): scanned cards waiting to be moved into the collection.
 const isCart = computed(() => props.location === 'cart')
-// Adding and importing don't fit the cart or a deck's Owned tab.
-const canAdd = computed(() => editable.value && !isCart.value && !props.deck)
+// Adding and importing don't fit the cart.
+const canAdd = computed(() => editable.value && !isCart.value)
 const selecting = computed(() => selection.count.value > 0)
 const defaultLocation = computed(() => (props.location && props.location !== 'unfiled' ? Number(props.location) : null))
 
@@ -75,7 +72,6 @@ const defaultLocation = computed(() => (props.location && props.location !== 'un
 const query = computed(() => ({
   ...filter.value,
   ...(props.location ? { location: props.location } : {}),
-  ...(props.deck ? { deck: String(props.deck) } : {}),
 }))
 
 type BrowserPage = Page<BrowserRow> & { total_values?: Money }
@@ -84,9 +80,6 @@ async function fetchPage(offset: number, limit: number): Promise<BrowserPage | u
   const pageQuery = { ...query.value, offset: String(offset), limit: String(limit) }
   if (props.source.kind === 'own') {
     return (await api.GET('/api/items/', { params: { query: pageQuery } })).data
-  }
-  if (props.source.kind === 'deck-missing') {
-    return (await api.GET('/api/decks/{id}/missing/', { params: { path: { id: props.source.deckId }, query: pageQuery } })).data
   }
   const { username, locationId } = props.source
   return (await api.GET('/api/users/{username}/locations/{id}/items/', {
@@ -218,12 +211,6 @@ function openExport(onlySelection: boolean) {
 }
 
 async function loadExport() {
-  if (props.source.kind === 'deck-missing') {
-    const { data } = await api.POST('/api/decks/{id}/missing/export/', {
-      params: { path: { id: props.source.deckId } }, body: { filter: query.value as never },
-    })
-    return data
-  }
   if (props.source.kind === 'public') {
     const { username, locationId } = props.source
     const { data } = await api.POST('/api/users/{username}/locations/{id}/export/', {
@@ -248,7 +235,7 @@ const pricesUpdated = computed(() => {
 })
 const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
 const exportName = computed(() =>
-  props.source.kind === 'deck-missing' ? `deck-${props.source.deckId}-missing` : props.location ? `location-${props.location}` : 'collection')
+  props.location ? `location-${props.location}` : 'collection')
 </script>
 
 <template>
@@ -292,11 +279,9 @@ const exportName = computed(() =>
           <DropdownMenuContent align="end">
             <DropdownMenuItem v-if="canAdd" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
-            <!-- The want list comes later (spec 005, AC-14). -->
-            <DropdownMenuItem v-if="source.kind === 'deck-missing'" disabled><HeartIcon /> Add to want list</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <IconButton v-if="editable && !deck" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
+        <IconButton v-if="editable" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
         <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>

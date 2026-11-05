@@ -22,7 +22,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
             <CardPreview :image="card.printing.image_normal" :name="card.printing.name">
               <button
                 type="button" class="flex w-full items-center gap-1.5 rounded px-1 text-left text-sm leading-6 hover:bg-muted"
-                :aria-label="card.printing.name" data-testid="deck-row" @click="emit('open', card)"
+                :aria-label="card.printing.name" data-testid="deck-row" data-deck-card @click="emit('open', card)"
               >
                 <span class="w-5 shrink-0 text-right tabular-nums text-muted-foreground">{{ card.quantity }}</span>
                 <span class="min-w-0 flex-1 truncate">{{ card.printing.name }}</span>
