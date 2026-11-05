@@ -241,7 +241,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           @filter="setFilter" @clear="clearFilters" @option="setOption"
         />
         <DeckText
-          v-if="shown.length && layout === 'text'" :cards="shown" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+          v-if="shown.length && layout === 'text'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
           @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckList

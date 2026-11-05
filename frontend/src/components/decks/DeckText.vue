@@ -3,11 +3,12 @@ import { computed } from 'vue'
 import CardPreview from '@/components/CardPreview.vue'
 import { groupDeck, type DeckCard, type GroupBy, type SortBy } from '@/lib/decks'
 import DeckCardMenu from './DeckCardMenu.vue'
+import GroupHeading from './GroupHeading.vue'
 import ManaCost from './ManaCost.vue'
 import OwnershipBadge from './OwnershipBadge.vue'
 
 /** Compact rows; the card image appears beside the hovered line, like EDHREC (spec 005, AC-6). */
-const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean }>()
+const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; currency: string }>()
 const emit = defineEmits<{ open: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
 const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy))
 </script>
@@ -15,7 +16,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
 <template>
   <div class="columns-1 gap-6 sm:columns-2 lg:columns-3" data-testid="deck-text">
     <section v-for="g in groups" :key="g.key" class="mb-4 break-inside-avoid" :data-testid="`group-${g.key}`">
-      <h3 class="mb-1 text-sm font-semibold">{{ g.label }} <span class="font-normal text-muted-foreground">({{ g.count }})</span></h3>
+      <GroupHeading :group="g" :currency="currency" class="mb-1" />
       <ul>
         <li v-for="card in g.cards" :key="card.id">
           <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">

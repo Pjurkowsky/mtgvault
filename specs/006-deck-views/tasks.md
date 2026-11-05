@@ -32,7 +32,7 @@ Done for T4-T5: the collection browser and filter specs pass unchanged.
 
 - [x] **T9 Images view from `CardTile` with sizes; size remembered** (AC-1)
 - [x] **T10 Hover preview in List rows, `CardTable`, browser lists, Swaps; side image removed** (AC-2)
-- [ ] **T11 `GroupHeading` with values in every view; outlined destructive buttons** (AC-3, AC-4)
+- [x] **T11 `GroupHeading` with values in every view; outlined destructive buttons** (AC-3, AC-4)
 
 ## Phase 5: Swaps, categories, stats
 

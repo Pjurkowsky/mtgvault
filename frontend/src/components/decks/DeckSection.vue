@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { PencilIcon, Trash2Icon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
+import DestructiveButton from '@/components/DestructiveButton.vue'
 import IconButton from '@/components/IconButton.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -72,7 +73,7 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
         </ToggleGroup>
       </div>
       <div class="flex justify-between gap-2">
-        <Button variant="ghost" class="text-destructive" :disabled="busy" @click="emit('remove')">Remove from deck</Button>
+        <DestructiveButton :disabled="busy" @click="emit('remove')">Remove from deck</DestructiveButton>
         <Button :disabled="busy || !dirty" @click="emit('save', { quantity, zone })">Save</Button>
       </div>
     </template>

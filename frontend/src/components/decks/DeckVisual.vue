@@ -6,6 +6,7 @@ import { GRID_COLUMNS, type CardSize } from '@/lib/cards'
 import { cn } from '@/lib/utils'
 import { OWN_STATES, groupDeck, type DeckCard, type GroupBy, type OwnState, type SortBy } from '@/lib/decks'
 import DeckCardMenu from './DeckCardMenu.vue'
+import GroupHeading from './GroupHeading.vue'
 
 /** Card images grouped like the list, as the collection's grid tiles (spec 004 AC-19, spec 006 AC-1). */
 const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; size: CardSize; currency: string }>()
@@ -17,7 +18,7 @@ const state = (card: DeckCard) => OWN_STATES[card.ownership.state as OwnState]
 <template>
   <div class="grid gap-6" data-testid="deck-visual" :data-size="size">
     <section v-for="g in groups" :key="g.key" :data-testid="`group-${g.key}`">
-      <h3 class="mb-2 text-sm font-semibold">{{ g.label }} <span class="font-normal text-muted-foreground">({{ g.count }})</span></h3>
+      <GroupHeading :group="g" :currency="currency" class="mb-2" />
       <ul :class="cn('grid gap-3', GRID_COLUMNS[size])">
         <li v-for="card in g.cards" :key="card.id" class="group">
           <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
