@@ -14,6 +14,8 @@ defineProps<{
   selected?: boolean
   /** Large image for the fullscreen button. */
   large?: string | null
+  /** Reachable with the arrow keys (spec 006, AC-9). */
+  navigable?: boolean
 }>()
 const emit = defineEmits<{ click: [event: MouseEvent] }>()
 </script>
@@ -26,6 +28,7 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
     :aria-label="label"
     data-testid="card-tile"
     :data-selected="selected || undefined"
+    :data-deck-card="navigable || undefined"
     @click="emit('click', $event)"
   >
     <img
@@ -38,7 +41,6 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
       <span class="rounded-md bg-background/90 px-1.5 text-sm font-semibold shadow" data-testid="card-quantity">×{{ quantity }}</span>
       <slot name="badges" />
     </span>
-    <span class="absolute right-2 bottom-2"><slot name="corner" /></span>
     <span
       class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/85 to-transparent p-2 pt-8 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
       data-testid="card-hover"

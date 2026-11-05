@@ -130,7 +130,7 @@ test.describe('Deck cards', () => {
 
     await page.getByRole('button', { name: 'Card images' }).click()
     await expect(page.getByTestId('deck-visual')).toBeVisible()
-    await page.getByTestId('deck-visual').getByRole('button', { name: 'Shivan Dragon' }).click()
+    await page.getByTestId('deck-visual').getByRole('button', { name: 'Shivan Dragon', exact: true }).click()
     await expect(cardDialog(page)).toContainText('Shivan Dragon')
     await closeCardDialog(page)
     await page.reload()

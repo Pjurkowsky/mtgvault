@@ -29,13 +29,13 @@ test.describe('Deck search and filters', () => {
     await page.reload()
     await expect(page.getByTestId('deck-row')).toHaveCount(1)
     await page.getByRole('button', { name: 'Card images' }).click()
-    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Lightning Bolt' })).toBeVisible()
-    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Sol Ring' })).toHaveCount(0)
+    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Lightning Bolt', exact: true })).toBeVisible()
+    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Sol Ring', exact: true })).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Filters' }).click()
     await panel.getByRole('button', { name: 'Clear' }).click()
     await page.keyboard.press('Escape')
-    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Sol Ring' })).toBeVisible()
+    await expect(page.getByTestId('deck-visual').getByRole('button', { name: 'Sol Ring', exact: true })).toBeVisible()
   })
 
   test('AC-6, AC-8: the ownership filter replaces the Owned and Missing tabs; Export missing in the menu', async ({ page, request }) => {

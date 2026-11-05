@@ -1,29 +1,39 @@
 <script setup lang="ts">
-import type { CardSize } from '@/lib/cards'
 import { computed } from 'vue'
-import { groupDeck, type DeckCard, type GroupBy, type SortBy } from '@/lib/decks'
+import CardTile from '@/components/browser/CardTile.vue'
+import Price from '@/components/Price.vue'
+import { GRID_COLUMNS, type CardSize } from '@/lib/cards'
+import { cn } from '@/lib/utils'
+import { OWN_STATES, groupDeck, type DeckCard, type GroupBy, type OwnState, type SortBy } from '@/lib/decks'
 import DeckCardMenu from './DeckCardMenu.vue'
-import OwnershipBadge from './OwnershipBadge.vue'
 
-/** Card images grouped like the list (spec 004, AC-19). */
-const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; size?: CardSize }>()
+/** Card images grouped like the list, as the collection's grid tiles (spec 004 AC-19, spec 006 AC-1). */
+const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; size: CardSize; currency: string }>()
 const emit = defineEmits<{ open: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
 const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy))
+const state = (card: DeckCard) => OWN_STATES[card.ownership.state as OwnState]
 </script>
 
 <template>
-  <div class="grid gap-6" data-testid="deck-visual">
-    <section v-for="g in groups" :key="g.key">
+  <div class="grid gap-6" data-testid="deck-visual" :data-size="size">
+    <section v-for="g in groups" :key="g.key" :data-testid="`group-${g.key}`">
       <h3 class="mb-2 text-sm font-semibold">{{ g.label }} <span class="font-normal text-muted-foreground">({{ g.count }})</span></h3>
-      <ul class="grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-7">
-        <li v-for="card in g.cards" :key="card.id" class="relative">
+      <ul :class="cn('grid gap-3', GRID_COLUMNS[size])">
+        <li v-for="card in g.cards" :key="card.id" class="group">
           <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
-            <button type="button" class="block w-full" :aria-label="card.printing.name" data-deck-card @click="emit('open', card)">
-              <img :src="card.printing.image_normal" :alt="card.printing.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
-            </button>
+            <CardTile
+              :image="size === 'sm' ? card.printing.image_small : card.printing.image_normal" :name="card.printing.name"
+              :quantity="card.quantity" :label="card.printing.name" :large="card.printing.image_large || card.printing.image_normal"
+              navigable @click="emit('open', card)"
+            >
+              <template #badges>
+                <span class="flex items-center rounded-md bg-background/90 px-1.5 shadow" :data-state="card.ownership.state" data-testid="ownership">
+                  <span :class="['size-2 rounded-full', state(card).dot]" /><span class="sr-only">{{ state(card).label }}</span>
+                </span>
+              </template>
+              <template #price><Price :value="card.price" :values="card.prices" :currency="currency" /></template>
+            </CardTile>
           </DeckCardMenu>
-          <span class="absolute top-1.5 left-1.5 rounded bg-background/90 px-1 text-xs font-semibold shadow">×{{ card.quantity }}</span>
-          <span class="absolute right-1.5 bottom-1.5 rounded bg-background/90 px-1 shadow"><OwnershipBadge :card="card" /></span>
         </li>
       </ul>
     </section>

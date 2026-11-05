@@ -249,7 +249,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           :editable="isOwner" @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckVisual
-          v-else-if="shown.length" :cards="shown" :size="size" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+          v-else-if="shown.length" :cards="shown" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
           @open="showCard" @swap="proposeSwap" @delete="removeCard"
         />
         <p v-else class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>

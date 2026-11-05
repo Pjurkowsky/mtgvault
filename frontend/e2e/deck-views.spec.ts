@@ -43,7 +43,7 @@ test.describe('Deck views', () => {
     await expect(deckRow(page, 'Counterspell')).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Card images' }).click()
-    await page.getByTestId('deck-visual').getByRole('button', { name: 'Forest' }).click({ button: 'right' })
+    await page.getByTestId('deck-visual').getByRole('button', { name: 'Forest', exact: true }).click({ button: 'right' })
     await expect(menu.getByRole('menuitem')).toHaveText(['Edit', 'Propose swap', 'Add to want list', 'Delete'])
     await page.keyboard.press('Escape')
     // Delete removes the card from the deck only.
