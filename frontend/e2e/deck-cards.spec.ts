@@ -126,7 +126,7 @@ test.describe('Deck cards', () => {
     await page.getByRole('button', { name: 'List', exact: true }).click()
     await expect(page.getByTestId('deck-list')).toBeVisible()
     await deckRow(page, 'Shivan Dragon').hover()
-    await expect(page.getByTestId('deck-preview')).toHaveAttribute('src', /.+/)
+    await expect(page.getByTestId('card-preview')).toHaveAttribute('alt', 'Shivan Dragon')
 
     await page.getByRole('button', { name: 'Card images' }).click()
     await expect(page.getByTestId('deck-visual')).toBeVisible()

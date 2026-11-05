@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardPreview from '@/components/CardPreview.vue'
 import Price from '@/components/Price.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -62,8 +63,15 @@ const emit = defineEmits<{
                 data-testid="card-checkbox" @click.prevent="emit('check', row, index, $event)"
               />
             </TableCell>
-            <TableCell><img :src="row.printing.image_small" alt="" loading="lazy" class="h-10 rounded-sm" /></TableCell>
-            <TableCell class="font-medium">{{ row.printing.name }}</TableCell>
+            <!-- The thumbnail is small: hovering it or the name shows the card (spec 006, AC-2). -->
+            <TableCell>
+              <CardPreview :image="row.printing.image_normal" :name="row.printing.name">
+                <img :src="row.printing.image_small" alt="" loading="lazy" class="h-10 rounded-sm" />
+              </CardPreview>
+            </TableCell>
+            <TableCell class="font-medium">
+              <CardPreview :image="row.printing.image_normal" :name="row.printing.name"><span>{{ row.printing.name }}</span></CardPreview>
+            </TableCell>
             <TableCell :title="row.printing.set_name" class="uppercase">{{ row.printing.set_code }}</TableCell>
             <TableCell>{{ row.printing.collector_number }}</TableCell>
             <TableCell>{{ labelOf(FINISHES, row.finish) }}</TableCell>
