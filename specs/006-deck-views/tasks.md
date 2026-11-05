@@ -18,7 +18,7 @@ export → import round trip keeping categories.
 ## Phase 2: Shared pieces
 
 - [x] **T4 `CardTile` extracted from `CardGrid`** (AC-1)
-- [ ] **T5 Filter pieces extracted; collection `FilterPopover` rebuilt on them** (AC-6)
+- [x] **T5 Filter pieces extracted; collection `FilterPopover` rebuilt on them** (AC-6)
 
 Done for T4-T5: the collection browser and filter specs pass unchanged.
 
