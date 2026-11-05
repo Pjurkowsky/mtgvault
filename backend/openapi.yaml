@@ -1925,7 +1925,7 @@ components:
         sections:
           type: array
           items:
-            $ref: '#/components/schemas/BinderSection'
+            $ref: '#/components/schemas/BinderSectionRead'
         slots:
           type: array
           items:
@@ -2075,6 +2075,38 @@ components:
       required:
       - first_page
       - last_page
+      - name
+    BinderSectionRead:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 60
+        first_page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        last_page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        filter:
+          type: object
+          additionalProperties: {}
+          description: 'Card browser filter keys: color, type, rarity, set, finish,
+            condition, price_min, price_max'
+        matching:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+          nullable: true
+          description: Ids of the binder's rows that match the filter; null without
+            one
+      required:
+      - first_page
+      - last_page
+      - matching
       - name
     BinderSlot:
       type: object
@@ -4031,7 +4063,7 @@ components:
         sections:
           type: array
           items:
-            $ref: '#/components/schemas/BinderSection'
+            $ref: '#/components/schemas/BinderSectionRead'
         slots:
           type: array
           items:

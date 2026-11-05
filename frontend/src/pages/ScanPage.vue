@@ -10,6 +10,8 @@ import Price from '@/components/Price.vue'
 import ResultBar from '@/components/scanner/ResultBar.vue'
 import ScannerSettingsSheet from '@/components/scanner/ScannerSettingsSheet.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
+import BinderScanDialog, { type BinderScan } from '@/components/binder/BinderScanDialog.vue'
+import { nextPlace, placeLabel, type Place } from '@/lib/binder'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { loadScanTarget, saveScanTarget, type ScanTarget } from '@/lib/scanTarget'
@@ -26,7 +28,45 @@ const deckId = computed(() => (route.query.deck ? Number(route.query.deck) : nul
 const target = ref<ScanTarget | null>(deckId.value ? loadScanTarget(deckId.value) : null)
 const deck = ref<{ id: number; name: string; location: number | null } | null>(null)
 const locationNames = ref<Record<string, string>>({})
-const scanner = useScanner(() => target.value)
+
+// A binder's scans (spec 007, AC-20 to AC-23): in order from a cursor, or Unplaced.
+const binderId = computed(() => (route.query.location ? Number(route.query.location) : null))
+const binderGrid = ref<{ rows: number; cols: number } | null>(null)
+const num = (v: unknown) => Math.max(1, Number(v) || 1)
+const binderScan = ref<BinderScan>({
+  inOrder: true,
+  cursor: { page: num(route.query.page), row: num(route.query.row), col: num(route.query.col) },
+  direction: 'rows',
+})
+const lastSlot = ref<(Place & { id: number }) | null>(null)
+const binderFull = ref(false)
+const binderOpen = ref(false)
+if (binderId.value) {
+  target.value = { kind: 'location', location: binderId.value }
+}
+function binderTarget(): ScanTarget | null {
+  if (!binderId.value) return target.value
+  const b = binderScan.value
+  return { kind: 'location', location: binderId.value, ...(b.inOrder ? { binder: { ...b.cursor, direction: b.direction } } : {}) }
+}
+const scanner = useScanner(binderTarget, {
+  logged(result) {
+    if (!binderId.value) return
+    binderFull.value = !!result.binder_full
+    lastSlot.value = result.slot ?? null
+    const grid = binderGrid.value
+    if (result.slot && grid) {
+      binderScan.value = { ...binderScan.value, cursor: nextPlace(result.slot, grid.rows, grid.cols, binderScan.value.direction) }
+    }
+  },
+  undoSlot: () => lastSlot.value?.id ?? null,
+  undone() {
+    // The freed pocket is where the next card goes.
+    if (lastSlot.value) binderScan.value = { ...binderScan.value, cursor: { page: lastSlot.value.page, row: lastSlot.value.row, col: lastSlot.value.col } }
+    lastSlot.value = null
+    binderFull.value = false
+  },
+})
 const { camera, status, settings, lastScan, lastDeckCard, cart, ready } = scanner
 const currency = computed(() => auth.user?.currency ?? 'USD')
 const settingsOpen = ref(false)
@@ -44,6 +84,14 @@ onMounted(async () => {
     locationNames.value = Object.fromEntries((l.data?.locations ?? []).map((x) => [String(x.id), x.name]))
     if (deck.value && !target.value) target.value = deck.value.location ? { kind: 'location', location: deck.value.location } : { kind: 'cart' }
   }
+  if (binderId.value) {
+    const [b, l] = await Promise.all([
+      api.GET('/api/locations/{id}/binder/', { params: { path: { id: binderId.value } } }),
+      api.GET('/api/locations/'),
+    ])
+    if (b.data) binderGrid.value = { rows: b.data.rows, cols: b.data.cols }
+    locationNames.value = Object.fromEntries((l.data?.locations ?? []).map((x) => [String(x.id), x.name]))
+  }
   void scanner.start()
 })
 
@@ -56,6 +104,19 @@ const destination = computed(() => {
     return { label: t.location === null ? 'Unfiled' : (locationNames.value[id] ?? 'Location'), icon: PackageIcon, to: { name: 'location', params: { id } } }
   }
   return { label: 'Cart', icon: ShoppingCartIcon, to: { name: 'location', params: { id: 'cart' } } }
+})
+
+function changeBinderScan(next: BinderScan) {
+  binderScan.value = next
+  binderFull.value = false
+  lastSlot.value = null
+  void scanner.retarget()
+}
+const binderLabel = computed(() => {
+  const b = binderScan.value
+  const grid = binderGrid.value
+  if (!b.inOrder) return 'Unplaced'
+  return `${grid ? placeLabel(b.cursor, grid.cols) : `Page ${b.cursor.page}`} ${b.direction === 'rows' ? '→' : '↓'}`
 })
 
 function changeTarget(next: ScanTarget) {
@@ -79,6 +140,7 @@ const percent = computed(() => {
 const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
 
 function close() {
+  if (binderId.value) return router.push({ name: 'location', params: { id: String(binderId.value) } })
   router.push(deckId.value ? { name: 'deck', params: { id: deckId.value } } : { name: 'collection' })
 }
 function tapToResume() {
@@ -110,10 +172,19 @@ function onEdited(item: BrowserRow) {
         </span>
       </RouterLink>
       <Button v-if="deck" variant="secondary" size="sm" @click="targetOpen = true">Change</Button>
+      <template v-if="binderId">
+        <span class="rounded-md bg-background/90 px-3 py-2 text-sm text-foreground shadow" data-testid="binder-cursor">{{ binderLabel }}</span>
+        <Button variant="secondary" size="sm" :disabled="!binderGrid" @click="binderOpen = true">Change</Button>
+      </template>
       <div class="ml-auto">
         <IconButton label="Scanner settings" variant="secondary" :disabled="!settings" @click="settingsOpen = true"><SettingsIcon /></IconButton>
       </div>
     </div>
+
+    <!-- A full binder with a page count: later scans go to Unplaced (spec 007, AC-23) -->
+    <p v-if="binderFull" class="absolute top-32 left-1/2 z-10 -translate-x-1/2 rounded-full bg-amber-500 px-4 py-1.5 text-sm font-medium whitespace-nowrap text-black" data-testid="binder-full">
+      Binder full · new cards go to Unplaced
+    </p>
 
     <!-- Status -->
     <p v-if="statusText" class="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm whitespace-nowrap" data-testid="scan-status">
@@ -151,12 +222,17 @@ function onEdited(item: BrowserRow) {
     <div class="absolute inset-x-0 bottom-0 p-3 text-foreground" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
       <ResultBar
         v-if="lastScan || lastDeckCard" class="mx-auto max-w-xl" :item="lastScan" :deck-card="lastDeckCard" :currency="currency"
+        :place="lastSlot && binderGrid ? placeLabel(lastSlot, binderGrid.cols) : null"
         @plus="scanner.plusOne()" @undo="scanner.undo()" @finish="scanner.setFinish" @printing="editOpen = true"
       />
     </div>
 
     <ScannerSettingsSheet v-if="settings" v-model:open="settingsOpen" :settings="settings" :currency="currency" :ready="ready" :save="scanner.saveSettings" />
     <EditItemDialog v-model:open="editOpen" :row="lastScan" @saved="onEdited" />
+    <BinderScanDialog
+      v-if="binderId && binderGrid" v-model:open="binderOpen" :current="binderScan" :rows="binderGrid.rows" :cols="binderGrid.cols"
+      @confirm="changeBinderScan"
+    />
     <ScanTargetDialog
       v-if="deck" v-model:open="targetOpen" :deck-id="deck.id" :box-id="deck.location" :current="target" action="Use"
       @confirm="changeTarget"

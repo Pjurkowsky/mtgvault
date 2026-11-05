@@ -23,6 +23,8 @@ const props = defineProps<{
   card?: PickedCard | null
   /** Printing to preselect with `card`. */
   printingId?: string | null
+  /** An empty binder pocket: one new copy goes there (spec 007, AC-14). */
+  pocket?: { page: number; row: number; col: number } | null
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ added: [] }>()
@@ -96,13 +98,14 @@ async function add() {
       purchase_price: f.purchase_price === '' ? null : Number(f.purchase_price),
       purchase_currency: f.purchase_price === '' ? null : f.purchase_currency,
       location: f.location === 'unfiled' ? null : Number(f.location),
+      ...(props.pocket && f.location === String(props.defaultLocation) ? { slot: props.pocket } : {}),
     },
   })
   saving.value = false
   if (error || !data) return (errors.value = fieldErrors(error))
   toast.success(`Added ${f.quantity} × ${data.item.printing.name}${data.merged ? ' (merged with an existing row)' : ''}.`)
   emit('added')
-  if (fixed.value) return (open.value = false)
+  if (fixed.value || props.pocket) return (open.value = false)
   const keepLocation = f.location
   reset()
   form.value.location = keepLocation
@@ -115,7 +118,7 @@ async function add() {
   <Dialog v-model:open="open">
     <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
       <DialogHeader>
-        <DialogTitle>{{ fixed ? `Add ${card?.name ?? ''}` : 'Add card' }}</DialogTitle>
+        <DialogTitle>{{ fixed ? `Add ${card?.name ?? ''}` : pocket ? `Add card to page ${pocket.page}, row ${pocket.row}, column ${pocket.col}` : 'Add card' }}</DialogTitle>
       </DialogHeader>
 
       <CardSearch v-if="!fixed" ref="search" v-model:query="query" :picked="!!card" @choose="choose" />

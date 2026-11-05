@@ -24,7 +24,8 @@ from .views import NOT_FOUND, public_location
 
 def binder_payload(location: Location, ctx: dict, **extra) -> dict:
     slots = list(location.binder_slots.order_by('page', 'row', 'col', '-position'))
-    mismatched = binder.mismatched_slots(location, slots, ctx)
+    matches = binder.section_matches(location, ctx)
+    mismatched = binder.mismatched_slots(location, slots, matches)
     items = with_unit_price(binder.binder_items(location), ctx['currency'], ctx['rates']) \
         .select_related('printing__set', 'location').order_by('printing__name', 'id')
     pockets = {(s.page, s.row, s.col) for s in slots}
@@ -37,7 +38,9 @@ def binder_payload(location: Location, ctx: dict, **extra) -> dict:
         'page_count': binder.page_count(location),
         'used': len(pockets),
         'total': location.binder_pages * per_page if location.binder_pages else None,
-        'sections': location.binder_sections.all(),
+        'sections': [{'name': s.name, 'first_page': s.first_page, 'last_page': s.last_page, 'filter': s.filter,
+                      'matching': sorted(matches[s.pk]) if matches[s.pk] is not None else None}
+                     for s in location.binder_sections.all()],
         'slots': [{'id': s.id, 'item_id': s.item_id, 'page': s.page, 'row': s.row, 'col': s.col,
                    'position': s.position, 'mismatch': s.id in mismatched} for s in slots],
         'items': items,

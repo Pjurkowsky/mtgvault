@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
+  BookOpenIcon,
   CameraIcon,
   ArrowDownWideNarrowIcon,
   ArrowUpNarrowWideIcon,
@@ -13,8 +14,9 @@ import {
   UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/api/client'
+import BinderView from '@/components/binder/BinderView.vue'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
 import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
@@ -53,6 +55,8 @@ const props = defineProps<{
   /** Fixed location: an id, or 'unfiled'. Omit for all cards. */
   location?: string
   readonly?: boolean
+  /** The location is a Binder: offer the binder view (spec 007, AC-1). */
+  binder?: boolean
 }>()
 const emit = defineEmits<{ changed: [] }>()
 
@@ -60,6 +64,7 @@ const { filter, view, update, setView, clearFilters, activeFilterCount } = useBr
 const selection = useSelection()
 const confirm = useConfirm()
 const router = useRouter()
+const route = useRoute()
 const editable = computed(() => props.source.kind === 'own' && !props.readonly)
 // The cart (spec 003): scanned cards waiting to be moved into the collection.
 const isCart = computed(() => props.location === 'cart')
@@ -67,6 +72,38 @@ const isCart = computed(() => props.location === 'cart')
 const canAdd = computed(() => editable.value && !isCart.value)
 const selecting = computed(() => selection.count.value > 0)
 const defaultLocation = computed(() => (props.location && props.location !== 'unfiled' ? Number(props.location) : null))
+
+// ----- binder view (spec 007, AC-1, AC-5) -----
+const binderId = computed(() =>
+  !props.binder ? null : props.source.kind === 'public' ? props.source.locationId : Number(props.location) || null)
+const binderKey = () => `mtgvault.binder.view.${binderId.value}`
+function storedBinderView(): View | null {
+  try {
+    const v = localStorage.getItem(binderKey())
+    return v === 'grid' || v === 'table' || v === 'binder' ? v : null
+  } catch {
+    return null
+  }
+}
+/** A binder opens in binder view until a view is picked there; elsewhere there is no binder view. */
+const shownView = computed<View>(() => {
+  const fromUrl = route.query.view as View | undefined
+  if (binderId.value) return fromUrl && ['grid', 'table', 'binder'].includes(fromUrl) ? fromUrl : storedBinderView() ?? 'binder'
+  return view.value === 'binder' ? 'grid' : view.value
+})
+function pickView(next: View) {
+  if (binderId.value) {
+    try {
+      localStorage.setItem(binderKey(), next)
+    } catch {
+      /* the URL still carries it */
+    }
+  }
+  if (next === 'binder') update({ view: 'binder' })
+  else setView(next)
+}
+const binderVersion = ref(0)
+const inBinder = computed(() => shownView.value === 'binder' && !!binderId.value)
 
 // ----- data -----
 const query = computed(() => ({
@@ -92,6 +129,7 @@ const totalValues = computed(() => (page.value as BrowserPage | null)?.total_val
 
 function refresh() {
   reload()
+  binderVersion.value++
   emit('changed')
 }
 
@@ -193,11 +231,19 @@ function onSaved(item: BrowserRow) {
   refresh()
 }
 
-/** Open the scanner; Fast scanning needs a full page load of the isolated /scan/fast (spec 003, AC-16). */
-async function openScanner() {
+/**
+ * Open the scanner; Fast scanning needs a full page load of the isolated /scan/fast (spec 003, AC-16).
+ * On a binder, scans go into it in order, from `place` when given (spec 007, AC-21).
+ */
+async function openScanner(place?: { page: number; row: number; col: number } | null) {
+  const query: Record<string, string> = {}
+  if (binderId.value) {
+    query.location = String(binderId.value)
+    if (place) Object.assign(query, { page: String(place.page), row: String(place.row), col: String(place.col) })
+  }
   const { data } = await api.GET('/api/scanner/settings/')
-  if (data?.fast) window.location.assign('/scan/fast')
-  else router.push({ name: 'scan' })
+  if (data?.fast) window.location.assign(`/scan/fast${Object.keys(query).length ? `?${new URLSearchParams(query)}` : ''}`)
+  else router.push({ name: 'scan', query })
 }
 
 function openBulk(action: BulkAction) {
@@ -242,25 +288,30 @@ const exportName = computed(() =>
   <div class="grid gap-4 pb-20">
     <!-- Toolbar -->
     <div class="flex flex-wrap items-center gap-2">
-      <div class="relative min-w-48 flex-1">
+      <div v-if="!inBinder" class="relative min-w-48 flex-1">
         <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input v-model="search" placeholder="Search" aria-label="Search cards" class="pl-8" type="search" />
       </div>
-      <FilterPopover :filter="filter" :active-count="activeFilterCount" :currency="currency" @update="update" @clear="clearFilters" />
-      <Select :model-value="filter.sort" @update:model-value="(v) => update({ sort: String(v) })">
+      <FilterPopover v-if="!inBinder" :filter="filter" :active-count="activeFilterCount" :currency="currency" @update="update" @clear="clearFilters" />
+      <Select v-if="!inBinder" :model-value="filter.sort" @update:model-value="(v) => update({ sort: String(v) })">
         <SelectTrigger class="w-36" aria-label="Sort by"><SelectValue /></SelectTrigger>
         <SelectContent>
           <SelectItem v-for="s in SORTS" :key="s.value" :value="s.value">{{ s.label }}</SelectItem>
         </SelectContent>
       </Select>
       <IconButton
+        v-if="!inBinder"
         :label="filter.dir === 'asc' ? 'Ascending' : 'Descending'"
         @click="update({ dir: filter.dir === 'asc' ? 'desc' : 'asc' })"
       >
         <ArrowUpNarrowWideIcon v-if="filter.dir === 'asc'" />
         <ArrowDownWideNarrowIcon v-else />
       </IconButton>
-      <ToggleGroup type="single" variant="outline" :model-value="view" @update:model-value="(v) => v && setView(v as View)">
+      <ToggleGroup type="single" variant="outline" :model-value="shownView" @update:model-value="(v) => v && pickView(v as View)">
+        <Tooltip v-if="binderId">
+          <TooltipTrigger as-child><ToggleGroupItem value="binder" aria-label="Binder view"><BookOpenIcon /></ToggleGroupItem></TooltipTrigger>
+          <TooltipContent>Binder view</TooltipContent>
+        </Tooltip>
         <Tooltip>
           <TooltipTrigger as-child><ToggleGroupItem value="grid" aria-label="Grid view"><LayoutGridIcon /></ToggleGroupItem></TooltipTrigger>
           <TooltipContent>Grid view</TooltipContent>
@@ -281,7 +332,7 @@ const exportName = computed(() =>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <IconButton v-if="editable" label="Scan cards" @click="openScanner"><CameraIcon /></IconButton>
+        <IconButton v-if="editable" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
         <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>
@@ -294,8 +345,13 @@ const exportName = computed(() =>
     </div>
 
     <!-- Results -->
+    <BinderView
+      v-if="inBinder"
+      :source="source" :location-id="binderId!" :editable="editable" :version="binderVersion"
+      @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck" @scan="openScanner" @changed="refresh"
+    />
     <CardGrid
-      v-if="view === 'grid' && rows.length"
+      v-else-if="shownView === 'grid' && rows.length"
       :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
       @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
     />
@@ -306,15 +362,15 @@ const exportName = computed(() =>
       @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
       @select-all="toggleSelectAll"
     />
-    <p v-else-if="!loading && page" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
+    <p v-else-if="!loading && page && !inBinder" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
       {{ activeFilterCount || filter.q ? 'No cards match.' : 'No cards yet.' }}
     </p>
-    <div v-if="loading && !rows.length" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div v-if="loading && !rows.length && !inBinder" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       <Skeleton v-for="n in 10" :key="n" class="aspect-[488/680] w-full" />
     </div>
     <div ref="sentinel" aria-hidden="true" />
-    <p v-if="loading && rows.length" class="text-center text-sm text-muted-foreground">Loading…</p>
-    <p v-else-if="done && rows.length > 60" class="text-center text-sm text-muted-foreground">End of list</p>
+    <p v-if="loading && rows.length && !inBinder" class="text-center text-sm text-muted-foreground">Loading…</p>
+    <p v-else-if="done && rows.length > 60 && !inBinder" class="text-center text-sm text-muted-foreground">End of list</p>
 
     <!-- Bulk bar while anything is selected (AC-15) -->
     <div

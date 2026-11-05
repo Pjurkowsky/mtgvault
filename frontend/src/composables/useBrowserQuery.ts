@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter, type LocationQueryValue } from 'vue-router'
 
-export type View = 'grid' | 'table'
+export type View = 'grid' | 'table' | 'binder'
 const LIST_KEYS = ['color', 'type', 'rarity', 'set', 'finish', 'condition'] as const
 type ListKey = (typeof LIST_KEYS)[number]
 const VIEW_STORAGE = 'mtgvault.browser.view'

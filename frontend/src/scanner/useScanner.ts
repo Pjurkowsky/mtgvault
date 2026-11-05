@@ -28,7 +28,14 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
  * in the worker, decide (manavault's rules), and log accepted cards to the cart,
  * or where a deck's scans go (spec 005, AC-16, AC-17).
  */
-export function useScanner(target: () => ScanTarget | null = () => null) {
+/** Scan in order (spec 007): where a logged copy went, and the pocket Undo frees. */
+export type ScannerHooks = {
+  logged?: (result: Schemas['ScanResult']) => void
+  undoSlot?: () => number | null
+  undone?: () => void
+}
+
+export function useScanner(target: () => ScanTarget | null = () => null, hooks: ScannerHooks = {}) {
   const camera = useCamera()
   const status = ref<ScannerStatus>({ kind: 'loading', progress: null })
   const settings = ref<Schemas['ScannerSettings'] | null>(null)
@@ -150,6 +157,7 @@ export function useScanner(target: () => ScanTarget | null = () => null) {
     lastScan.value = data.item
     lastDeckCard.value = data.deck_card
     cart.value = data.totals
+    hooks.logged?.(data)
     status.value = { kind: 'logged', name: (data.item ?? data.deck_card)?.printing.name ?? candidate.name }
     if (settings.value?.sounds) playSound(data.sound)
   }
@@ -209,8 +217,12 @@ export function useScanner(target: () => ScanTarget | null = () => null) {
     if (lastDeckCard.value) return deckUndo()
     const row = lastScan.value
     if (!row) return
-    const { data } = await api.POST('/api/scanner/scans/{id}/undo/', { params: { path: { id: row.id } } })
+    const slot = hooks.undoSlot?.() ?? null
+    const { data } = await api.POST('/api/scanner/scans/{id}/undo/', {
+      params: { path: { id: row.id } }, ...(slot ? { body: { slot } } : {}),
+    })
     if (!data) return
+    hooks.undone?.()
     cart.value = data.totals
     tracker = forgetLastLogged(tracker) // the same card may be scanned again
     if (data.remaining === 0) {

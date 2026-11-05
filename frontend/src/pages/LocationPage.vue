@@ -52,7 +52,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
       </p>
     </div>
 
-    <CardBrowser :key="id" :source="{ kind: 'own' }" :location="id" @changed="store.load" />
+    <CardBrowser :key="id" :source="{ kind: 'own' }" :location="id" :binder="location?.kind === 'binder'" @changed="store.load" />
 
     <template v-if="location">
       <LocationDialog v-model:open="editOpen" :location="location" />

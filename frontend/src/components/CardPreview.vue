@@ -4,7 +4,8 @@ import { Slot } from 'reka-ui'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 
 /** Large card image on hover (AC-9, AC-32). Wraps whatever shows the card. */
-defineProps<{ image?: string | null; name: string; disabled?: boolean }>()
+/** `stack`: every card of a shared binder pocket, shown side by side (spec 007, AC-19). */
+defineProps<{ image?: string | null; name: string; disabled?: boolean; stack?: { image: string; name: string }[] }>()
 // Listeners from a wrapping trigger (the card menu) reach the card itself.
 defineOptions({ inheritAttrs: false })
 
@@ -29,7 +30,10 @@ function release() {
   <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="350" :close-delay="0" @update:open="(v) => (open = v && hovering)">
     <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerenter="hovering = true" @pointerleave="release"><slot /></HoverCardTrigger>
     <HoverCardContent side="right" class="w-auto border-none bg-transparent p-0 shadow-none">
-      <img :src="image" :alt="name" class="w-64 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
+      <div v-if="stack?.length" class="flex gap-2" data-testid="stack-preview">
+        <img v-for="(c, i) in stack" :key="i" :src="c.image" :alt="c.name" class="w-48 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
+      </div>
+      <img v-else :src="image" :alt="name" class="w-64 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
     </HoverCardContent>
   </HoverCard>
   <Slot v-else v-bind="$attrs"><slot /></Slot>

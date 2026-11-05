@@ -17,20 +17,20 @@ scan order along rows and down columns, binder full.
 
 ## Phase 2: The view
 
-- [ ] **T4 `lib/binder.ts`, `BinderView`, `BinderPage`, `BinderSlot`: pages, spreads, arrows and keys, page in the URL** (AC-2 to AC-5)
-- [ ] **T5 Binder view option only on binders, opening in binder view the first time** (AC-1)
-- [ ] **T6 `GridPicker`, `BinderSettingsDialog`, page count, sections with filters and hints** (AC-6 to AC-11)
+- [x] **T4 `lib/binder.ts`, `BinderView`, `BinderPage`, `BinderSlot`: pages, spreads, arrows and keys, page in the URL** (AC-2 to AC-5)
+- [x] **T5 Binder view option only on binders, opening in binder view the first time** (AC-1)
+- [x] **T6 `GridPicker`, `BinderSettingsDialog`, page count, sections with filters and hints** (AC-6 to AC-11)
 
 ## Phase 3: Placing and moving
 
-- [ ] **T7 `UnplacedTray`, empty slot menu, add card to a slot, From Unplaced** (AC-12 to AC-14)
-- [ ] **T8 `useBinderDrag`: slot and tray drag and drop, edge page turn, long press, swap or share** (AC-15 to AC-17)
-- [ ] **T9 Card menu Move to slot and Unplace; stacks with +N, hover and order** (AC-18, AC-19)
+- [x] **T7 `UnplacedTray`, empty slot menu, add card to a slot, From Unplaced** (AC-12 to AC-14)
+- [x] **T8 `useBinderDrag`: slot and tray drag and drop, edge page turn, long press, swap or share** (AC-15 to AC-17)
+- [x] **T9 Card menu Move to slot and Unplace; stacks with +N, hover and order** (AC-18, AC-19)
 
 ## Phase 4: Scanner and public
 
 - [ ] **T10 Scanner on a binder: Scan button, Scan from here, in-order dialog, result bar slot, undo, binder full** (AC-20 to AC-23)
-- [ ] **T11 Public binder view read-only** (AC-24)
+- [x] **T11 Public binder view read-only** (AC-24)
 
 ## Phase 5: Tests and wrap up
 

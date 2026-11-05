@@ -45,6 +45,6 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
       </div>
       <p class="text-muted-foreground" data-testid="location-totals">{{ cards(location.card_count) }} · <Price :value="location.value" :values="location.values" :currency="currency" /></p>
     </div>
-    <CardBrowser :key="`${username}/${id}`" :source="{ kind: 'public', username, locationId: id }" readonly />
+    <CardBrowser :key="`${username}/${id}`" :source="{ kind: 'public', username, locationId: id }" :binder="location.kind === 'binder'" readonly />
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowLeftRightIcon, EyeIcon, HeartIcon, LayersIcon, PencilIcon, TagsIcon, Trash2Icon } from '@lucide/vue'
+import { ArrowLeftRightIcon, EyeIcon, GridIcon, HeartIcon, InboxIcon, LayersIcon, PencilIcon, TagsIcon, Trash2Icon } from '@lucide/vue'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -9,7 +9,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
-export type MenuItem = 'open' | 'edit' | 'categories' | 'deck' | 'swap' | 'want' | 'delete'
+export type MenuItem = 'open' | 'edit' | 'categories' | 'deck' | 'swap' | 'want' | 'slot' | 'unplace' | 'delete'
 
 /**
  * Right-click (long-press on touch) menu for a card (spec 002, AC-18). The card
@@ -17,7 +17,7 @@ export type MenuItem = 'open' | 'edit' | 'categories' | 'deck' | 'swap' | 'want'
  * Delete (spec 005, AC-7).
  */
 const props = defineProps<{ editable: boolean; items?: MenuItem[] }>()
-const emit = defineEmits<{ open: []; edit: []; categories: []; delete: []; deck: []; swap: [] }>()
+const emit = defineEmits<{ open: []; edit: []; categories: []; delete: []; deck: []; swap: []; slot: []; unplace: [] }>()
 
 const LABELS: Record<MenuItem, { label: string; icon: unknown }> = {
   open: { label: 'Open', icon: EyeIcon },
@@ -27,6 +27,9 @@ const LABELS: Record<MenuItem, { label: string; icon: unknown }> = {
   swap: { label: 'Propose swap', icon: ArrowLeftRightIcon },
   // The want list comes later (spec 005 AC-14, spec 006 AC-8).
   want: { label: 'Add to want list', icon: HeartIcon },
+  // Binder pockets (spec 007, AC-18).
+  slot: { label: 'Move to slot…', icon: GridIcon },
+  unplace: { label: 'Unplace', icon: InboxIcon },
   delete: { label: 'Delete', icon: Trash2Icon },
 }
 const shown = computed<MenuItem[]>(() => props.items ?? (props.editable ? ['open', 'edit', 'deck', 'delete'] : ['open']))

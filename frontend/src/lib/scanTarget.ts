@@ -1,7 +1,7 @@
 /** Where a deck's scans go, remembered per deck in this browser (spec 005, AC-16). */
 export type ScanTarget =
   | { kind: 'cart' }
-  | { kind: 'location'; location: number | null } // null = Unfiled
+  | { kind: 'location'; location: number | null; binder?: { page: number; row: number; col: number; direction: 'rows' | 'columns' } } // null = Unfiled; binder = scan in order (spec 007)
   | { kind: 'deck'; deck: number } // the decklist only
 
 const key = (deckId: number) => `mtgvault.scan.deck.${deckId}`

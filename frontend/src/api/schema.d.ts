@@ -963,7 +963,7 @@ export interface components {
             used: number;
             /** @description Pockets in a binder with a fixed page count */
             total: number | null;
-            sections: components["schemas"]["BinderSection"][];
+            sections: components["schemas"]["BinderSectionRead"][];
             slots: components["schemas"]["BinderSlot"][];
             /** @description The binder's rows */
             items: components["schemas"]["Item"][];
@@ -1018,6 +1018,17 @@ export interface components {
             filter?: {
                 [key: string]: unknown;
             };
+        };
+        BinderSectionRead: {
+            name: string;
+            first_page: number;
+            last_page: number;
+            /** @description Card browser filter keys: color, type, rarity, set, finish, condition, price_min, price_max */
+            filter?: {
+                [key: string]: unknown;
+            };
+            /** @description Ids of the binder's rows that match the filter; null without one */
+            readonly matching: number[] | null;
         };
         BinderSlot: {
             id: number;
@@ -1840,7 +1851,7 @@ export interface components {
             used: number;
             /** @description Pockets in a binder with a fixed page count */
             total: number | null;
-            sections: components["schemas"]["BinderSection"][];
+            sections: components["schemas"]["BinderSectionRead"][];
             slots: components["schemas"]["BinderSlot"][];
             /** @description The binder's rows */
             items: components["schemas"]["PublicItem"][];

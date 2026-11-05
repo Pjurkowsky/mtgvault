@@ -11,7 +11,8 @@ import { FINISHES } from '@/lib/cards'
  * The last logged card with quick fixes (spec 003, AC-11). A decklist-only scan
  * (spec 005, AC-17) has no collection row: just +1 and Undo.
  */
-const props = defineProps<{ item?: Schemas['Item'] | null; deckCard?: Schemas['ScannedDeckCard'] | null; currency: string }>()
+/** `place`: where scan in order put the copy, "Page 3 · slot 5" (spec 007, AC-22). */
+const props = defineProps<{ item?: Schemas['Item'] | null; deckCard?: Schemas['ScannedDeckCard'] | null; currency: string; place?: string | null }>()
 const emit = defineEmits<{ plus: []; undo: []; finish: [finish: Schemas['FinishEnum']]; printing: [] }>()
 const printing = computed(() => (props.item ?? props.deckCard)!.printing)
 const finishes = () => (props.item ? FINISHES.filter((f) => props.item!.printing.finishes.includes(f.value)) : [])
@@ -30,6 +31,7 @@ const finishes = () => (props.item ? FINISHES.filter((f) => props.item!.printing
         <Price v-if="item" :value="item.unit_price" :values="item.unit_prices" :currency="currency" />
         <Price v-else :value="deckCard!.price" :currency="currency" />
       </span>
+      <span v-if="place" class="text-sm font-medium" data-testid="result-slot">{{ place }}</span>
       <div class="flex flex-wrap items-center gap-2">
         <ToggleGroup
           v-if="item && finishes().length > 1" type="single" variant="outline" size="sm" :model-value="item.finish"

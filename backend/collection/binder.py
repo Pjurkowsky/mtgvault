@@ -68,15 +68,27 @@ def section_filter(raw: dict) -> dict:
     return data.validated_data
 
 
-def mismatched_slots(location: Location, slots, ctx) -> set[int]:
-    """Slots on a section's pages whose card doesn't match its filter (AC-11)."""
-    out = set()
+def section_matches(location: Location, ctx) -> dict[int, set[int] | None]:
+    """Per section: the ids of the binder's rows that match its filter, None without a filter."""
+    out = {}
     for section in location.binder_sections.all():
         params = section_filter(section.filter)
         if not any(params.get(k) not in (None, [], '') for k in SECTION_FILTER_KEYS):
+            out[section.pk] = None
             continue
         params['location'] = str(location.pk)
-        matching = set(apply_filters(binder_items(location), params, ctx['currency'], ctx['rates']).values_list('id', flat=True))
+        out[section.pk] = set(apply_filters(binder_items(location), params, ctx['currency'], ctx['rates'])
+                              .values_list('id', flat=True))
+    return out
+
+
+def mismatched_slots(location: Location, slots, matches: dict) -> set[int]:
+    """Slots on a section's pages whose card doesn't match its filter (AC-11)."""
+    out = set()
+    for section in location.binder_sections.all():
+        matching = matches.get(section.pk)
+        if matching is None:
+            continue
         out |= {s.id for s in slots if section.first_page <= s.page <= section.last_page and s.item_id not in matching}
     return out
 

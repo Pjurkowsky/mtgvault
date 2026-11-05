@@ -351,6 +351,11 @@ class BinderSectionSerializer(serializers.Serializer):
         return attrs
 
 
+class BinderSectionReadSerializer(BinderSectionSerializer):
+    matching = serializers.ListField(child=serializers.IntegerField(), allow_null=True, read_only=True,
+                                     help_text="Ids of the binder's rows that match the filter; null without one")
+
+
 class BinderSettingsSerializer(serializers.Serializer):
     rows = serializers.IntegerField(min_value=1, max_value=6, required=False)
     cols = serializers.IntegerField(min_value=1, max_value=6, required=False)
@@ -387,7 +392,7 @@ class PublicBinderSerializer(serializers.Serializer):
     page_count = serializers.IntegerField(help_text='Pages to show')
     used = serializers.IntegerField(help_text='Pockets holding a card')
     total = serializers.IntegerField(allow_null=True, help_text='Pockets in a binder with a fixed page count')
-    sections = BinderSectionSerializer(many=True)
+    sections = BinderSectionReadSerializer(many=True)
     slots = BinderSlotSerializer(many=True)
     items = PublicItemSerializer(many=True, help_text="The binder's rows")
     unplaced = UnplacedSerializer(many=True)

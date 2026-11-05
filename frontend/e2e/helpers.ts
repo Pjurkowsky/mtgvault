@@ -167,3 +167,7 @@ export async function deckMenu(page: Page, item: 'Import' | 'Export' | 'Edit' | 
   await page.getByRole('button', { name: 'More' }).click()
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
+
+/** A binder pocket by page and slot number (spec 007); slots count left to right, top to bottom. */
+export const binderSlot = (page: Page, p: number, n: number, cols = 3) =>
+  page.locator(`[data-testid="binder-slot"][data-place="${p}-${Math.floor((n - 1) / cols) + 1}-${((n - 1) % cols) + 1}"]`)
