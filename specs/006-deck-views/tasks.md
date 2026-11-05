@@ -36,7 +36,7 @@ Done for T4-T5: the collection browser and filter specs pass unchanged.
 
 ## Phase 5: Swaps, categories, stats
 
-- [ ] **T12 Swaps table of pairs with labelled diffs, collapsible groups remembered** (AC-10, AC-11)
+- [x] **T12 Swaps table of pairs with labelled diffs, collapsible groups remembered** (AC-10, AC-11)
 - [ ] **T13 `CategoryInput` in the deck section and the card menu; By category grouping; category filter** (AC-12 to AC-14)
 - [ ] **T14 `lib/deckStats.ts` and the new Stats tab; chart clicks set the filter** (AC-16 to AC-18)
 

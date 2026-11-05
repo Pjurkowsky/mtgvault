@@ -1,24 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { ArrowLeftRightIcon, ChevronDownIcon } from '@lucide/vue'
 import CardPreview from '@/components/CardPreview.vue'
+import DestructiveButton from '@/components/DestructiveButton.vue'
+import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/money'
+import { cn } from '@/lib/utils'
 import type { DeckCard, DeckDetail } from '@/lib/decks'
 import ManaCost from './ManaCost.vue'
 import OwnershipBadge from './OwnershipBadge.vue'
 
-/** Cards with swap candidates, each candidate compared to the card it replaces (spec 005, AC-10, AC-13). */
+/**
+ * Pairs of the card in the deck and a proposed replacement, side by side with the swap button
+ * between them (spec 005 AC-10, spec 006 AC-10, AC-11).
+ */
 const props = defineProps<{ deck: DeckDetail; readonly?: boolean }>()
 const emit = defineEmits<{ open: [card: DeckCard]; apply: [candidate: DeckCard]; remove: [candidate: DeckCard] }>()
 
-const pairs = computed(() =>
+const groups = computed(() =>
   props.deck.cards
     .map((card) => ({ card, candidates: props.deck.cards.filter((c) => c.swap_for === card.id) }))
-    .filter((p) => p.candidates.length)
+    .filter((g) => g.candidates.length)
     .sort((a, b) => a.card.printing.name.localeCompare(b.card.printing.name)),
 )
 
-/** `text` is the absolute difference; the sign comes from `value`. */
+// Collapsed groups, remembered per deck in this browser (AC-11).
+const key = computed(() => `mtgvault.swaps.collapsed.${props.deck.id}`)
+const collapsed = ref<number[]>([])
+watch(key, (k) => {
+  try {
+    collapsed.value = JSON.parse(localStorage.getItem(k) ?? '[]')
+  } catch {
+    collapsed.value = []
+  }
+}, { immediate: true })
+function toggle(id: number) {
+  collapsed.value = collapsed.value.includes(id) ? collapsed.value.filter((x) => x !== id) : [...collapsed.value, id]
+  try {
+    localStorage.setItem(key.value, JSON.stringify(collapsed.value))
+  } catch {
+    /* still collapses for this visit */
+  }
+}
+
 function signed(value: number, text: string) {
   return value > 0 ? `+${text}` : value < 0 ? `−${text}` : text
 }
@@ -27,34 +52,49 @@ function priceDiff(out: DeckCard, into: DeckCard) {
   const diff = into.price - out.price
   return signed(diff, formatMoney(Math.abs(diff), props.deck.currency))
 }
-function mvDiff(out: DeckCard, into: DeckCard) {
-  const diff = Number(into.printing.cmc) - Number(out.printing.cmc)
-  return signed(diff, String(Math.abs(diff)))
-}
+const mv = (card: DeckCard) => Number(card.printing.cmc)
+const mvDiff = (out: DeckCard, into: DeckCard) => signed(mv(into) - mv(out), String(Math.abs(mv(into) - mv(out))))
+const proposals = (n: number) => `${n} ${n === 1 ? 'proposal' : 'proposals'}`
 </script>
 
 <template>
-  <div v-if="pairs.length" class="grid gap-5" data-testid="deck-swaps">
-    <section v-for="{ card, candidates } in pairs" :key="card.id" class="grid gap-1" :data-testid="`swap-${card.printing.name}`">
-      <CardPreview :image="card.printing.image_normal" :name="card.printing.name">
-        <button type="button" class="flex items-center gap-2 text-left font-medium" @click="emit('open', card)">
-          {{ card.printing.name }} <ManaCost :cost="card.printing.mana_cost" />
-        </button>
-      </CardPreview>
-      <ul class="grid gap-1 border-l pl-3">
-        <li v-for="c in candidates" :key="c.id" class="flex flex-wrap items-center gap-3 text-sm" data-testid="swap-candidate">
-          <CardPreview :image="c.printing.image_normal" :name="c.printing.name">
-            <button type="button" class="flex min-w-40 flex-1 items-center gap-2 text-left" @click="emit('open', c)">
-              {{ c.printing.name }} <ManaCost :cost="c.printing.mana_cost" />
-            </button>
-          </CardPreview>
-          <span class="w-20 text-muted-foreground tabular-nums" data-testid="swap-price">{{ priceDiff(card, c) }}</span>
-          <span class="w-12 text-muted-foreground tabular-nums" data-testid="swap-mv">{{ mvDiff(card, c) }}</span>
-          <OwnershipBadge :card="c" show-label />
-          <span v-if="!readonly" class="ml-auto flex gap-2">
-            <Button size="sm" variant="outline" @click="emit('apply', c)">Apply</Button>
-            <Button size="sm" variant="ghost" class="text-destructive" @click="emit('remove', c)">Remove</Button>
-          </span>
+  <div v-if="groups.length" class="grid gap-4" data-testid="deck-swaps">
+    <section v-for="{ card, candidates } in groups" :key="card.id" class="rounded-lg border" :data-testid="`swap-${card.printing.name}`">
+      <button
+        type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-semibold hover:bg-muted/50"
+        :aria-expanded="!collapsed.includes(card.id)" @click="toggle(card.id)"
+      >
+        <ChevronDownIcon :class="cn('size-4 transition-transform', collapsed.includes(card.id) && '-rotate-90')" />
+        {{ card.printing.name }} <span class="font-normal text-muted-foreground">· {{ proposals(candidates.length) }}</span>
+      </button>
+      <ul v-if="!collapsed.includes(card.id)" class="divide-y border-t">
+        <li
+          v-for="c in candidates" :key="c.id"
+          class="grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)]" data-testid="swap-candidate"
+        >
+          <template v-for="(side, i) in [card, c]" :key="side.id">
+            <div v-if="i === 1" class="grid justify-items-center gap-1 text-center text-xs text-muted-foreground">
+              <Button v-if="!readonly" size="sm" @click="emit('apply', c)"><ArrowLeftRightIcon /> Swap</Button>
+              <ArrowLeftRightIcon v-else class="size-5" />
+              <span data-testid="swap-price">Price {{ priceDiff(card, c) }}</span>
+              <span data-testid="swap-mv">Mana value {{ mvDiff(card, c) }}</span>
+            </div>
+            <div class="flex min-w-0 items-center gap-3" :data-testid="i === 0 ? 'swap-out' : 'swap-in'">
+              <CardPreview :image="side.printing.image_normal" :name="side.printing.name">
+                <button type="button" class="shrink-0" :aria-label="side.printing.name" @click="emit('open', side)">
+                  <img :src="side.printing.image_small" :alt="side.printing.name" loading="lazy" class="w-16 rounded-[4.75%/3.5%] bg-muted" />
+                </button>
+              </CardPreview>
+              <div class="grid min-w-0 gap-0.5 text-sm">
+                <span class="flex items-center gap-1.5 truncate font-medium">{{ side.printing.name }} <ManaCost :cost="side.printing.mana_cost" /></span>
+                <span class="text-muted-foreground">
+                  <Price :value="side.price" :values="side.prices" :currency="deck.currency" /> · Mana value {{ mv(side) }}
+                </span>
+                <OwnershipBadge :card="side" show-label />
+              </div>
+              <DestructiveButton v-if="i === 1 && !readonly" size="sm" class="ml-auto" @click="emit('remove', c)">Remove</DestructiveButton>
+            </div>
+          </template>
         </li>
       </ul>
     </section>

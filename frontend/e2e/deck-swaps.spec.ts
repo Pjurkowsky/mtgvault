@@ -25,21 +25,33 @@ test.describe('Deck swaps', () => {
     const bolt = page.getByTestId('swap-Lightning Bolt')
     await expect(bolt.getByTestId('swap-candidate')).toHaveCount(2)
     const shivan = bolt.getByTestId('swap-candidate').filter({ hasText: 'Shivan Dragon' })
-    await expect(shivan.getByTestId('swap-mv')).toHaveText('+5')
-    await expect(shivan.getByTestId('swap-price')).not.toBeEmpty()
-    await expect(shivan.getByTestId('ownership')).toHaveAttribute('data-state', 'missing')
+    // Spec 006, AC-10: both cards side by side, labelled differences under the swap button.
+    await expect(shivan.getByTestId('swap-out')).toContainText('Lightning Bolt')
+    await expect(shivan.getByTestId('swap-out')).toContainText('Mana value 1')
+    await expect(shivan.getByTestId('swap-in')).toContainText('Mana value 6')
+    await expect(shivan.getByTestId('swap-mv')).toHaveText('Mana value +5')
+    await expect(shivan.getByTestId('swap-price')).toContainText(/^Price /)
+    await expect(shivan.getByTestId('swap-in').getByTestId('ownership')).toHaveAttribute('data-state', 'missing')
+
+    // AC-11: a card's proposals collapse under its heading, remembered.
+    await bolt.getByRole('button', { name: /Lightning Bolt · 2 proposals/ }).click()
+    await expect(bolt.getByTestId('swap-candidate')).toHaveCount(0)
+    await page.reload()
+    await expect(bolt.getByTestId('swap-candidate')).toHaveCount(0)
+    await bolt.getByRole('button', { name: /Lightning Bolt · 2 proposals/ }).click()
+    await expect(bolt.getByTestId('swap-candidate')).toHaveCount(2)
 
     // Apply: Shivan takes the 4 copies in the Mainboard, Bolt waits in the Maybeboard as its candidate.
-    await shivan.getByRole('button', { name: 'Apply' }).click()
+    await shivan.getByRole('button', { name: 'Swap', exact: true }).click()
     await expect(page.getByText('Swapped in Shivan Dragon.')).toBeVisible()
     const back = page.getByTestId('swap-Shivan Dragon')
-    await expect(back.getByTestId('swap-candidate')).toHaveText([/Brainstorm/, /Lightning Bolt/])
+    await expect(back.getByTestId('swap-in')).toHaveText([/Brainstorm/, /Lightning Bolt/])
     let cards = (await api.get(`/api/decks/${deck.id}/`)).cards as { zone: string; quantity: number; printing: { name: string } }[]
     expect(cards.find((c) => c.printing.name === 'Shivan Dragon')).toMatchObject({ zone: 'main', quantity: 4 })
     expect(cards.find((c) => c.printing.name === 'Lightning Bolt')).toMatchObject({ zone: 'maybe' })
 
     // Undo by applying the old card back.
-    await back.getByTestId('swap-candidate').filter({ hasText: 'Lightning Bolt' }).getByRole('button', { name: 'Apply' }).click()
+    await back.getByTestId('swap-candidate').filter({ hasText: 'Lightning Bolt' }).getByRole('button', { name: 'Swap', exact: true }).click()
     await expect(page.getByText('Swapped in Lightning Bolt.')).toBeVisible()
     await expect(page.getByTestId('swap-Lightning Bolt').getByTestId('swap-candidate')).toHaveCount(2)
 
@@ -62,7 +74,7 @@ test.describe('Deck swaps', () => {
     await page.goto(`/u/${user.username}/decks/${deck.id}`)
     await page.getByRole('tab', { name: 'Swaps' }).click()
     await expect(page.getByTestId('swap-candidate')).toHaveCount(2)
-    await expect(page.getByRole('button', { name: 'Apply' })).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Swap', exact: true })).toHaveCount(0)
 
     // Removing Lightning Bolt keeps Shivan in the Maybeboard, unlinked; a candidate leaving the Maybeboard drops its link.
     const detail = await api.get(`/api/decks/${deck.id}/`)
