@@ -78,6 +78,7 @@ test.describe('Selection and bulk actions', () => {
     await api.importList('1 Forest (M21) 272', binder)
     await page.goto('/')
     await locationTile(page, 'Binder').getByRole('link').click()
+    await page.getByLabel('Grid view').click() // binders open in binder view (spec 007)
     await expect(tile(page, 'Sol Ring')).toHaveCount(2)
 
     await check(page, 'Sol Ring')

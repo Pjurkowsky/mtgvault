@@ -11,7 +11,7 @@ import ResultBar from '@/components/scanner/ResultBar.vue'
 import ScannerSettingsSheet from '@/components/scanner/ScannerSettingsSheet.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import BinderScanDialog, { type BinderScan } from '@/components/binder/BinderScanDialog.vue'
-import { nextPlace, placeLabel, type Place } from '@/lib/binder'
+import { nextPlace, placeKey, placeLabel, type Place } from '@/lib/binder'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { loadScanTarget, saveScanTarget, type ScanTarget } from '@/lib/scanTarget'
@@ -43,6 +43,12 @@ const binderFull = ref(false)
 const binderOpen = ref(false)
 if (binderId.value) {
   target.value = { kind: 'location', location: binderId.value }
+}
+function firstEmpty(b: { rows: number; cols: number; slots: Place[] }): Place {
+  const taken = new Set(b.slots.map(placeKey))
+  let p: Place = { page: 1, row: 1, col: 1 }
+  while (taken.has(placeKey(p))) p = nextPlace(p, b.rows, b.cols, 'rows')
+  return p
 }
 function binderTarget(): ScanTarget | null {
   if (!binderId.value) return target.value
@@ -89,7 +95,11 @@ onMounted(async () => {
       api.GET('/api/locations/{id}/binder/', { params: { path: { id: binderId.value } } }),
       api.GET('/api/locations/'),
     ])
-    if (b.data) binderGrid.value = { rows: b.data.rows, cols: b.data.cols }
+    if (b.data) {
+      binderGrid.value = { rows: b.data.rows, cols: b.data.cols }
+      // Without a start slot, scans start at the first empty one (AC-21).
+      if (!route.query.page) binderScan.value = { ...binderScan.value, cursor: firstEmpty(b.data) }
+    }
     locationNames.value = Object.fromEntries((l.data?.locations ?? []).map((x) => [String(x.id), x.name]))
   }
   void scanner.start()

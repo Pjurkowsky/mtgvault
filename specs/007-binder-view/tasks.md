@@ -29,10 +29,10 @@ scan order along rows and down columns, binder full.
 
 ## Phase 4: Scanner and public
 
-- [ ] **T10 Scanner on a binder: Scan button, Scan from here, in-order dialog, result bar slot, undo, binder full** (AC-20 to AC-23)
+- [x] **T10 Scanner on a binder: Scan button, Scan from here, in-order dialog, result bar slot, undo, binder full** (AC-20 to AC-23)
 - [x] **T11 Public binder view read-only** (AC-24)
 
 ## Phase 5: Tests and wrap up
 
-- [ ] **T12 e2e: binder, binder-settings, binder-placing, scanner-binder**
+- [x] **T12 e2e: binder, binder-settings, binder-placing, scanner-binder**
 - [ ] **T13 Full suite, Docker build, READMEs, spec status**

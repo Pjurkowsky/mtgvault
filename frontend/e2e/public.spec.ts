@@ -50,6 +50,7 @@ test.describe('Public locations and directory', () => {
     await page.goto(`/u/${owner.username}`)
     await locationTile(page, 'Showcase').getByRole('link').click()
     await expect(page.getByTestId('location-name')).toHaveText('Showcase')
+    await page.getByLabel('Grid view').click() // binders open in binder view (spec 007)
     await expect(page.getByTestId('browser-summary')).toContainText('3 cards')
     await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(0)
     await expect(page.getByTestId('select-all')).toHaveCount(0)

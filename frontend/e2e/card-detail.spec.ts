@@ -140,6 +140,7 @@ test('AC-37: on a public location the detail is read-only, with EDHREC tabs', as
   await api.importList('1 Sol Ring (C21) 263', showcase, { purchase_price: 50, purchase_currency: 'EUR' })
   await page.goto(`/u/${owner.username}`)
   await locationTile(page, 'Showcase').getByRole('link').click()
+  await page.getByLabel('Grid view').click() // binders open in binder view (spec 007)
   await tile(page, 'Sol Ring').click()
   await expect(page.getByTestId('edhrec-commanders')).toContainText('94% of decks')
   await expect(detail(page)).not.toContainText('Purchase price')
