@@ -35,8 +35,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Forward API calls to the Django dev server ("backend" service in Docker)
-      '/api': process.env.API_PROXY_TARGET ?? 'http://localhost:8000',
+      // Forward API calls to the Django dev server ("backend" service in Docker).
+      // Keep the browser's Host (localhost), which Django allows; not "backend:8000".
+      '/api': { target: process.env.API_PROXY_TARGET ?? 'http://localhost:8000', changeOrigin: false },
     },
   },
 })
