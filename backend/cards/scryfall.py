@@ -72,6 +72,7 @@ def printing_fields(card: dict) -> dict:
         'legalities': card.get('legalities') or {},
         'color_identity': card.get('color_identity') or [],
         'keywords': card.get('keywords') or [],
+        'produced_mana': [c for c in card.get('produced_mana') or [] if c in 'WUBRGC'],
         'oracle_text': card.get('oracle_text')
         or '\n//\n'.join(face.get('oracle_text', '') for face in card.get('card_faces') or []),
         'image_small': images.get('small', ''),

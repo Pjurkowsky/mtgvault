@@ -7,9 +7,9 @@ after API changes.
 
 ## Phase 1: Data and API
 
-- [ ] **T1 `Printing.produced_mana` and its sync mapping; `DeckCard.categories`** (AC-12, AC-16)
-- [ ] **T2 Deck card serializer fields, categories PATCH, categories endpoint, API types** (AC-6, AC-12, AC-13)
-- [ ] **T3 `#Tag` categories in deck import and export** (AC-15)
+- [x] **T1 `Printing.produced_mana` and its sync mapping; `DeckCard.categories`** (AC-12, AC-16)
+- [x] **T2 Deck card serializer fields, categories PATCH, categories endpoint, API types** (AC-6, AC-12, AC-13)
+- [x] **T3 `#Tag` categories in deck import and export** (AC-15)
 
 Done for T1-T3: a `sync_cards --file` run fills `produced_mana`; shell checks
 for the PATCH rules (trim, duplicates, limit), suggestions order, and an

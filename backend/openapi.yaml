@@ -755,6 +755,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/AddResult'
           description: ''
+  /api/decks/categories/:
+    get:
+      operationId: decks_categories_retrieve
+      description: 'Spec 006, AC-13: category names to suggest.'
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySuggestions'
+          description: ''
   /api/decks/import/preview/:
     post:
       operationId: decks_import_preview_create
@@ -1893,6 +1908,15 @@ components:
           nullable: true
       required:
       - prices_updated_at
+    CategorySuggestions:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+      required:
+      - categories
     ColorEnum:
       enum:
       - W
@@ -1998,7 +2022,13 @@ components:
           type: integer
           nullable: true
           description: Deck card this Maybeboard card could replace
+        categories:
+          type: array
+          items:
+            type: string
+          description: Your names for the card; the first is primary
       required:
+      - categories
       - id
       - ownership
       - price
@@ -2117,7 +2147,13 @@ components:
           type: integer
         printing:
           $ref: '#/components/schemas/PrintingBrief'
+        categories:
+          type: array
+          items:
+            type: string
+          description: 'From #tags on the line'
       required:
+      - categories
       - line
       - printing
       - quantity
@@ -2210,6 +2246,12 @@ components:
             type: string
             maxLength: 1
           readOnly: true
+        produced_mana:
+          type: array
+          items:
+            type: string
+            maxLength: 1
+          readOnly: true
         can_command:
           allOf:
           - $ref: '#/components/schemas/CanCommand'
@@ -2228,6 +2270,7 @@ components:
       - mana_cost
       - name
       - oracle_id
+      - produced_mana
       - rarity
       - set_code
       - set_name
@@ -3196,6 +3239,12 @@ components:
           minimum: 1
         zone:
           $ref: '#/components/schemas/ZoneEnum'
+        categories:
+          type: array
+          items:
+            type: string
+            maxLength: 40
+          description: Replaces the list; trimmed, duplicates dropped, at most 10
     PatchedDeckWrite:
       type: object
       properties:

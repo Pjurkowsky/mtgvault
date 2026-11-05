@@ -1,6 +1,8 @@
 """Writes for decks (spec 004). Copies move through collection.services, so
 merging rules stay the same everywhere."""
 
+from collections import Counter
+
 from django.db import transaction
 from django.db.models import Sum
 from rest_framework.exceptions import ValidationError
@@ -94,6 +96,36 @@ def set_format(deck: Deck, deck_format: str):
             move_zone(card, zone)
 
 
+MAX_CATEGORIES = 10
+# Suggested to everyone next to the names used in their decks (spec 006, AC-13).
+COMMON_CATEGORIES = ['Ramp', 'Draw', 'Removal', 'Board wipe', 'Lands', 'Win condition']
+
+
+def merge_categories(*lists) -> list[str]:
+    """Trimmed names in order, case-insensitive duplicates dropped, at most MAX_CATEGORIES."""
+    out, seen = [], set()
+    for names in lists:
+        for name in names:
+            name = ' '.join(name.split())
+            if name and name.lower() not in seen:
+                seen.add(name.lower())
+                out.append(name)
+    return out[:MAX_CATEGORIES]
+
+
+def category_suggestions(user) -> list[str]:
+    """Names from the user's decks, most used first, then the common set."""
+    used = Counter()
+    for names in DeckCard.objects.filter(deck__user=user).exclude(categories=[]).values_list('categories', flat=True):
+        used.update(names)
+    out, seen = [], set()
+    for name in [n for n, _ in used.most_common()] + COMMON_CATEGORIES:
+        if name.lower() not in seen:
+            seen.add(name.lower())
+            out.append(name)
+    return out
+
+
 @transaction.atomic
 def move_zone(card: DeckCard, zone: str) -> DeckCard:
     """Move a card to another zone, merging with that card's entry there. Keeps swap links
@@ -111,7 +143,8 @@ def move_zone(card: DeckCard, zone: str) -> DeckCard:
             card.candidates.update(swap_for=None)  # a Maybeboard card replaces nothing
         return card
     target.quantity = min(target.quantity + card.quantity, MAX_QUANTITY)
-    target.save(update_fields=['quantity'])
+    target.categories = merge_categories(target.categories, card.categories)
+    target.save(update_fields=['quantity', 'categories'])
     if zone != DeckCard.Zone.MAYBE:
         card.candidates.update(swap_for=target)
     card.delete()

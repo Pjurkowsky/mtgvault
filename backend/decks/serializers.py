@@ -15,7 +15,7 @@ class DeckPrintingSerializer(PrintingBriefSerializer):
     can_command = serializers.SerializerMethodField()
 
     class Meta(PrintingBriefSerializer.Meta):
-        fields = PrintingBriefSerializer.Meta.fields + ['mana_cost', 'cmc', 'types', 'color_identity', 'can_command']
+        fields = PrintingBriefSerializer.Meta.fields + ['mana_cost', 'cmc', 'types', 'color_identity', 'produced_mana', 'can_command']
         read_only_fields = fields
 
     def get_can_command(self, printing) -> CanCommandSerializer:
@@ -58,6 +58,7 @@ class DeckCardSerializer(serializers.Serializer):
     prices = MoneySerializer()
     ownership = OwnershipSerializer()
     swap_for = serializers.IntegerField(allow_null=True, help_text='Deck card this Maybeboard card could replace')
+    categories = serializers.ListField(child=serializers.CharField(), help_text='Your names for the card; the first is primary')
 
 
 class IssueSerializer(serializers.Serializer):
@@ -152,6 +153,14 @@ class DeckCardEditSerializer(serializers.Serializer):
     printing = serializers.PrimaryKeyRelatedField(queryset=Printing.objects.all(), required=False)
     quantity = serializers.IntegerField(min_value=1, max_value=999, required=False)
     zone = serializers.ChoiceField(DeckCard.Zone.choices, required=False)
+    categories = serializers.ListField(
+        child=serializers.CharField(max_length=40, allow_blank=True), required=False,
+        help_text='Replaces the list; trimmed, duplicates dropped, at most 10',
+    )
+
+
+class CategorySuggestionsSerializer(serializers.Serializer):
+    categories = serializers.ListField(child=serializers.CharField())
 
 
 class NewCopySerializer(serializers.Serializer):
@@ -204,6 +213,7 @@ class DeckImportRowSerializer(serializers.Serializer):
     zone = serializers.CharField()
     quantity = serializers.IntegerField()
     printing = PrintingBriefSerializer()
+    categories = serializers.ListField(child=serializers.CharField(), help_text='From #tags on the line')
 
 
 class DeckImportPreviewSerializer(serializers.Serializer):

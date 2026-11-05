@@ -27,7 +27,7 @@ BATCH_SIZE = 2000
 
 PRINTING_UPDATE_FIELDS = [
     'oracle_id', 'name', 'front_name', 'set', 'collector_number', 'lang', 'released_at',
-    'rarity', 'colors', 'types', 'type_line', 'mana_cost', 'cmc', 'finishes', 'illustration_id', 'promo', 'legalities', 'color_identity', 'keywords', 'oracle_text',
+    'rarity', 'colors', 'types', 'type_line', 'mana_cost', 'cmc', 'finishes', 'illustration_id', 'promo', 'legalities', 'color_identity', 'keywords', 'produced_mana', 'oracle_text',
     'image_small', 'image_normal', 'image_large', *PRICE_FIELDS,
 ]
 

@@ -396,6 +396,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/categories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Spec 006, AC-13: category names to suggest. */
+        get: operations["decks_categories_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/import/preview/": {
         parameters: {
             query?: never;
@@ -949,6 +966,9 @@ export interface components {
             /** Format: date-time */
             prices_updated_at: string | null;
         };
+        CategorySuggestions: {
+            categories: string[];
+        };
         /**
          * @description * `W` - W
          *     * `U` - U
@@ -1001,6 +1021,8 @@ export interface components {
             ownership: components["schemas"]["Ownership"];
             /** @description Deck card this Maybeboard card could replace */
             swap_for: number | null;
+            /** @description Your names for the card; the first is primary */
+            categories: string[];
         };
         DeckCardWrite: {
             /**
@@ -1044,6 +1066,8 @@ export interface components {
             zone: string;
             quantity: number;
             printing: components["schemas"]["PrintingBrief"];
+            /** @description From #tags on the line */
+            categories: string[];
         };
         DeckList: {
             currency: string;
@@ -1079,6 +1103,7 @@ export interface components {
             readonly cmc: number;
             readonly types: string[];
             readonly color_identity: string[];
+            readonly produced_mana: string[];
             readonly can_command: components["schemas"]["CanCommand"];
         };
         DeckSummary: {
@@ -1485,6 +1510,8 @@ export interface components {
             printing?: string;
             quantity?: number;
             zone?: components["schemas"]["ZoneEnum"];
+            /** @description Replaces the list; trimmed, duplicates dropped, at most 10 */
+            categories?: string[];
         };
         PatchedDeckWrite: {
             name?: string;
@@ -2530,6 +2557,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AddResult"];
+                };
+            };
+        };
+    };
+    decks_categories_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorySuggestions"];
                 };
             };
         };

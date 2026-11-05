@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models import Q
 
@@ -46,6 +47,8 @@ class DeckCard(models.Model):
     quantity = models.PositiveSmallIntegerField(default=1)
     # A Maybeboard card proposed to replace another card of the deck (spec 005, AC-9).
     swap_for = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates')
+    # Your own names for the card in this deck; the first is the primary one (spec 006, AC-12).
+    categories = ArrayField(models.CharField(max_length=40), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

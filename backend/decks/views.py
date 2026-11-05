@@ -26,6 +26,7 @@ from .ownership import deck_ownership
 from .serializers import (
     AddFromCollectionSerializer,
     AddResultSerializer,
+    CategorySuggestionsSerializer,
     CreateBoxSerializer,
     DeckCardEditSerializer,
     DeckCardWriteSerializer,
@@ -89,6 +90,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'prices': prices_in_all(c.printing, finish, ctx['rates']),
             'ownership': ownership,
             'swap_for': c.swap_for_id,
+            'categories': c.categories,
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st}
@@ -107,7 +109,10 @@ def import_text(deck, text):
     rows, errors = textlist.parse(text)
     with transaction.atomic():
         for zone, row in rows:
-            services.add_card(deck, row.printing, row.quantity, services.fit_zone(deck, zone))
+            card = services.add_card(deck, row.printing, row.quantity, services.fit_zone(deck, zone))
+            if row.categories:
+                card.categories = services.merge_categories(card.categories, row.categories)
+                card.save(update_fields=['categories'])
     return rows, errors
 
 
@@ -189,6 +194,8 @@ class DeckCardDetailView(APIView):
                 card.printing = d['printing']
             if 'quantity' in d:
                 card.quantity = d['quantity']
+            if 'categories' in d:
+                card.categories = services.merge_categories(d['categories'])
             card.save()
             if 'zone' in d:
                 services.move_zone(card, d['zone'])  # merges with that zone
@@ -199,6 +206,14 @@ class DeckCardDetailView(APIView):
         deck, card = self.get_card(request, pk, card_id)
         card.delete()
         return detail_response(request, deck)
+
+
+class CategorySuggestionsView(APIView):
+    """Spec 006, AC-13: category names to suggest."""
+
+    @extend_schema(responses=CategorySuggestionsSerializer)
+    def get(self, request):
+        return Response({'categories': services.category_suggestions(request.user)})
 
 
 class MarkOwnedView(APIView):
@@ -291,7 +306,8 @@ class DeckImportPreviewView(APIView):
         data.is_valid(raise_exception=True)
         rows, errors = textlist.parse(data.validated_data['text'])
         return Response(DeckImportPreviewSerializer({
-            'rows': [{'line': r.line, 'zone': zone, 'quantity': r.quantity, 'printing': r.printing} for zone, r in rows],
+            'rows': [{'line': r.line, 'zone': zone, 'quantity': r.quantity, 'printing': r.printing, 'categories': r.categories}
+                     for zone, r in rows],
             'errors': errors, 'cards': sum(r.quantity for _, r in rows),
         }).data)
 

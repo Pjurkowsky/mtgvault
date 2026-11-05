@@ -54,6 +54,8 @@ class Printing(models.Model):
     legalities = models.JSONField(default=dict, blank=True)
     color_identity = ArrayField(models.CharField(max_length=1), default=list, blank=True)
     keywords = ArrayField(models.CharField(max_length=60), default=list, blank=True)
+    # Colors of mana the card can make (W U B R G C), for deck stats (spec 006, AC-16).
+    produced_mana = ArrayField(models.CharField(max_length=1), default=list, blank=True)
     oracle_text = models.TextField(blank=True)
     image_small = models.URLField(max_length=500, blank=True)
     image_normal = models.URLField(max_length=500, blank=True)

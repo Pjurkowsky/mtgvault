@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('decks/', views.DeckListView.as_view(), name='decks'),
     path('decks/import/preview/', views.DeckImportPreviewView.as_view(), name='deck-import-preview'),
+    path('decks/categories/', views.CategorySuggestionsView.as_view(), name='deck-categories'),
     path('decks/add-from-collection/', views.AddFromCollectionView.as_view(), name='deck-add-from-collection'),
     path('decks/<int:pk>/', views.DeckDetailView.as_view(), name='deck'),
     path('decks/<int:pk>/delete/', views.DeckDeleteView.as_view(), name='deck-delete'),
