@@ -44,7 +44,7 @@ export const OWN_STATES: Record<OwnState, { label: string; dot: string }> = {
 const TYPE_ORDER = ['Creature', 'Planeswalker', 'Battle', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land']
 const COLOR_NAMES: Record<string, string> = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' }
 
-export type GroupBy = 'type' | 'mana_value' | 'color'
+export type GroupBy = 'type' | 'mana_value' | 'color' | 'category'
 export type SortBy = 'name' | 'mana_value' | 'price'
 
 export type Group = { key: string; label: string; cards: DeckCard[]; count: number }
@@ -52,6 +52,13 @@ export type Group = { key: string; label: string; cards: DeckCard[]; count: numb
 function groupKey(card: DeckCard, by: GroupBy): [string, number] {
   const p = card.printing
   const types = p.types ?? []
+  // By category: the primary category; uncategorized cards fall back to their type, after the categories (spec 006, AC-14).
+  if (by === 'category') {
+    const primary = card.categories[0]
+    if (primary) return [primary, 0]
+    const [label, order] = groupKey(card, 'type')
+    return [label, 100 + order]
+  }
   if (by === 'type') {
     const index = TYPE_ORDER.findIndex((t) => types.includes(t))
     return index === -1 ? ['Other', 99] : [TYPE_ORDER[index] === 'Sorcery' ? 'Sorceries' : `${TYPE_ORDER[index]}s`, index]
@@ -87,7 +94,7 @@ export function groupDeck(cards: DeckCard[], by: GroupBy, sort: SortBy): Group[]
     bucket.cards.push(card)
     buckets.set(label, bucket)
   }
-  for (const [label, bucket] of [...buckets.entries()].sort((a, b) => a[1].order - b[1].order)) {
+  for (const [label, bucket] of [...buckets.entries()].sort((a, b) => a[1].order - b[1].order || a[0].localeCompare(b[0]))) {
     groups.push(make(`main-${label}`, label, bucket.cards))
   }
   for (const zone of ['side', 'maybe'] as const) {

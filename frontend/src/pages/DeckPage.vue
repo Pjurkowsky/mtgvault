@@ -8,6 +8,7 @@ import {
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import ExportDialog from '@/components/browser/ExportDialog.vue'
+import CategoryDialog from '@/components/decks/CategoryDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
 import DeckCardDetail from '@/components/decks/DeckCardDetail.vue'
@@ -63,7 +64,7 @@ watch([id, username], load, { immediate: true })
 // all decks; options in the URL win (spec 005, AC-8).
 type Tab = 'deck' | 'swaps' | 'stats'
 const LAYOUTS = ['text', 'list', 'visual'] as const
-const GROUPS = ['type', 'mana_value', 'color'] as const
+const GROUPS = ['type', 'mana_value', 'color', 'category'] as const
 const ORDERS = ['name', 'mana_value', 'price'] as const
 const one = (v: unknown) => (Array.isArray(v) ? v[0] : v) as string | undefined
 const pick = <T extends string>(value: string | undefined, allowed: readonly T[]) => (allowed.includes(value as T) ? (value as T) : undefined)
@@ -103,6 +104,11 @@ function showCard(card: DeckCard) {
   cardOpen.value = true
 }
 const confirm = useConfirm()
+const categoriesOpen = ref(false)
+function editCategories(card: DeckCard) {
+  openCard.value = card
+  categoriesOpen.value = true
+}
 const swapOpen = ref(false)
 const swapCard = ref<DeckCard | null>(null)
 function proposeSwap(card: DeckCard) {
@@ -242,15 +248,15 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
         />
         <DeckText
           v-if="shown.length && layout === 'text'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
-          @open="showCard" @swap="proposeSwap" @delete="removeCard"
+          @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckList
           v-else-if="shown.length && layout === 'list'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
-          :editable="isOwner" @open="showCard" @swap="proposeSwap" @delete="removeCard"
+          :editable="isOwner" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
         />
         <DeckVisual
           v-else-if="shown.length" :cards="shown" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
-          @open="showCard" @swap="proposeSwap" @delete="removeCard"
+          @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
         />
         <p v-else class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
       </TabsContent>
@@ -265,6 +271,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       </TabsContent>
     </Tabs>
 
+    <CategoryDialog v-if="isOwner" v-model:open="categoriesOpen" :deck="deck" :card="openCard" @changed="changed" />
     <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :readonly="!isOwner" @changed="changed" />
     <template v-if="isOwner">
       <DeckAddDialog v-model:open="addOpen" :deck="deck" @changed="changed" />

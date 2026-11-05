@@ -10,7 +10,7 @@ import GroupHeading from './GroupHeading.vue'
 
 /** Card images grouped like the list, as the collection's grid tiles (spec 004 AC-19, spec 006 AC-1). */
 const props = defineProps<{ cards: DeckCard[]; groupBy: GroupBy; sortBy: SortBy; editable: boolean; size: CardSize; currency: string }>()
-const emit = defineEmits<{ open: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
+const emit = defineEmits<{ open: [card: DeckCard]; categories: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
 const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy))
 const state = (card: DeckCard) => OWN_STATES[card.ownership.state as OwnState]
 </script>
@@ -21,7 +21,7 @@ const state = (card: DeckCard) => OWN_STATES[card.ownership.state as OwnState]
       <GroupHeading :group="g" :currency="currency" class="mb-2" />
       <ul :class="cn('grid gap-3', GRID_COLUMNS[size])">
         <li v-for="card in g.cards" :key="card.id" class="group">
-          <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
+          <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @categories="emit('categories', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
             <CardTile
               :image="size === 'sm' ? card.printing.image_small : card.printing.image_normal" :name="card.printing.name"
               :quantity="card.quantity" :label="card.printing.name" :large="card.printing.image_large || card.printing.image_normal"

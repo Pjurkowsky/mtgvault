@@ -10,7 +10,7 @@ import OwnershipBadge from './OwnershipBadge.vue'
 
 /** Moxfield-style list: grouped columns; the card image shows on hover (spec 004 AC-18, spec 006 AC-2). */
 const props = defineProps<{ cards: DeckCard[]; currency: string; groupBy: GroupBy; sortBy: SortBy; editable: boolean }>()
-const emit = defineEmits<{ open: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
+const emit = defineEmits<{ open: [card: DeckCard]; categories: [card: DeckCard]; swap: [card: DeckCard]; delete: [card: DeckCard] }>()
 
 const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy))
 </script>
@@ -21,7 +21,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
         <GroupHeading :group="g" :currency="currency" class="mb-1 border-b pb-1" />
         <ul>
           <li v-for="card in g.cards" :key="card.id">
-            <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
+            <DeckCardMenu :card="card" :editable="editable" @open="emit('open', $event)" @categories="emit('categories', $event)" @swap="emit('swap', $event)" @delete="emit('delete', $event)">
             <CardPreview :image="card.printing.image_normal" :name="card.printing.name">
             <button
               type="button"

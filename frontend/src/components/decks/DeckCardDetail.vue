@@ -7,6 +7,7 @@ import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import { useConfirm } from '@/composables/useConfirm'
+import { refreshSuggestions } from '@/lib/categories'
 import { ZONE_LABELS, type DeckCard, type DeckDetail, type Zone } from '@/lib/decks'
 import DeckSection from './DeckSection.vue'
 
@@ -39,6 +40,14 @@ async function save(patch: { quantity: number; zone: Zone }) {
   busy.value = true
   const { data, error } = await api.PATCH('/api/decks/{id}/cards/{card_id}/', { ...path(), body: patch })
   if (done(data, error, 'Saved.')) open.value = false
+}
+
+/** Categories save as you edit them (spec 006, AC-12). */
+async function setCategories(categories: string[]) {
+  const { data, error } = await api.PATCH('/api/decks/{id}/cards/{card_id}/', { ...path(), body: { categories } })
+  if (!data) return toast.error(Object.values(fieldErrors(error)).join(' ') || 'Could not save the categories.')
+  emit('changed', data)
+  void refreshSuggestions()
 }
 
 async function choosePrinting(printing: Schemas['Printing']) {
@@ -98,7 +107,7 @@ async function deleteCopy(itemId: number) {
     <template v-if="card" #deck>
       <DeckSection
         :deck="deck" :card="card" :readonly="readonly" :busy="busy"
-        @save="save" @remove="remove" @move="move" @add-copy="addOpen = true" @edit-copy="editCopy" @delete-copy="deleteCopy"
+        @save="save" @remove="remove" @move="move" @add-copy="addOpen = true" @edit-copy="editCopy" @delete-copy="deleteCopy" @categories="setCategories"
       />
     </template>
   </CardDetailDialog>

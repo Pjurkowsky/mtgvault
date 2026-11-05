@@ -4,12 +4,14 @@ import { PencilIcon, Trash2Icon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import DestructiveButton from '@/components/DestructiveButton.vue'
 import IconButton from '@/components/IconButton.vue'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ZONE_LABELS, zonesForCard, type DeckCard, type DeckDetail, type Zone } from '@/lib/decks'
+import CategoryInput from './CategoryInput.vue'
 import OwnershipBadge from './OwnershipBadge.vue'
 
 /** The deck part of the card dialog: ownership with copies, quantity, zone, remove (spec 005, AC-3, AC-5). */
@@ -21,6 +23,7 @@ const emit = defineEmits<{
   'add-copy': []
   'edit-copy': [itemId: number]
   'delete-copy': [itemId: number]
+  categories: [names: string[]]
 }>()
 const ACTIVE = 'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground'
 
@@ -62,6 +65,9 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
       </Button>
     </div>
 
+    <ul v-if="readonly && card.categories.length" class="flex flex-wrap gap-1.5" data-testid="deck-card-categories">
+      <li v-for="name in card.categories" :key="name"><Badge variant="secondary">{{ name }}</Badge></li>
+    </ul>
     <template v-if="!readonly">
       <Separator />
       <div class="grid grid-cols-[6rem_1fr] items-center gap-3">
@@ -71,6 +77,8 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
         <ToggleGroup type="single" variant="outline" :model-value="zone" aria-labelledby="deck-card-zone" class="flex-wrap justify-start" @update:model-value="(v) => v && (zone = v as Zone)">
           <ToggleGroupItem v-for="z in zones" :key="z" :value="z" :class="ACTIVE" class="px-3">{{ ZONE_LABELS[z] }}</ToggleGroupItem>
         </ToggleGroup>
+        <Label class="self-start pt-1.5">Categories</Label>
+        <CategoryInput :model-value="card.categories" :disabled="busy" @update:model-value="(v) => emit('categories', v)" />
       </div>
       <div class="flex justify-between gap-2">
         <DestructiveButton :disabled="busy" @click="emit('remove')">Remove from deck</DestructiveButton>

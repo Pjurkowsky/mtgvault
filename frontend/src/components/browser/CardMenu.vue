@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowLeftRightIcon, EyeIcon, HeartIcon, LayersIcon, PencilIcon, Trash2Icon } from '@lucide/vue'
+import { ArrowLeftRightIcon, EyeIcon, HeartIcon, LayersIcon, PencilIcon, TagsIcon, Trash2Icon } from '@lucide/vue'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -9,7 +9,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 
-export type MenuItem = 'open' | 'edit' | 'deck' | 'swap' | 'want' | 'delete'
+export type MenuItem = 'open' | 'edit' | 'categories' | 'deck' | 'swap' | 'want' | 'delete'
 
 /**
  * Right-click (long-press on touch) menu for a card (spec 002, AC-18). The card
@@ -17,11 +17,12 @@ export type MenuItem = 'open' | 'edit' | 'deck' | 'swap' | 'want' | 'delete'
  * Delete (spec 005, AC-7).
  */
 const props = defineProps<{ editable: boolean; items?: MenuItem[] }>()
-const emit = defineEmits<{ open: []; edit: []; delete: []; deck: []; swap: [] }>()
+const emit = defineEmits<{ open: []; edit: []; categories: []; delete: []; deck: []; swap: [] }>()
 
 const LABELS: Record<MenuItem, { label: string; icon: unknown }> = {
   open: { label: 'Open', icon: EyeIcon },
   edit: { label: 'Edit', icon: PencilIcon },
+  categories: { label: 'Categories…', icon: TagsIcon },
   deck: { label: 'Add to deck', icon: LayersIcon },
   swap: { label: 'Propose swap', icon: ArrowLeftRightIcon },
   // The want list comes later (spec 005 AC-14, spec 006 AC-8).

@@ -30,7 +30,7 @@ test.describe('Deck views', () => {
     const menu = page.getByRole('menu')
 
     await deckRow(page, 'Counterspell').click({ button: 'right' })
-    await expect(menu.getByRole('menuitem')).toHaveText(['Edit', 'Propose swap', 'Add to want list', 'Delete'])
+    await expect(menu.getByRole('menuitem')).toHaveText(['Edit', 'Categories…', 'Propose swap', 'Add to want list', 'Delete'])
     await menu.getByRole('menuitem', { name: 'Edit' }).click()
     await expect(cardDialog(page).getByTestId('deck-section')).toBeVisible()
     await cardDialog(page).getByRole('button', { name: 'Close' }).last().click()
@@ -44,7 +44,7 @@ test.describe('Deck views', () => {
 
     await page.getByRole('button', { name: 'Card images' }).click()
     await page.getByTestId('deck-visual').getByRole('button', { name: 'Forest', exact: true }).click({ button: 'right' })
-    await expect(menu.getByRole('menuitem')).toHaveText(['Edit', 'Propose swap', 'Add to want list', 'Delete'])
+    await expect(menu.getByRole('menuitem')).toHaveText(['Edit', 'Categories…', 'Propose swap', 'Add to want list', 'Delete'])
     await page.keyboard.press('Escape')
     // Delete removes the card from the deck only.
     expect((await api.get(`/api/decks/${deck.id}/`)).cards).toHaveLength(3)

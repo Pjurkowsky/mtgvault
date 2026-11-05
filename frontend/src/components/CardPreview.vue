@@ -8,14 +8,26 @@ defineProps<{ image?: string | null; name: string; disabled?: boolean }>()
 // Listeners from a wrapping trigger (the card menu) reach the card itself.
 defineOptions({ inheritAttrs: false })
 
-// A click opens a dialog over the card: no preview until the pointer leaves.
+// A click opens a dialog over the card, a right-click its menu: no preview until the pointer leaves.
+// Only while the pointer is on the card: focus coming back from a menu or dialog must not open it
+// (it would sit under the next dialog and take its Escape).
 const open = ref(false)
 const clicked = ref(false)
+const hovering = ref(false)
+function suppress() {
+  clicked.value = true
+  open.value = false
+}
+function release() {
+  hovering.value = false
+  clicked.value = false
+  open.value = false
+}
 </script>
 
 <template>
-  <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="350" :close-delay="0" @update:open="(v) => (open = v)">
-    <HoverCardTrigger as-child v-bind="$attrs" @click="clicked = true" @pointerleave="clicked = false"><slot /></HoverCardTrigger>
+  <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="350" :close-delay="0" @update:open="(v) => (open = v && hovering)">
+    <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerenter="hovering = true" @pointerleave="release"><slot /></HoverCardTrigger>
     <HoverCardContent side="right" class="w-auto border-none bg-transparent p-0 shadow-none">
       <img :src="image" :alt="name" class="w-64 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
     </HoverCardContent>

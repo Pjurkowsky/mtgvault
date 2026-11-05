@@ -61,6 +61,7 @@ const KEYS = '/ focuses the search, Escape clears it. Arrow keys move between ca
         <SelectItem value="type">By type</SelectItem>
         <SelectItem value="mana_value">By mana value</SelectItem>
         <SelectItem value="color">By color</SelectItem>
+        <SelectItem value="category">By category</SelectItem>
       </SelectContent>
     </Select>
     <Select :model-value="sortBy" @update:model-value="(v) => emit('option', 'order', String(v))">
