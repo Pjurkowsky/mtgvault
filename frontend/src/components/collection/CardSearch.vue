@@ -3,11 +3,13 @@ import { ref, watch } from 'vue'
 import { LayoutGridIcon, ListIcon } from '@lucide/vue'
 import { api, type Schemas } from '@/api/client'
 import CardPreview from '@/components/CardPreview.vue'
+import CardSizeToggle from '@/components/CardSizeToggle.vue'
 import ExpandButton from '@/components/ExpandButton.vue'
 import { Input } from '@/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePreference } from '@/composables/usePreference'
+import { CARD_SIZES, type CardSize } from '@/lib/cards'
 import { cn } from '@/lib/utils'
 
 /**
@@ -21,8 +23,9 @@ const emit = defineEmits<{ choose: [result: Schemas['CardSearchResult']] }>()
 
 // Result layout, remembered per browser.
 const view = usePreference('add.view', 'grid', ['grid', 'list'] as const)
-const size = usePreference('add.size', 'md', ['sm', 'md', 'lg'] as const)
-const GRID_COLUMNS = { sm: 'grid-cols-4 sm:grid-cols-6', md: 'grid-cols-3 sm:grid-cols-4', lg: 'grid-cols-2 sm:grid-cols-3' }
+const size = usePreference<CardSize>('add.size', 'md', CARD_SIZES)
+// The dialog is narrower than a page: fewer columns than GRID_COLUMNS.
+const COLUMNS: Record<CardSize, string> = { sm: 'grid-cols-4 sm:grid-cols-6', md: 'grid-cols-3 sm:grid-cols-4', lg: 'grid-cols-2 sm:grid-cols-3' }
 
 const results = ref<Schemas['CardSearchResult'][]>([])
 const searching = ref(false)
@@ -60,16 +63,12 @@ defineExpose({ focus: () => (input.value?.$el as HTMLInputElement | undefined)?.
           <TooltipContent>Results as list</TooltipContent>
         </Tooltip>
       </ToggleGroup>
-      <ToggleGroup v-if="view === 'grid'" type="single" variant="outline" :model-value="size" aria-label="Card size" @update:model-value="(v) => v && (size = v as 'sm' | 'md' | 'lg')">
-        <ToggleGroupItem value="sm" aria-label="Small cards">S</ToggleGroupItem>
-        <ToggleGroupItem value="md" aria-label="Medium cards">M</ToggleGroupItem>
-        <ToggleGroupItem value="lg" aria-label="Large cards">L</ToggleGroupItem>
-      </ToggleGroup>
+      <CardSizeToggle v-if="view === 'grid'" v-model="size" />
     </template>
   </div>
 
   <template v-if="!picked && results.length">
-    <ul v-if="view === 'grid'" :class="cn('grid gap-3', GRID_COLUMNS[size])" data-testid="card-results" :data-size="size">
+    <ul v-if="view === 'grid'" :class="cn('grid gap-3', COLUMNS[size])" data-testid="card-results" :data-size="size">
       <li v-for="r in results" :key="r.oracle_id" class="group relative">
         <ExpandButton :image="r.image_normal" :name="r.name" />
         <CardPreview :image="r.image_normal" :name="r.name">

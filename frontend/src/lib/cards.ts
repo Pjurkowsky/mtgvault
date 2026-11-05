@@ -82,3 +82,12 @@ export const SORTS = [
 
 export const labelOf = (list: readonly { value: string; label: string }[], value: string | null | undefined) =>
   list.find((x) => x.value === value)?.label ?? value ?? ''
+
+/** Grid sizes (spec 002 add card, spec 006 AC-1). */
+export type CardSize = 'sm' | 'md' | 'lg'
+export const CARD_SIZES = ['sm', 'md', 'lg'] as const
+export const GRID_COLUMNS: Record<CardSize, string> = {
+  sm: 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8',
+  md: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6',
+  lg: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+}
