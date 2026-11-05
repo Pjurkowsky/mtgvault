@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 001-collection
-Followed by: 006-binder-view
+Followed by: 007-binder-view
 
 ## Goal
 
