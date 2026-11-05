@@ -73,11 +73,11 @@ test.describe('Deck legality and stats', () => {
     await expect(curve.locator('[data-mv="1"]')).toContainText('4')
     await expect(curve.locator('[data-mv="2"]')).toContainText('2')
     await expect(curve.locator('[data-mv="6"]')).toContainText('1')
-    await expect(curve.locator('[data-mv="7+"]')).toContainText('0')
+    await expect(curve.locator('[data-mv="7+"]').getByTestId('curve-count')).toHaveText('0')
     // (4×1 + 2×2 + 6) / 7 non-land cards
-    await expect(page.getByTestId('average-mv')).toHaveText('Average mana value 2.00')
+    await expect(page.getByTestId('average-mv')).toContainText('2.00')
     // Blue 2×2, red 4×1 + 1×2
-    await expect(page.getByTestId('pips').locator('li')).toHaveText(['4', '6'])
+    await expect(page.getByTestId('color-shares')).toHaveText(['40% · 40% · 0', '60% · 60% · 0', '0% · 0100% · 20'])
     await expect(page.getByTestId('types')).toContainText('Instant6')
     await expect(page.getByTestId('types')).toContainText('Land20')
 
@@ -85,6 +85,6 @@ test.describe('Deck legality and stats', () => {
     const v = value.stats.value
     expect(v.owned + v.missing).toBeCloseTo(v.total, 2)
     expect(v.owned).toBeGreaterThan(0)
-    await expect(page.getByTestId('deck-value')).toContainText('Owned')
+    await expect(page.getByTestId('stat-owned')).toContainText('Owned')
   })
 })

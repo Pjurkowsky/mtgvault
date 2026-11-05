@@ -95,6 +95,8 @@ const nav = useCardNavigation(computed(() => (deckTab.value?.$el as HTMLElement 
 const filter = computed(() => filterFromQuery(route.query))
 const shown = computed(() => deck.value?.cards.filter((c) => matches(c, filter.value)) ?? [])
 const setFilter = (patch: Partial<DeckFilter>) => router.replace({ query: { ...route.query, ...filterToQuery(patch) } })
+/** A chart click opens the Deck tab with only that filter (AC-17). */
+const showFiltered = (patch: Partial<DeckFilter>) => router.replace({ query: { ...route.query, ...clearedQuery(), ...filterToQuery(patch), tab: undefined } })
 const clearFilters = () => router.replace({ query: { ...route.query, ...clearedQuery(), q: route.query.q } })
 
 const cardOpen = ref(false)
@@ -267,7 +269,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
 
       <TabsContent value="stats" class="grid gap-4 pt-2">
         <LegalityPanel :deck="deck" />
-        <DeckStats :deck="deck" />
+        <DeckStats :deck="deck" @filter="showFiltered" @open="showCard" />
       </TabsContent>
     </Tabs>
 

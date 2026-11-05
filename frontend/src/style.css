@@ -21,6 +21,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -69,6 +71,9 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
+  /* Deck stats series, checked with the dataviz validator against the card surface (spec 006). */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
@@ -103,6 +108,8 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.488 0.243 264.376);
+  --series-1: #3987e5;
+  --series-2: #d95926;
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
