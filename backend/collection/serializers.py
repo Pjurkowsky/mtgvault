@@ -167,6 +167,14 @@ class PublicItemPageSerializer(ItemPageSerializer):
     results = PublicItemSerializer(many=True)
 
 
+class BinderPlaceSerializer(serializers.Serializer):
+    """A pocket: page, row and column, all from 1."""
+
+    page = serializers.IntegerField(min_value=1, max_value=500)
+    row = serializers.IntegerField(min_value=1, max_value=6)
+    col = serializers.IntegerField(min_value=1, max_value=6)
+
+
 class ItemWriteSerializer(serializers.Serializer):
     printing = serializers.PrimaryKeyRelatedField(queryset=Printing.objects.select_related('set'))
     quantity = serializers.IntegerField(min_value=1, max_value=999, default=1)
@@ -176,6 +184,7 @@ class ItemWriteSerializer(serializers.Serializer):
     purchase_price = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0, required=False, allow_null=True)
     purchase_currency = serializers.ChoiceField(Currency.choices, required=False, allow_null=True)
     location = serializers.IntegerField(required=False, allow_null=True, help_text='Location id; null = Unfiled')
+    slot = BinderPlaceSerializer(required=False, help_text='Binder only: put one new copy in this pocket (spec 007, AC-14)')
 
     def validate_location(self, value):
         if value is None:
@@ -188,6 +197,8 @@ class ItemWriteSerializer(serializers.Serializer):
     def validate(self, attrs):
         if attrs.get('purchase_price') is not None and not attrs.get('purchase_currency'):
             attrs['purchase_currency'] = self.context['request'].user.currency
+        if attrs.get('slot') and getattr(attrs.get('location'), 'kind', None) != Location.Kind.BINDER:
+            raise serializers.ValidationError({'slot': ['Only binders have slots.']})
         return attrs
 
 
@@ -306,3 +317,99 @@ class PublicLocationSerializer(serializers.ModelSerializer):
 class PublicLocationListSerializer(serializers.Serializer):
     currency = serializers.CharField()
     locations = PublicLocationSerializer(many=True)
+
+
+# ---------- binders (spec 007) ----------
+
+class BinderCursorSerializer(BinderPlaceSerializer):
+    """Scan in order: where the next card goes, and which way the scan moves (AC-20)."""
+
+    direction = serializers.ChoiceField(['rows', 'columns'], default='rows')
+
+
+class BinderSectionSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=60)
+    first_page = serializers.IntegerField(min_value=1, max_value=500)
+    last_page = serializers.IntegerField(min_value=1, max_value=500)
+    filter = serializers.DictField(required=False, default=dict,
+                                   help_text='Card browser filter keys: color, type, rarity, set, finish, condition, price_min, price_max')
+
+    def validate_name(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Name the section.')
+        return value
+
+    def validate_filter(self, value):
+        from .binder import SECTION_FILTER_KEYS, section_filter
+        section_filter(value)  # raises on bad values
+        return {k: v for k, v in value.items() if k in SECTION_FILTER_KEYS and v not in (None, '', [])}
+
+    def validate(self, attrs):
+        if attrs['last_page'] < attrs['first_page']:
+            raise serializers.ValidationError({'last_page': ['The last page comes after the first.']})
+        return attrs
+
+
+class BinderSettingsSerializer(serializers.Serializer):
+    rows = serializers.IntegerField(min_value=1, max_value=6, required=False)
+    cols = serializers.IntegerField(min_value=1, max_value=6, required=False)
+    spread = serializers.BooleanField(required=False)
+    pages = serializers.IntegerField(min_value=1, max_value=500, required=False, allow_null=True)
+    sections = BinderSectionSerializer(many=True, required=False)
+
+    def validate_sections(self, value):
+        from .binder import check_sections
+        check_sections(value)
+        return value
+
+
+class BinderSlotSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    item = serializers.IntegerField(source='item_id')
+    page = serializers.IntegerField()
+    row = serializers.IntegerField()
+    col = serializers.IntegerField()
+    position = serializers.IntegerField(help_text='Order in a shared pocket; the highest is on top')
+    mismatch = serializers.BooleanField(help_text="Outside its section's filter")
+
+
+class UnplacedSerializer(serializers.Serializer):
+    item = serializers.IntegerField()
+    count = serializers.IntegerField()
+
+
+class PublicBinderSerializer(serializers.Serializer):
+    rows = serializers.IntegerField()
+    cols = serializers.IntegerField()
+    spread = serializers.BooleanField()
+    pages = serializers.IntegerField(allow_null=True, help_text='Fixed page count, or null')
+    page_count = serializers.IntegerField(help_text='Pages to show')
+    used = serializers.IntegerField(help_text='Pockets holding a card')
+    total = serializers.IntegerField(allow_null=True, help_text='Pockets in a binder with a fixed page count')
+    sections = BinderSectionSerializer(many=True)
+    slots = BinderSlotSerializer(many=True)
+    items = PublicItemSerializer(many=True, help_text="The binder's rows")
+    unplaced = UnplacedSerializer(many=True)
+    currency = serializers.CharField()
+
+
+class BinderSerializer(PublicBinderSerializer):
+    items = ItemSerializer(many=True, help_text="The binder's rows")
+    unplaced_now = serializers.IntegerField(required=False, help_text='After a settings change: cards that lost their slot')
+
+
+class BinderMoveSerializer(serializers.Serializer):
+    slot = serializers.IntegerField(required=False, help_text='Move this placed card')
+    item = serializers.IntegerField(required=False, help_text="Or place one of this row's unplaced copies")
+    to = BinderPlaceSerializer(allow_null=True, help_text='null: back to Unplaced')
+    mode = serializers.ChoiceField(['swap', 'share'], default='swap', help_text='When the target slot is taken')
+
+    def validate(self, attrs):
+        if ('slot' in attrs) == ('item' in attrs):
+            raise serializers.ValidationError('Give a slot or an item.')
+        return attrs
+
+
+class BinderOrderSerializer(BinderPlaceSerializer):
+    slots = serializers.ListField(child=serializers.IntegerField(), help_text='Slot ids, top first')

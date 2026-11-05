@@ -19,6 +19,11 @@ class Location(models.Model):
     kind = models.CharField(max_length=10, choices=Kind.choices)
     is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # Binder layout (spec 007). Kept when the kind changes, so changing it back restores the binder.
+    binder_rows = models.PositiveSmallIntegerField(default=3)
+    binder_cols = models.PositiveSmallIntegerField(default=3)
+    binder_spread = models.BooleanField(default=True, help_text='Show facing pages')
+    binder_pages = models.PositiveSmallIntegerField(null=True, blank=True, help_text='Fixed page count; empty grows as needed')
 
     class Meta:
         constraints = [
@@ -111,3 +116,34 @@ class CollectionItem(models.Model):
             models.Index(fields=['user', 'location'], name='item_user_location'),
             models.Index(fields=['user', 'added_at'], name='item_user_added_at'),
         ]
+
+
+class BinderSection(models.Model):
+    """A named page range of a binder with an optional filter (spec 007, AC-10)."""
+
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='binder_sections')
+    name = models.CharField(max_length=60)
+    first_page = models.PositiveSmallIntegerField()
+    last_page = models.PositiveSmallIntegerField()
+    # The card browser's query keys (color, type, rarity, set, finish, condition, price_min, price_max).
+    filter = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['first_page']
+
+
+class BinderSlot(models.Model):
+    """One placed copy of a collection row in a binder pocket (spec 007, AC-2).
+    Copies without a slot are the binder's Unplaced ones."""
+
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='binder_slots')
+    item = models.ForeignKey(CollectionItem, on_delete=models.CASCADE, related_name='slots')
+    page = models.PositiveSmallIntegerField()
+    row = models.PositiveSmallIntegerField()
+    col = models.PositiveSmallIntegerField()
+    # Order inside a shared pocket: the highest is on top (AC-19).
+    position = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['location', 'page', 'row', 'col'], name='slot_place')]

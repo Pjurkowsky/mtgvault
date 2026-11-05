@@ -10,7 +10,8 @@ from rest_framework.views import APIView
 from cards.models import Printing
 from cards.pricing import price
 from cards.views import price_context
-from collection.models import CollectionItem
+from collection import binder
+from collection.models import BinderSlot, CollectionItem
 from collection.serializers import EMPTY_TOTALS
 from collection.services import Copies, save_item
 from collection.views import location_totals, own_location, with_unit_price
@@ -24,6 +25,7 @@ from .serializers import (
     ScannerSettingsSerializer,
     ScanRequestSerializer,
     ScanResultSerializer,
+    UndoRequestSerializer,
     UndoResultSerializer,
 )
 
@@ -150,25 +152,39 @@ class ScanView(APIView):
 
         in_cart = target['kind'] == 'cart'
         location = None if in_cart else own_location(request.user, target.get('location'))
-        row, merged = save_item(
-            request.user, printing=printing, finish=default_finish(printing), condition='NM',
-            language='en', location=location, copies=Copies(1), rates=ctx['rates'], in_cart=in_cart,
-        )
+        slot, full = None, False
+        with transaction.atomic():
+            row, merged = save_item(
+                request.user, printing=printing, finish=default_finish(printing), condition='NM',
+                language='en', location=location, copies=Copies(1), rates=ctx['rates'], in_cart=in_cart,
+            )
+            # Scan in order: the copy takes the next free pocket from the cursor (spec 007, AC-20, AC-23).
+            if target.get('binder') and binder.is_binder(location):
+                place = binder.next_free(location, target['binder'])
+                if place is None:
+                    full = True
+                else:
+                    slot = binder.place_new(location, row, place)
         item = with_unit_price(CollectionItem.objects.filter(pk=row.pk), ctx['currency'], ctx['rates']) \
             .select_related('printing__set', 'location').get()
         return Response(ScanResultSerializer({
             'item': item, 'deck_card': None, 'merged': merged, 'totals': row_totals(item, ctx),
             'sound': sound_for(item.unit_price, preferences),
+            'slot': slot, 'binder_full': full,
         }, context=ctx).data, status=status.HTTP_201_CREATED)
 
 
 class UndoScanView(APIView):
     """Remove one copy from the row a scan logged into: cart or location (spec 003 AC-11, spec 005 AC-17)."""
 
-    @extend_schema(request=None, responses=UndoResultSerializer)
+    @extend_schema(request=UndoRequestSerializer, responses=UndoResultSerializer)
     def post(self, request, pk):
+        data = UndoRequestSerializer(data=request.data or {})
+        data.is_valid(raise_exception=True)
         with transaction.atomic():
             row = get_object_or_404(CollectionItem.objects.select_for_update(), pk=pk, user=request.user)
+            if slot := data.validated_data.get('slot'):
+                BinderSlot.objects.filter(pk=slot, item=row).delete()  # the scanned pocket, not the row's last one
             if row.quantity > 1:
                 row.quantity -= 1
                 row.save(update_fields=['quantity'])

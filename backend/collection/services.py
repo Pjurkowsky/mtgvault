@@ -157,6 +157,8 @@ def edit_item(row: CollectionItem, rates=None, **changes):
         added_at=row.added_at,
         added={f: getattr(row, f) for f in ('added_usd', 'added_eur', 'added_pln')},
     )
+    from .binder import move_slots
+    move_slots(row, other)  # the merged row keeps both rows' binder slots (spec 007)
     row.delete()
     merged_row = _merge_into(other, copies, rates)
     _fill_deck(merged_row)

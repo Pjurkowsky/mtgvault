@@ -7,9 +7,9 @@ after API changes.
 
 ## Phase 1: Data and API
 
-- [ ] **T1 Binder fields on `Location`, `BinderSection`, `BinderSlot`, migration; `sync_slots` on every row save; merges keep slots** (AC-13)
-- [ ] **T2 `collection/binder.py`: state, settings with resize, move (swap, share, unplace), order, next free slot** (AC-8, AC-9, AC-15, AC-17, AC-19, AC-20)
-- [ ] **T3 Binder endpoints (owner and public), items POST with a slot, scan cursor and undo; API types** (AC-14, AC-21 to AC-24)
+- [x] **T1 Binder fields on `Location`, `BinderSection`, `BinderSlot`, migration; `sync_slots` on every row save; merges keep slots** (AC-13)
+- [x] **T2 `collection/binder.py`: state, settings with resize, move (swap, share, unplace), order, next free slot** (AC-8, AC-9, AC-15, AC-17, AC-19, AC-20)
+- [x] **T3 Binder endpoints (owner and public), items POST with a slot, scan cursor and undo; API types** (AC-14, AC-21 to AC-24)
 
 Done for T1-T3: shell checks against the e2e database for freeing slots
 (move out, lower quantity, delete, cart), merges, resize, swap and share,

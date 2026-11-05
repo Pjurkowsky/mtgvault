@@ -575,6 +575,54 @@ export interface paths {
         patch: operations["locations_partial_update"];
         trace?: never;
     };
+    "/api/locations/{id}/binder/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["locations_binder_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["locations_binder_partial_update"];
+        trace?: never;
+    };
+    "/api/locations/{id}/binder/move/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["locations_binder_move_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/locations/{id}/binder/order/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["locations_binder_order_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/locations/{id}/delete/": {
         parameters: {
             query?: never;
@@ -826,6 +874,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/locations/{id}/binder/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_locations_binder_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/locations/{id}/export/": {
         parameters: {
             query?: never;
@@ -886,6 +950,85 @@ export interface components {
         AuthResponse: {
             access: string;
             user: components["schemas"]["Me"];
+        };
+        Binder: {
+            rows: number;
+            cols: number;
+            spread: boolean;
+            /** @description Fixed page count, or null */
+            pages: number | null;
+            /** @description Pages to show */
+            page_count: number;
+            /** @description Pockets holding a card */
+            used: number;
+            /** @description Pockets in a binder with a fixed page count */
+            total: number | null;
+            sections: components["schemas"]["BinderSection"][];
+            slots: components["schemas"]["BinderSlot"][];
+            /** @description The binder's rows */
+            items: components["schemas"]["Item"][];
+            unplaced: components["schemas"]["Unplaced"][];
+            currency: string;
+            /** @description After a settings change: cards that lost their slot */
+            unplaced_now?: number;
+        };
+        /** @description Scan in order: where the next card goes, and which way the scan moves (AC-20). */
+        BinderCursor: {
+            page: number;
+            row: number;
+            col: number;
+            /** @default rows */
+            direction?: components["schemas"]["DirectionEnum"];
+        };
+        BinderMove: {
+            /** @description Move this placed card */
+            slot?: number;
+            /** @description Or place one of this row's unplaced copies */
+            item?: number;
+            /** @description null: back to Unplaced */
+            to: components["schemas"]["BinderPlace"] | null;
+            /**
+             * @description When the target slot is taken
+             *
+             *     * `swap` - swap
+             *     * `share` - share
+             * @default swap
+             */
+            mode?: components["schemas"]["ModeEnum"];
+        };
+        /** @description A pocket: page, row and column, all from 1. */
+        BinderOrder: {
+            page: number;
+            row: number;
+            col: number;
+            /** @description Slot ids, top first */
+            slots: number[];
+        };
+        /** @description A pocket: page, row and column, all from 1. */
+        BinderPlace: {
+            page: number;
+            row: number;
+            col: number;
+        };
+        BinderSection: {
+            name: string;
+            first_page: number;
+            last_page: number;
+            /** @description Card browser filter keys: color, type, rarity, set, finish, condition, price_min, price_max */
+            filter?: {
+                [key: string]: unknown;
+            };
+        };
+        BinderSlot: {
+            id: number;
+            item: number;
+            page: number;
+            row: number;
+            col: number;
+            /** @description Order in a shared pocket; the highest is on top */
+            position: number;
+            /** @description Outside its section's filter */
+            mismatch: boolean;
         };
         /** @enum {unknown} */
         BlankEnum: "";
@@ -1137,6 +1280,12 @@ export interface components {
          * @enum {string}
          */
         DirEnum: "asc" | "desc";
+        /**
+         * @description * `rows` - rows
+         *     * `columns` - columns
+         * @enum {string}
+         */
+        DirectionEnum: "rows" | "columns";
         DirectoryUser: {
             username: string;
             public_locations: number;
@@ -1355,6 +1504,8 @@ export interface components {
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description Location id; null = Unfiled */
             location?: number | null;
+            /** @description Binder only: put one new copy in this pocket (spec 007, AC-14) */
+            slot?: components["schemas"]["BinderPlace"];
         };
         /**
          * @description * `en` - English
@@ -1457,6 +1608,12 @@ export interface components {
         MissingExport: {
             filter?: components["schemas"]["ItemFilter"];
         };
+        /**
+         * @description * `swap` - swap
+         *     * `share` - share
+         * @enum {string}
+         */
+        ModeEnum: "swap" | "share";
         /** @description One amount in every currency. Null = no price. */
         Money: {
             /** Format: double */
@@ -1502,6 +1659,13 @@ export interface components {
             current_password: string;
             new_password: string;
         };
+        PatchedBinderSettings: {
+            rows?: number;
+            cols?: number;
+            spread?: boolean;
+            pages?: number | null;
+            sections?: components["schemas"]["BinderSection"][];
+        };
         PatchedDeckCardEdit: {
             /**
              * Format: uuid
@@ -1540,6 +1704,8 @@ export interface components {
             purchase_currency?: (components["schemas"]["CurrencyEnum"] | components["schemas"]["NullEnum"]) | null;
             /** @description Location id; null = Unfiled */
             location?: number | null;
+            /** @description Binder only: put one new copy in this pocket (spec 007, AC-14) */
+            slot?: components["schemas"]["BinderPlace"];
         };
         /** @description Owner view of a location. Totals come from the view (context['totals']). */
         PatchedLocation: {
@@ -1662,6 +1828,25 @@ export interface components {
             /** Format: uri */
             readonly image_large: string;
         };
+        PublicBinder: {
+            rows: number;
+            cols: number;
+            spread: boolean;
+            /** @description Fixed page count, or null */
+            pages: number | null;
+            /** @description Pages to show */
+            page_count: number;
+            /** @description Pockets holding a card */
+            used: number;
+            /** @description Pockets in a binder with a fixed page count */
+            total: number | null;
+            sections: components["schemas"]["BinderSection"][];
+            slots: components["schemas"]["BinderSlot"][];
+            /** @description The binder's rows */
+            items: components["schemas"]["PublicItem"][];
+            unplaced: components["schemas"]["Unplaced"][];
+            currency: string;
+        };
         PublicExportRequest: {
             filter?: components["schemas"]["ItemFilter"];
         };
@@ -1750,6 +1935,13 @@ export interface components {
              *     * `big_ding` - big_ding
              */
             sound: components["schemas"]["SoundEnum"];
+            /** @description Scan in order: the pocket the copy went to */
+            slot?: components["schemas"]["ScannedSlot"] | null;
+            /**
+             * @description Scan in order found no free pocket (AC-23)
+             * @default false
+             */
+            binder_full?: boolean;
         };
         /** @description Where scans go (spec 005, AC-16). Without one they go to the cart (spec 003). */
         ScanTarget: {
@@ -1758,6 +1950,8 @@ export interface components {
             location?: number | null;
             /** @description kind=deck: the decklist (no copy is added) */
             deck?: number;
+            /** @description kind=location, a binder: scan in order from here (spec 007, AC-20) */
+            binder?: components["schemas"]["BinderCursor"];
         };
         /**
          * @description * `cart` - cart
@@ -1773,6 +1967,13 @@ export interface components {
             printing: components["schemas"]["Printing"];
             /** Format: double */
             price: number | null;
+        };
+        /** @description A pocket: page, row and column, all from 1. */
+        ScannedSlot: {
+            page: number;
+            row: number;
+            col: number;
+            id: number;
         };
         ScannerSettings: {
             /** @description Multi-threaded recognition (cross-origin isolated page) */
@@ -1864,11 +2065,19 @@ export interface components {
          * @enum {string}
          */
         TypeEnum: "Artifact" | "Battle" | "Creature" | "Enchantment" | "Instant" | "Kindred" | "Land" | "Planeswalker" | "Sorcery" | "Tribal";
+        UndoRequest: {
+            /** @description Scan in order: free this pocket too (spec 007, AC-22) */
+            slot?: number;
+        };
         UndoResult: {
             /** @description Copies left in the row (0 = removed) */
             remaining: number;
             /** @description Totals of the row's cart or location */
             totals: components["schemas"]["Totals"];
+        };
+        Unplaced: {
+            item: number;
+            count: number;
         };
         ValueSplit: {
             /** Format: double */
@@ -2944,6 +3153,108 @@ export interface operations {
             };
         };
     };
+    locations_binder_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Binder"];
+                };
+            };
+        };
+    };
+    locations_binder_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBinderSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBinderSettings"];
+                "multipart/form-data": components["schemas"]["PatchedBinderSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Binder"];
+                };
+            };
+        };
+    };
+    locations_binder_move_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BinderMove"];
+                "application/x-www-form-urlencoded": components["schemas"]["BinderMove"];
+                "multipart/form-data": components["schemas"]["BinderMove"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Binder"];
+                };
+            };
+        };
+    };
+    locations_binder_order_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BinderOrder"];
+                "application/x-www-form-urlencoded": components["schemas"]["BinderOrder"];
+                "multipart/form-data": components["schemas"]["BinderOrder"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Binder"];
+                };
+            };
+        };
+    };
     locations_delete_create: {
         parameters: {
             query?: never;
@@ -3139,7 +3450,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UndoRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["UndoRequest"];
+                "multipart/form-data": components["schemas"]["UndoRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3319,6 +3636,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicLocation"];
+                };
+            };
+        };
+    };
+    users_locations_binder_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBinder"];
                 };
             };
         };

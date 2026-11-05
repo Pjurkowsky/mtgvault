@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from cards.models import Set
 from cards.serializers import PrintingSerializer
-from collection.serializers import ItemSerializer, TotalsSerializer
+from collection.serializers import BinderCursorSerializer, BinderPlaceSerializer, ItemSerializer, TotalsSerializer
 
 from .models import ScannerSettings
 
@@ -42,6 +42,7 @@ class ScanTargetSerializer(serializers.Serializer):
     kind = serializers.ChoiceField(['cart', 'location', 'deck'])
     location = serializers.IntegerField(required=False, allow_null=True, help_text='kind=location: id, or null for Unfiled')
     deck = serializers.IntegerField(required=False, help_text='kind=deck: the decklist (no copy is added)')
+    binder = BinderCursorSerializer(required=False, help_text='kind=location, a binder: scan in order from here (spec 007, AC-20)')
 
     def validate(self, data):
         if data['kind'] == 'deck' and not data.get('deck'):
@@ -63,12 +64,22 @@ class ScannedDeckCardSerializer(serializers.Serializer):
     price = serializers.DecimalField(max_digits=12, decimal_places=2, allow_null=True)
 
 
+class ScannedSlotSerializer(BinderPlaceSerializer):
+    id = serializers.IntegerField()
+
+
+class UndoRequestSerializer(serializers.Serializer):
+    slot = serializers.IntegerField(required=False, help_text="Scan in order: free this pocket too (spec 007, AC-22)")
+
+
 class ScanResultSerializer(serializers.Serializer):
     item = ItemSerializer(allow_null=True, help_text='The collection row (null for a decklist-only scan)')
     deck_card = ScannedDeckCardSerializer(allow_null=True, help_text='Decklist-only scans: the deck card')
     merged = serializers.BooleanField()
     totals = TotalsSerializer(help_text='Totals of where the card went: cart, location or deck')
     sound = serializers.ChoiceField(['click', 'ding', 'big_ding'], help_text='Which sound fits the price')
+    slot = ScannedSlotSerializer(allow_null=True, default=None, help_text='Scan in order: the pocket the copy went to')
+    binder_full = serializers.BooleanField(default=False, help_text='Scan in order found no free pocket (AC-23)')
 
 
 class UndoResultSerializer(serializers.Serializer):

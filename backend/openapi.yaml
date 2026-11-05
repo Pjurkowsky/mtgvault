@@ -1184,6 +1184,120 @@ paths:
               schema:
                 $ref: '#/components/schemas/Location'
           description: ''
+  /api/locations/{id}/binder/:
+    get:
+      operationId: locations_binder_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Binder'
+          description: ''
+    patch:
+      operationId: locations_binder_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBinderSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBinderSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBinderSettings'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Binder'
+          description: ''
+  /api/locations/{id}/binder/move/:
+    post:
+      operationId: locations_binder_move_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BinderMove'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BinderMove'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BinderMove'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Binder'
+          description: ''
+  /api/locations/{id}/binder/order/:
+    post:
+      operationId: locations_binder_order_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BinderOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BinderOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BinderOrder'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Binder'
+          description: ''
   /api/locations/{id}/delete/:
     post:
       operationId: locations_delete_create
@@ -1375,6 +1489,17 @@ paths:
         required: true
       tags:
       - scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UndoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UndoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UndoRequest'
       security:
       - jwtAuth: []
       responses:
@@ -1559,6 +1684,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PublicLocation'
+          description: ''
+  /api/users/{username}/locations/{id}/binder/:
+    get:
+      operationId: users_locations_binder_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicBinder'
           description: ''
   /api/users/{username}/locations/{id}/export/:
     post:
@@ -1748,6 +1899,210 @@ components:
       required:
       - access
       - user
+    Binder:
+      type: object
+      properties:
+        rows:
+          type: integer
+        cols:
+          type: integer
+        spread:
+          type: boolean
+        pages:
+          type: integer
+          nullable: true
+          description: Fixed page count, or null
+        page_count:
+          type: integer
+          description: Pages to show
+        used:
+          type: integer
+          description: Pockets holding a card
+        total:
+          type: integer
+          nullable: true
+          description: Pockets in a binder with a fixed page count
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinderSection'
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinderSlot'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+          description: The binder's rows
+        unplaced:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unplaced'
+        currency:
+          type: string
+        unplaced_now:
+          type: integer
+          description: 'After a settings change: cards that lost their slot'
+      required:
+      - cols
+      - currency
+      - items
+      - page_count
+      - pages
+      - rows
+      - sections
+      - slots
+      - spread
+      - total
+      - unplaced
+      - used
+    BinderCursor:
+      type: object
+      description: 'Scan in order: where the next card goes, and which way the scan
+        moves (AC-20).'
+      properties:
+        page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        row:
+          type: integer
+          maximum: 6
+          minimum: 1
+        col:
+          type: integer
+          maximum: 6
+          minimum: 1
+        direction:
+          allOf:
+          - $ref: '#/components/schemas/DirectionEnum'
+          default: rows
+      required:
+      - col
+      - page
+      - row
+    BinderMove:
+      type: object
+      properties:
+        slot:
+          type: integer
+          description: Move this placed card
+        item:
+          type: integer
+          description: Or place one of this row's unplaced copies
+        to:
+          allOf:
+          - $ref: '#/components/schemas/BinderPlace'
+          nullable: true
+          description: 'null: back to Unplaced'
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeEnum'
+          default: swap
+          description: |-
+            When the target slot is taken
+
+            * `swap` - swap
+            * `share` - share
+      required:
+      - to
+    BinderOrder:
+      type: object
+      description: 'A pocket: page, row and column, all from 1.'
+      properties:
+        page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        row:
+          type: integer
+          maximum: 6
+          minimum: 1
+        col:
+          type: integer
+          maximum: 6
+          minimum: 1
+        slots:
+          type: array
+          items:
+            type: integer
+          description: Slot ids, top first
+      required:
+      - col
+      - page
+      - row
+      - slots
+    BinderPlace:
+      type: object
+      description: 'A pocket: page, row and column, all from 1.'
+      properties:
+        page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        row:
+          type: integer
+          maximum: 6
+          minimum: 1
+        col:
+          type: integer
+          maximum: 6
+          minimum: 1
+      required:
+      - col
+      - page
+      - row
+    BinderSection:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 60
+        first_page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        last_page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        filter:
+          type: object
+          additionalProperties: {}
+          description: 'Card browser filter keys: color, type, rarity, set, finish,
+            condition, price_min, price_max'
+      required:
+      - first_page
+      - last_page
+      - name
+    BinderSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+        item:
+          type: integer
+        page:
+          type: integer
+        row:
+          type: integer
+        col:
+          type: integer
+        position:
+          type: integer
+          description: Order in a shared pocket; the highest is on top
+        mismatch:
+          type: boolean
+          description: Outside its section's filter
+      required:
+      - col
+      - id
+      - item
+      - mismatch
+      - page
+      - position
+      - row
     BlankEnum:
       enum:
       - ''
@@ -2353,6 +2708,14 @@ components:
       description: |-
         * `asc` - asc
         * `desc` - desc
+    DirectionEnum:
+      enum:
+      - rows
+      - columns
+      type: string
+      description: |-
+        * `rows` - rows
+        * `columns` - columns
     DirectoryUser:
       type: object
       properties:
@@ -2894,6 +3257,10 @@ components:
           type: integer
           nullable: true
           description: Location id; null = Unfiled
+        slot:
+          allOf:
+          - $ref: '#/components/schemas/BinderPlace'
+          description: 'Binder only: put one new copy in this pocket (spec 007, AC-14)'
       required:
       - finish
       - printing
@@ -3114,6 +3481,14 @@ components:
       properties:
         filter:
           $ref: '#/components/schemas/ItemFilter'
+    ModeEnum:
+      enum:
+      - swap
+      - share
+      type: string
+      description: |-
+        * `swap` - swap
+        * `share` - share
     Money:
       type: object
       description: One amount in every currency. Null = no price.
@@ -3226,6 +3601,28 @@ components:
       required:
       - current_password
       - new_password
+    PatchedBinderSettings:
+      type: object
+      properties:
+        rows:
+          type: integer
+          maximum: 6
+          minimum: 1
+        cols:
+          type: integer
+          maximum: 6
+          minimum: 1
+        spread:
+          type: boolean
+        pages:
+          type: integer
+          maximum: 500
+          minimum: 1
+          nullable: true
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinderSection'
     PatchedDeckCardEdit:
       type: object
       properties:
@@ -3301,6 +3698,10 @@ components:
           type: integer
           nullable: true
           description: Location id; null = Unfiled
+        slot:
+          allOf:
+          - $ref: '#/components/schemas/BinderPlace'
+          description: 'Binder only: put one new copy in this pocket (spec 007, AC-14)'
     PatchedLocation:
       type: object
       description: Owner view of a location. Totals come from the view (context['totals']).
@@ -3604,6 +4005,61 @@ components:
       - set_code
       - set_name
       - type_line
+    PublicBinder:
+      type: object
+      properties:
+        rows:
+          type: integer
+        cols:
+          type: integer
+        spread:
+          type: boolean
+        pages:
+          type: integer
+          nullable: true
+          description: Fixed page count, or null
+        page_count:
+          type: integer
+          description: Pages to show
+        used:
+          type: integer
+          description: Pockets holding a card
+        total:
+          type: integer
+          nullable: true
+          description: Pockets in a binder with a fixed page count
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinderSection'
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/BinderSlot'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicItem'
+          description: The binder's rows
+        unplaced:
+          type: array
+          items:
+            $ref: '#/components/schemas/Unplaced'
+        currency:
+          type: string
+      required:
+      - cols
+      - currency
+      - items
+      - page_count
+      - pages
+      - rows
+      - sections
+      - slots
+      - spread
+      - total
+      - unplaced
+      - used
     PublicExportRequest:
       type: object
       properties:
@@ -3826,6 +4282,15 @@ components:
             * `click` - click
             * `ding` - ding
             * `big_ding` - big_ding
+        slot:
+          allOf:
+          - $ref: '#/components/schemas/ScannedSlot'
+          nullable: true
+          description: 'Scan in order: the pocket the copy went to'
+        binder_full:
+          type: boolean
+          default: false
+          description: Scan in order found no free pocket (AC-23)
       required:
       - deck_card
       - item
@@ -3846,6 +4311,11 @@ components:
         deck:
           type: integer
           description: 'kind=deck: the decklist (no copy is added)'
+        binder:
+          allOf:
+          - $ref: '#/components/schemas/BinderCursor'
+          description: 'kind=location, a binder: scan in order from here (spec 007,
+            AC-20)'
       required:
       - kind
     ScanTargetKindEnum:
@@ -3883,6 +4353,29 @@ components:
       - price
       - printing
       - quantity
+    ScannedSlot:
+      type: object
+      description: 'A pocket: page, row and column, all from 1.'
+      properties:
+        page:
+          type: integer
+          maximum: 500
+          minimum: 1
+        row:
+          type: integer
+          maximum: 6
+          minimum: 1
+        col:
+          type: integer
+          maximum: 6
+          minimum: 1
+        id:
+          type: integer
+      required:
+      - col
+      - id
+      - page
+      - row
     ScannerSettings:
       type: object
       properties:
@@ -4062,6 +4555,12 @@ components:
         * `Planeswalker` - Planeswalker
         * `Sorcery` - Sorcery
         * `Tribal` - Tribal
+    UndoRequest:
+      type: object
+      properties:
+        slot:
+          type: integer
+          description: 'Scan in order: free this pocket too (spec 007, AC-22)'
     UndoResult:
       type: object
       properties:
@@ -4075,6 +4574,16 @@ components:
       required:
       - remaining
       - totals
+    Unplaced:
+      type: object
+      properties:
+        item:
+          type: integer
+        count:
+          type: integer
+      required:
+      - count
+      - item
     ValueSplit:
       type: object
       properties:

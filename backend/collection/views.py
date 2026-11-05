@@ -218,11 +218,15 @@ class ItemListView(APIView):
         data.is_valid(raise_exception=True)
         d = data.validated_data
         ctx = price_context(request)
-        row, merged = save_item(
-            request.user, printing=d['printing'], finish=d['finish'], condition=d['condition'],
-            language=d['language'], location=d.get('location'), rates=ctx['rates'],
-            copies=Copies(d['quantity'], d.get('purchase_price'), d.get('purchase_currency')),
-        )
+        with transaction.atomic():
+            row, merged = save_item(
+                request.user, printing=d['printing'], finish=d['finish'], condition=d['condition'],
+                language=d['language'], location=d.get('location'), rates=ctx['rates'],
+                copies=Copies(d['quantity'], d.get('purchase_price'), d.get('purchase_currency')),
+            )
+            if d.get('slot'):  # Add card from an empty binder slot (spec 007, AC-14)
+                from .binder import place_new
+                place_new(d['location'], row, d['slot'])
         return Response(
             {'item': self._serialize(row, ctx), 'merged': merged},
             status=status.HTTP_201_CREATED,
