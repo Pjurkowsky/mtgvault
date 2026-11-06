@@ -41,7 +41,8 @@ export function useInfiniteItems<T>(fetchPage: (offset: number, limit: number) =
     return loadMore()
   }
 
-  watch(key, reload, { deep: true, immediate: true })
+  // Only a real change reloads: the view in the URL changing must not (spec 009, AC-2).
+  watch(() => JSON.stringify(key.value), reload, { immediate: true })
 
   return { rows, page, loading, done, loadMore, reload }
 }

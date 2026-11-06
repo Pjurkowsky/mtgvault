@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBinderDrag, type DragSource, type DropKey } from '@/composables/useBinderDrag'
 import {
-  pageWidth, placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
+  binderCache, pageWidth, placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
   type Binder, type BinderSlot, type Place,
 } from '@/lib/binder'
 import type { CardSize } from '@/lib/cards'
@@ -53,7 +53,9 @@ const route = useRoute()
 const router = useRouter()
 
 // ----- data -----
-const binder = ref<Binder | null>(null)
+const cacheKey = () => (props.source.kind === 'public' ? `${props.source.username}/${props.locationId}` : `own/${props.locationId}`)
+// Shown at once from the last visit, then refreshed.
+const binder = ref<Binder | null>(binderCache.get(cacheKey()) ?? null)
 async function load() {
   if (props.source.kind === 'public') {
     const { data } = await api.GET('/api/users/{username}/locations/{id}/binder/', {
@@ -65,6 +67,7 @@ async function load() {
     binder.value = data ?? null
   }
 }
+watch(binder, (b) => b && binderCache.set(cacheKey(), b))
 watch(() => [props.locationId, props.version], load, { immediate: true })
 
 const items = computed(() => new Map((binder.value?.items ?? []).map((r) => [r.id, r as BrowserRow])))
@@ -118,8 +121,13 @@ watch(needle, () => {
   matchIndex.value = 0
   if (current.value) showPage(current.value.page)
 })
-// The binder loads after a search in the URL: jump once it is there.
-watch(binder, (b, before) => !before && b && current.value && showPage(current.value.page))
+// A search in the URL: jump to its first match once the binder is there.
+let jumped = false
+watch(binder, (b) => {
+  if (jumped || !b) return
+  jumped = true
+  if (current.value) showPage(current.value.page)
+}, { immediate: true })
 function nextMatch(by: -1 | 1) {
   const n = matches.value.length
   if (!n) return

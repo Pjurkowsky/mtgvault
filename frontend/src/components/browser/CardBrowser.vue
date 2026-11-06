@@ -22,6 +22,7 @@ import { api } from '@/api/client'
 import BinderSearchNav from '@/components/binder/BinderSearchNav.vue'
 import BinderView from '@/components/binder/BinderView.vue'
 import UnplacedSidebar from '@/components/binder/UnplacedSidebar.vue'
+import { binderCache } from '@/lib/binder'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import CardSizeToggle from '@/components/CardSizeToggle.vue'
 import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
@@ -124,6 +125,7 @@ const sidebarHere = computed(() => !!binderId.value && editable.value && !inBind
 async function loadUnplaced() {
   if (!sidebarHere.value) return
   const { data } = await api.GET('/api/locations/{id}/binder/', { params: { path: { id: binderId.value! } } })
+  if (data) binderCache.set(`own/${binderId.value}`, data)
   const items = new Map((data?.items ?? []).map((r) => [r.id, r as BrowserRow]))
   sideUnplaced.value = (data?.unplaced ?? []).map((u) => ({ row: items.get(u.item)!, count: u.count })).filter((u) => u.row)
     .sort((a, b) => a.row.printing.name.localeCompare(b.row.printing.name))

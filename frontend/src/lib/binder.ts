@@ -6,6 +6,9 @@ export type BinderSlot = Schemas['BinderSlot']
 export type Place = { page: number; row: number; col: number }
 export type Direction = 'rows' | 'columns'
 
+/** The last binder state per binder, so switching views shows it at once (spec 009, AC-2). */
+export const binderCache = new Map<string, Binder>()
+
 /** Pocket width per card size, in rem (spec 009, AC-4). */
 export const POCKET_REM = { sm: 4, md: 5.5, lg: 7.5 } as const
 
