@@ -436,6 +436,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** @description Answers only when the database is reachable (spec 008, AC-21). */
         get: operations["health_retrieve"];
         put?: never;
         post?: never;
@@ -1388,6 +1389,9 @@ export interface components {
         Health: {
             status: string;
         };
+        HealthDown: {
+            status: string;
+        };
         ImportError: {
             line: number;
             text: string;
@@ -1615,6 +1619,11 @@ export interface components {
             currency: components["schemas"]["CurrencyEnum"];
             /** Format: date-time */
             readonly date_joined: string;
+            /**
+             * Staff status
+             * @description Designates whether the user can log into this admin site.
+             */
+            readonly is_staff: boolean;
         };
         MissingExport: {
             filter?: components["schemas"]["ItemFilter"];
@@ -1753,6 +1762,11 @@ export interface components {
             currency?: components["schemas"]["CurrencyEnum"];
             /** Format: date-time */
             readonly date_joined?: string;
+            /**
+             * Staff status
+             * @description Designates whether the user can log into this admin site.
+             */
+            readonly is_staff?: boolean;
         };
         PatchedScannerSettings: {
             /** @description Multi-threaded recognition (cross-origin isolated page) */
@@ -2840,6 +2854,14 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthDown"];
                 };
             };
         };

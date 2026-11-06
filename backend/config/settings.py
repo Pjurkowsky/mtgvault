@@ -28,13 +28,31 @@ environ.Env.read_env(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+# Self-hosted images keep a generated key in /data/secrets (spec 008, AC-15).
+SECRET_KEY_FILE = env('SECRET_KEY_FILE', default='')
+SECRET_KEY = env('SECRET_KEY', default='') or (
+    Path(SECRET_KEY_FILE).read_text().strip() if SECRET_KEY_FILE and Path(SECRET_KEY_FILE).exists() else ''
+)
+if not SECRET_KEY:
+    raise environ.ImproperlyConfigured('Set SECRET_KEY (or SECRET_KEY_FILE)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
+# Self-hosting (spec 008, AC-12): the site URL sets the host, the trusted
+# origin and whether the login cookie is Secure. The reverse proxy passes
+# X-Forwarded-Proto, which the container's nginx keeps.
+MTGVAULT_URL = env('MTGVAULT_URL', default='').rstrip('/')
+if MTGVAULT_URL:
+    from urllib.parse import urlsplit
+
+    _site = urlsplit(MTGVAULT_URL)
+    ALLOWED_HOSTS = [_site.hostname, 'localhost', '127.0.0.1']
+    CSRF_TRUSTED_ORIGINS = [f'{_site.scheme}://{_site.netloc}']
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
@@ -194,7 +212,11 @@ SIMPLE_JWT = {
 
 # The refresh token lives in an httpOnly cookie. Turn Secure on whenever the
 # site is served over HTTPS.
-AUTH_COOKIE_SECURE = env.bool('AUTH_COOKIE_SECURE', default=False)
+AUTH_COOKIE_SECURE = (
+    MTGVAULT_URL.startswith('https://') if MTGVAULT_URL else env.bool('AUTH_COOKIE_SECURE', default=False)
+)
+# The admin's session and CSRF cookies follow the login cookie.
+SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = AUTH_COOKIE_SECURE
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'MTG Vault API',
@@ -226,7 +248,13 @@ CELERY_BEAT_SCHEDULE = {
     # NBP publishes around noon Warsaw time; Scryfall refreshes prices daily.
     'sync-cards-daily': {'task': 'cards.tasks.sync_cards', 'schedule': crontab(hour=13, minute=0)},
     'sync-scanner-bundle-daily': {'task': 'scanner.tasks.sync_scanner_bundle', 'schedule': crontab(hour=4, minute=0)},
+    # Nightly database dump (spec 008, AC-22). Only where BACKUP_DIR is set.
+    **({'backup-database-daily': {'task': 'core.tasks.backup_database', 'schedule': crontab(hour=3, minute=0)}}
+       if env('BACKUP_DIR', default='') else {}),
 }
+
+BACKUP_DIR = env('BACKUP_DIR', default='')
+BACKUP_KEEP = env.int('BACKUP_KEEP', default=14)
 
 # Installed recognition model bundles (spec 003). Shared by backend and worker.
 SCANNER_DIR = env('SCANNER_DIR', default=str(BASE_DIR / 'var' / 'scanner'))

@@ -7,10 +7,10 @@ after API changes.
 
 ## Phase 1: Backend and app
 
-- [ ] **T1 Settings from `MTGVAULT_URL`, secret key file, forwarded proto; health checks the DB** (AC-12, AC-14, AC-15, AC-21)
-- [ ] **T2 `run_backup()`, nightly beat task, `backup` command, keep `BACKUP_KEEP`** (AC-22, AC-23)
-- [ ] **T3 `first_run` command: sync when the catalog is empty** (AC-18)
-- [ ] **T4 First account becomes admin; `is_staff` on Me; Admin item in the account menu; e2e `admin-link`** (AC-19, AC-20)
+- [x] **T1 Settings from `MTGVAULT_URL`, secret key file, forwarded proto; health checks the DB** (AC-12, AC-14, AC-15, AC-21)
+- [x] **T2 `run_backup()`, nightly beat task, `backup` command, keep `BACKUP_KEEP`** (AC-22, AC-23)
+- [x] **T3 `first_run` command: sync when the catalog is empty** (AC-18)
+- [x] **T4 First account becomes admin; `is_staff` on Me; Admin item in the account menu; e2e `admin-link`** (AC-19, AC-20)
 
 ## Phase 2: The image
 

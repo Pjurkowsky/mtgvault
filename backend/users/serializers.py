@@ -9,8 +9,8 @@ class MeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'currency', 'date_joined']
-        read_only_fields = ['username', 'email', 'date_joined']
+        fields = ['username', 'email', 'currency', 'date_joined', 'is_staff']
+        read_only_fields = ['username', 'email', 'date_joined', 'is_staff']
 
 
 class RegisterSerializer(serializers.ModelSerializer):

@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.core.cache import cache
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, status
@@ -32,6 +32,9 @@ LOGIN_FAILED = 'Wrong username/email or password.'
 # the new cookie, it still holds the old one; accept that one for a short while
 # instead of logging the user out.
 ROTATION_GRACE_SECONDS = 30
+
+# Any fixed number; it names the advisory lock taken by sign-ups.
+FIRST_ADMIN_LOCK = 80080001
 
 
 def _rotated_key(jti: str) -> str:
@@ -65,7 +68,15 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
+                # One sign-up at a time decides who is first (spec 008, AC-19).
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT pg_advisory_xact_lock(%s)', [FIRST_ADMIN_LOCK])
+                first = not User.objects.exists()
                 user = serializer.save()
+                if first:
+                    # The first account on a new site becomes its admin.
+                    user.is_staff = user.is_superuser = True
+                    user.save(update_fields=['is_staff', 'is_superuser'])
         except IntegrityError:
             # Two sign-ups with the same name raced past validation.
             raise ValidationError({'username': ['This username or email is taken.']})

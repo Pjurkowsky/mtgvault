@@ -799,6 +799,7 @@ paths:
   /api/health/:
     get:
       operationId: health_retrieve
+      description: Answers only when the database is reachable (spec 008, AC-21).
       tags:
       - health
       security:
@@ -810,6 +811,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthDown'
           description: ''
   /api/imports/commit/:
     post:
@@ -2944,6 +2951,13 @@ components:
           type: string
       required:
       - status
+    HealthDown:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
     ImportError:
       type: object
       properties:
@@ -3503,10 +3517,16 @@ components:
           type: string
           format: date-time
           readOnly: true
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
       required:
       - currency
       - date_joined
       - email
+      - is_staff
       - username
     MissingExport:
       type: object
@@ -3802,6 +3822,11 @@ components:
           type: string
           format: date-time
           readOnly: true
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
     PatchedScannerSettings:
       type: object
       properties:

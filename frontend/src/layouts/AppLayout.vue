@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { LogOutIcon, SettingsIcon, UserIcon } from '@lucide/vue'
+import { LogOutIcon, SettingsIcon, ShieldIcon, UserIcon } from '@lucide/vue'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -42,6 +42,9 @@ async function logout() {
             </DropdownMenuItem>
             <DropdownMenuItem as-child>
               <RouterLink :to="{ name: 'settings' }"><SettingsIcon /> Settings</RouterLink>
+            </DropdownMenuItem>
+            <DropdownMenuItem v-if="auth.user.is_staff" as-child>
+              <a href="/admin/"><ShieldIcon /> Admin</a>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @select="logout"><LogOutIcon /> Log out</DropdownMenuItem>
