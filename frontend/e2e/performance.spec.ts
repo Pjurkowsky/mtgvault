@@ -39,6 +39,8 @@ test('AC-36: with 20,000 rows, results show within 1 s of changing search, filte
   await timed('sort', async () => {
     await page.getByRole('combobox', { name: 'Sort by' }).click()
     await page.getByRole('option', { name: 'Price' }).click()
+    // Highest first: the cheapest card can also be first by name.
+    await page.getByRole('button', { name: 'Ascending' }).click()
   }, 'first')
 })
 

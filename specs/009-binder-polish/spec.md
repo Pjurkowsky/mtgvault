@@ -56,9 +56,11 @@ opening the sidebar never moves the controls you are about to click.
 
 ### Unplaced sidebar
 
-- **AC-7** The Unplaced tray is a sidebar on the right with a tab in the middle
-  of its edge ("Unplaced 12"). The tab shows and hides it; the choice is
-  remembered. On phones it slides over the pages.
+- **AC-7** The Unplaced tray is a sidebar on the window's right edge, with an
+  arrow tab (‹ or ›) and the count in the middle of its edge. The tab shows and
+  hides it; the choice is remembered. On wide screens the page makes room for
+  it; on phones it slides over the page. A binder location shows it in every
+  view, so switching views moves nothing.
 - **AC-8** Dragging a card from a pocket opens the sidebar as a drop target;
   after the drop it closes again if it was closed before.
 
@@ -105,6 +107,8 @@ opening the sidebar never moves the controls you are about to click.
   beside the open sidebar on a laptop (AC-4).
 - In Grid and Table view the size toggle keeps its place, invisible, so the
   buttons after it don't move (AC-2).
-- The sidebar takes its own space; opened by a drag, the pages make room for
-  it once, at the start of the drag (AC-8).
+- Opened by a drag, the page makes room for the sidebar once, at the start of
+  the drag (AC-8).
+- In Grid and Table view, cards in the sidebar open on click but don't drag
+  (AC-7).
 - Phones start with the sidebar closed (AC-7).

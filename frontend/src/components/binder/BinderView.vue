@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useElementSize, useWindowSize } from '@vueuse/core'
-import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/vue'
+import { useElementSize } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import type { BrowserRow, BrowserSource } from '@/components/browser/types'
@@ -10,9 +9,7 @@ import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useBinderDrag, type DragSource, type DropKey } from '@/composables/useBinderDrag'
-import { usePreference } from '@/composables/usePreference'
 import {
   pageWidth, placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
   type Binder, type BinderSlot, type Place,
@@ -24,7 +21,7 @@ import BinderSettingsDialog from './BinderSettingsDialog.vue'
 import FromUnplacedDialog from './FromUnplacedDialog.vue'
 import MoveToSlotDialog from './MoveToSlotDialog.vue'
 import StackDialog from './StackDialog.vue'
-import UnplacedTray from './UnplacedTray.vue'
+import UnplacedSidebar from './UnplacedSidebar.vue'
 
 /**
  * A Binder location as its physical pages (spec 007): pockets, facing pages,
@@ -76,7 +73,6 @@ const unplaced = computed(() =>
   (binder.value?.unplaced ?? []).map((u) => ({ row: items.value.get(u.item)!, count: u.count })).filter((u) => u.row)
     .sort((a, b) => a.row.printing.name.localeCompare(b.row.printing.name)),
 )
-const unplacedTotal = computed(() => unplaced.value.reduce((n, u) => n + u.count, 0))
 
 // ----- pages (AC-3, AC-4) -----
 // Facing pages only when two pages of this size fit side by side (AC-4).
@@ -177,21 +173,8 @@ async function put(from: { slot?: BinderSlot; item?: number }, to: Place | null)
 }
 
 // ----- drag and drop (AC-15, AC-16) -----
-// The Unplaced sidebar (AC-7, AC-8): shown or hidden with its edge tab, remembered;
-// a drag from a pocket opens it as a drop target until the drop.
-// Phones start with it closed: open, it covers the pages.
-const wideScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches
-const trayPref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open', 'closed'] as const)
+// A drag from a pocket opens the Unplaced sidebar as a drop target until the drop (AC-8).
 const dragOpened = ref(false)
-const trayShown = computed(() => trayPref.value === 'open' || dragOpened.value)
-const toggleTray = () => (trayPref.value = trayShown.value ? 'closed' : 'open')
-// The sidebar sits on the window's edge; on wide screens the whole page makes room
-// for it (header and toolbar too), like a docked panel. Phones get it over the page.
-const PANEL = 288 // w-72
-const { width: windowWidth } = useWindowSize()
-const docked = computed(() => props.editable && trayShown.value && windowWidth.value >= 768)
-watch(docked, (on) => (document.documentElement.style.paddingRight = on ? `${PANEL}px` : ''), { immediate: true })
-onBeforeUnmount(() => (document.documentElement.style.paddingRight = ''))
 const slotsById = computed(() => new Map((binder.value?.slots ?? []).map((s) => [s.id, s])))
 const drag = useBinderDrag({
   edgeEl: () => pagesEl.value,
@@ -207,8 +190,7 @@ function startDrag(source: DragSource, event: PointerEvent) {
   drag.start(source, event)
 }
 watch(drag.source, (s) => {
-  if (s?.slot && trayPref.value === 'closed') dragOpened.value = true
-  if (!s) dragOpened.value = false
+  dragOpened.value = !!s?.slot
 })
 
 // ----- dialogs -----
@@ -294,35 +276,10 @@ defineExpose({
         <p v-if="binder.total" class="text-center text-sm text-muted-foreground" data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</p>
       </div>
 
-      <!-- Unplaced sidebar on the window's right edge; its tab shows and hides it (spec 009, AC-7) -->
-      <aside
-        v-if="editable && trayShown"
-        class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-background shadow-xl"
-        data-testid="unplaced-sidebar" data-state="open"
-      >
-        <UnplacedTray
-          id="unplaced-tray" class="h-full overflow-y-auto rounded-none border-0"
-          :unplaced="unplaced" :editable="editable" :over="drag.over.value === 'tray'" :q="q"
-          @open="emit('open', $event)" @drag="startDrag"
-        />
-      </aside>
-      <span v-else-if="editable" class="hidden" data-testid="unplaced-sidebar" data-state="closed" />
-      <Tooltip v-if="editable">
-        <TooltipTrigger as-child>
-          <button
-            type="button"
-            class="fixed top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 rounded-l-md border border-r-0 bg-background px-1 py-3 text-xs font-medium shadow-md transition-[right] hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            :class="trayShown ? 'right-72' : 'right-0'"
-            :aria-label="trayShown ? 'Hide Unplaced' : 'Show Unplaced'" :aria-expanded="trayShown" aria-controls="unplaced-tray"
-            data-testid="unplaced-tab" @click="toggleTray"
-          >
-            <ChevronRightIcon v-if="trayShown" class="size-4" />
-            <ChevronLeftIcon v-else class="size-4" />
-            <span class="tabular-nums" data-testid="unplaced-tab-count">{{ unplacedTotal }}</span>
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="left">{{ trayShown ? 'Hide Unplaced' : 'Show Unplaced' }}</TooltipContent>
-      </Tooltip>
+      <UnplacedSidebar
+        v-if="editable" :unplaced="unplaced" :over="drag.over.value === 'tray'" :q="q" :force-open="dragOpened" draggable
+        @open="emit('open', $event)" @drag="startDrag"
+      />
     </div>
     <!-- Drag ghost -->
     <img

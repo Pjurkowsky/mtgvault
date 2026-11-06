@@ -53,6 +53,7 @@ test.describe('Binder polish', () => {
 
     await page.getByLabel('Grid view').click()
     await expect(filters).toBeEnabled()
+    await expect(page.getByTestId('unplaced-sidebar')).toHaveAttribute('data-state', 'open') // in every view (AC-7)
     expect(await x(search)).toBe(inBinder.search)
     expect(await x(filters)).toBe(inBinder.filters)
     expect(await x(more(page))).toBe(inBinder.more)
@@ -84,6 +85,7 @@ test.describe('Binder polish', () => {
   test('AC-4: S, M and L pocket sizes; facing pages only when both fit; remembered', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
+    await page.setViewportSize({ width: 1000, height: 900 }) // 680 px beside the sidebar
     await page.goto(`/locations/${binder}?page=2`)
     const pocket = slot(page, 2, 1)
 

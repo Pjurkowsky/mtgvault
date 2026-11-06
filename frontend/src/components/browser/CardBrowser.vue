@@ -21,6 +21,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/api/client'
 import BinderSearchNav from '@/components/binder/BinderSearchNav.vue'
 import BinderView from '@/components/binder/BinderView.vue'
+import UnplacedSidebar from '@/components/binder/UnplacedSidebar.vue'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import CardSizeToggle from '@/components/CardSizeToggle.vue'
 import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
@@ -117,6 +118,18 @@ const binderRef = ref<InstanceType<typeof BinderView> | null>(null)
 const inBinder = computed(() => shownView.value === 'binder' && !!binderId.value)
 // Pocket size, remembered in this browser (spec 009, AC-4).
 const binderSize = usePreference<CardSize>('binder.size', 'md', CARD_SIZES)
+// Grid and Table view of a binder keep its Unplaced sidebar, so switching views moves nothing (AC-2, AC-7).
+const sideUnplaced = ref<{ row: BrowserRow; count: number }[]>([])
+const sidebarHere = computed(() => !!binderId.value && editable.value && !inBinder.value)
+async function loadUnplaced() {
+  if (!sidebarHere.value) return
+  const { data } = await api.GET('/api/locations/{id}/binder/', { params: { path: { id: binderId.value! } } })
+  const items = new Map((data?.items ?? []).map((r) => [r.id, r as BrowserRow]))
+  sideUnplaced.value = (data?.unplaced ?? []).map((u) => ({ row: items.get(u.item)!, count: u.count })).filter((u) => u.row)
+    .sort((a, b) => a.row.printing.name.localeCompare(b.row.printing.name))
+}
+watch([sidebarHere, binderVersion], loadUnplaced, { immediate: true })
+
 // Binder settings from the ⋯ menu: opens the binder view first (AC-1).
 const settingsWanted = ref(false)
 function openBinderSettings() {
@@ -444,6 +457,7 @@ const exportName = computed(() =>
       <AddToDeckDialog v-model:open="deckOpen" :selection="deckSelection" @done="selection.clear()" />
       <BulkDialog v-model:open="bulkOpen" :action="bulkAction" :selection="selection.toSelection" @done="afterBulk" />
     </template>
+    <UnplacedSidebar v-if="sidebarHere" :unplaced="sideUnplaced" :over="false" :q="filter.q ?? ''" @open="openDetail" />
     <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="exportName" />
   </div>
 </template>
