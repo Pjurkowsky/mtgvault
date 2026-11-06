@@ -128,6 +128,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* Room for the scrollbar always, so a taller page doesn't narrow the content. */
+  html {
+    scrollbar-gutter: stable;
+  }
   body {
     @apply bg-background text-foreground;
   }

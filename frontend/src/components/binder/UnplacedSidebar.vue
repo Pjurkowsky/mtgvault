@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { DragSource } from '@/composables/useBinderDrag'
 import { usePreference } from '@/composables/usePreference'
 import UnplacedTray from './UnplacedTray.vue'
+import { useDock } from './useDock'
 
 /**
  * The Unplaced sidebar on the window's right edge (spec 009, AC-7, AC-8): an arrow
@@ -31,19 +32,11 @@ const pref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open
 const shown = computed(() => pref.value === 'open' || !!props.forceOpen)
 const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
 
-const PANEL = 288 // w-72
 const { width } = useWindowSize()
 const docked = computed(() => shown.value && width.value >= 768)
-const html = document.documentElement
-watch(docked, (on) => (html.style.paddingRight = on ? `${PANEL}px` : ''), { immediate: true })
-// The page eases aside with the panel; not on first paint, and not with reduced motion.
-const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-const frame = still ? 0 : requestAnimationFrame(() => (html.style.transition = 'padding-right 300ms cubic-bezier(0.32, 0.72, 0, 1)'))
-onBeforeUnmount(() => {
-  cancelAnimationFrame(frame)
-  html.style.paddingRight = ''
-  html.style.transition = ''
-})
+const { dock, release } = useDock()
+watch(docked, dock, { immediate: true })
+onBeforeUnmount(release)
 </script>
 
 <template>
