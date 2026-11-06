@@ -8,10 +8,10 @@ const emit = defineEmits<{ step: [by: -1 | 1] }>()
 </script>
 
 <template>
-  <div v-if="matches !== null" class="flex items-center gap-1 text-sm text-muted-foreground" data-testid="binder-matches">
-    <span v-if="matches" class="tabular-nums" data-testid="binder-match-count">{{ current + 1 }} of {{ matches }}</span>
-    <span v-else data-testid="binder-match-count">No matches</span>
-    <IconButton label="Previous match" size="icon-sm" :disabled="matches < 2" @click="emit('step', -1)"><ChevronUpIcon /></IconButton>
-    <IconButton label="Next match" size="icon-sm" :disabled="matches < 2" @click="emit('step', 1)"><ChevronDownIcon /></IconButton>
+  <div v-if="matches !== null" class="flex items-center gap-0.5 text-xs text-muted-foreground" data-testid="binder-matches">
+    <span v-if="matches" class="mr-0.5 tabular-nums" data-testid="binder-match-count">{{ current + 1 }} of {{ matches }}</span>
+    <span v-else class="mr-0.5" data-testid="binder-match-count">None</span>
+    <IconButton label="Previous match" size="icon-xs" :disabled="matches < 2" @click="emit('step', -1)"><ChevronUpIcon /></IconButton>
+    <IconButton label="Next match" size="icon-xs" :disabled="matches < 2" @click="emit('step', 1)"><ChevronDownIcon /></IconButton>
   </div>
 </template>

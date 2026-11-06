@@ -322,11 +322,11 @@ const exportName = computed(() =>
         </Tooltip>
       </ToggleGroup>
       <!-- Fixed width, so nothing after it moves when the view changes (spec 009, AC-2) -->
-      <div class="relative w-full sm:w-60">
+      <div class="relative w-full sm:w-48">
         <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           v-model="search" placeholder="Search" aria-label="Search cards" type="search"
-          :class="inBinder && binderRef?.matchCount != null ? 'pr-36 pl-8' : 'pl-8'"
+          :class="inBinder && binderRef?.matchCount != null ? 'pr-28 pl-8' : 'pl-8'"
           @keydown.enter="binderRef?.nextMatch($event.shiftKey ? -1 : 1)"
         />
         <BinderSearchNav

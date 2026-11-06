@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useElementSize } from '@vueuse/core'
+import { useElementSize, useWindowSize } from '@vueuse/core'
+import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import type { BrowserRow, BrowserSource } from '@/components/browser/types'
@@ -9,6 +10,7 @@ import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useBinderDrag, type DragSource, type DropKey } from '@/composables/useBinderDrag'
 import { usePreference } from '@/composables/usePreference'
 import {
@@ -112,7 +114,8 @@ const matches = computed<Place[]>(() => {
     .filter((s) => !seen.has(placeKey(s)) && seen.add(placeKey(s)))
     .map(({ page, row, col }) => ({ page, row, col }))
 })
-const matchKeys = computed(() => (needle.value ? new Set(matches.value.map(placeKey)) : null))
+// No match fades nothing.
+const matchKeys = computed(() => (matches.value.length ? new Set(matches.value.map(placeKey)) : null))
 const matchIndex = ref(0)
 const current = computed(() => matches.value[matchIndex.value] ?? null)
 watch(needle, () => {
@@ -182,6 +185,13 @@ const trayPref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['
 const dragOpened = ref(false)
 const trayShown = computed(() => trayPref.value === 'open' || dragOpened.value)
 const toggleTray = () => (trayPref.value = trayShown.value ? 'closed' : 'open')
+// The sidebar sits on the window's edge; on wide screens the whole page makes room
+// for it (header and toolbar too), like a docked panel. Phones get it over the page.
+const PANEL = 288 // w-72
+const { width: windowWidth } = useWindowSize()
+const docked = computed(() => props.editable && trayShown.value && windowWidth.value >= 768)
+watch(docked, (on) => (document.documentElement.style.paddingRight = on ? `${PANEL}px` : ''), { immediate: true })
+onBeforeUnmount(() => (document.documentElement.style.paddingRight = ''))
 const slotsById = computed(() => new Map((binder.value?.slots ?? []).map((s) => [s.id, s])))
 const drag = useBinderDrag({
   edgeEl: () => pagesEl.value,
@@ -263,7 +273,7 @@ defineExpose({
 
 <template>
   <div v-if="binder" class="grid gap-4" data-testid="binder">
-    <div class="flex items-start" :class="editable && 'gap-10'">
+    <div class="flex items-start">
       <div class="grid min-w-0 flex-1 gap-4">
         <div ref="pagesEl" class="flex justify-center-safe gap-3 overflow-x-auto pb-1" data-testid="binder-spread">
           <template v-for="(p, i) in shown" :key="p ?? `blank-${i}`">
@@ -284,27 +294,35 @@ defineExpose({
         <p v-if="binder.total" class="text-center text-sm text-muted-foreground" data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</p>
       </div>
 
+      <!-- Unplaced sidebar on the window's right edge; its tab shows and hides it (spec 009, AC-7) -->
       <aside
-        v-if="editable"
-        class="relative shrink-0 self-stretch transition-[width] max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40"
-        :class="trayShown ? 'w-64 max-md:bg-background max-md:shadow-xl xl:w-72' : 'w-0'"
-        data-testid="unplaced-sidebar" :data-state="trayShown ? 'open' : 'closed'"
+        v-if="editable && trayShown"
+        class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-background shadow-xl"
+        data-testid="unplaced-sidebar" data-state="open"
       >
-        <div class="sticky top-1/2 z-10 h-0">
-          <button
-            type="button"
-            class="absolute right-full flex -translate-y-1/2 items-center gap-1 rounded-l-md border border-r-0 bg-card px-1.5 py-3 text-xs font-medium shadow-sm [writing-mode:vertical-rl] hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            :aria-expanded="trayShown" aria-controls="unplaced-tray" data-testid="unplaced-tab" @click="toggleTray"
-          >Unplaced {{ unplacedTotal }}</button>
-        </div>
         <UnplacedTray
-          v-if="trayShown" id="unplaced-tray"
-          class="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto max-md:top-0 max-md:h-full max-md:max-h-none max-md:rounded-none max-md:border-0"
-
+          id="unplaced-tray" class="h-full overflow-y-auto rounded-none border-0"
           :unplaced="unplaced" :editable="editable" :over="drag.over.value === 'tray'" :q="q"
           @open="emit('open', $event)" @drag="startDrag"
         />
       </aside>
+      <span v-else-if="editable" class="hidden" data-testid="unplaced-sidebar" data-state="closed" />
+      <Tooltip v-if="editable">
+        <TooltipTrigger as-child>
+          <button
+            type="button"
+            class="fixed top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 rounded-l-md border border-r-0 bg-background px-1 py-3 text-xs font-medium shadow-md transition-[right] hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            :class="trayShown ? 'right-72' : 'right-0'"
+            :aria-label="trayShown ? 'Hide Unplaced' : 'Show Unplaced'" :aria-expanded="trayShown" aria-controls="unplaced-tray"
+            data-testid="unplaced-tab" @click="toggleTray"
+          >
+            <ChevronRightIcon v-if="trayShown" class="size-4" />
+            <ChevronLeftIcon v-else class="size-4" />
+            <span class="tabular-nums" data-testid="unplaced-tab-count">{{ unplacedTotal }}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left">{{ trayShown ? 'Hide Unplaced' : 'Show Unplaced' }}</TooltipContent>
+      </Tooltip>
     </div>
     <!-- Drag ghost -->
     <img

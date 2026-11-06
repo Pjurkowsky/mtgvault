@@ -96,7 +96,7 @@ opening the sidebar never moves the controls you are about to click.
 - The size toggle appears after the sort controls only in Binder view, so
   nothing before it moves (AC-2, AC-4).
 - Binder search matches card names, as the other views do (AC-5).
-- Search with no match shows "No matches" next to the box and fades nothing
+- Search with no match shows "None" in the box and fades nothing
   (AC-5).
 - Sets and price ranges stay out of the inline section filter; sections made
   with them keep working (AC-13).

@@ -131,7 +131,7 @@ test.describe('Binder polish', () => {
     await expect(slot(page, 1, 2)).toHaveAttribute('data-match', 'current')
 
     await page.getByLabel('Search cards').fill('nothing like it')
-    await expect(page.getByTestId('binder-match-count')).toHaveText('No matches')
+    await expect(page.getByTestId('binder-match-count')).toHaveText('None')
   })
 
   test('AC-6: pagination under the pages jumps to a page; used slots under it', async ({ page, request }) => {
@@ -155,7 +155,8 @@ test.describe('Binder polish', () => {
     const binder = await stockedBinder(api)
     await page.goto(`/locations/${binder}`)
     await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
-    await expect(page.getByTestId('unplaced-tab')).toHaveText('Unplaced 2')
+    await expect(page.getByTestId('unplaced-tab')).toHaveAccessibleName('Hide Unplaced')
+    await expect(page.getByTestId('unplaced-tab-count')).toHaveText('2')
 
     await page.getByTestId('unplaced-tab').click()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'closed')
