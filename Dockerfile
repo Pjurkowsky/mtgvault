@@ -1,8 +1,9 @@
+# syntax=docker/dockerfile:1
 # Self-hosted MTG Vault (spec 008): frontend, backend, Celery, nginx, and a
 # bundled Postgres and Redis that stay off when DATABASE_URL / REDIS_URL are set.
 #   docker build -t mtgvault .
 
-FROM node:24-alpine AS frontend
+FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend
 RUN corepack enable && corepack prepare pnpm@10 --activate
 WORKDIR /app
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./

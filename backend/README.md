@@ -76,7 +76,21 @@ uv run manage.py runserver    # http://localhost:8000
 The access token lasts 15 minutes and lives only in the frontend's memory. The
 refresh token lives in an httpOnly cookie scoped to `/api/auth/`, lasts 7 days
 and rotates on every refresh. Set `AUTH_COOKIE_SECURE=True` when serving over
-HTTPS.
+HTTPS; with `MTGVAULT_URL` set (self-hosting) it follows the URL's scheme.
+
+## Self-hosting settings
+
+With `MTGVAULT_URL` set, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` and the Secure
+cookies come from it, and `X-Forwarded-Proto` marks https requests.
+`SECRET_KEY_FILE` is read when `SECRET_KEY` is empty.
+
+- The first account registered on a site with no users becomes staff and
+  superuser (a Postgres advisory lock settles two at once).
+- `manage.py backup` writes a `pg_dump -Fc` to `BACKUP_DIR` and keeps
+  `BACKUP_KEEP`; with `BACKUP_DIR` set, beat runs it at 03:00 UTC.
+- `manage.py first_run` queues the card sync and scanner bundle on an empty
+  catalog; `manage.py wait_for_services` waits for Postgres and Redis.
+- `/api/health/` returns 503 when the database is unreachable.
 
 ## API contract
 

@@ -1,6 +1,6 @@
 # Spec 008: Self-hosting
 
-Status: Draft
+Status: Done (the GitHub workflow runs on the first push)
 Depends on: 000-accounts, 003-scanner
 
 ## Goal

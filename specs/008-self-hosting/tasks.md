@@ -26,5 +26,5 @@ after API changes.
 
 ## Phase 4: Publishing and wrap up
 
-- [ ] **T11 GitHub Actions workflow: multi-arch build, smoke test, tags, push to GHCR** (AC-3, AC-25, AC-26)
-- [ ] **T12 README self-hosting section; backend and frontend READMEs; e2e suite (2 workers); spec status** (AC-27)
+- [ ] **T11 GitHub Actions workflow: multi-arch build, smoke test, tags, push to GHCR** (AC-3, AC-25, AC-26) — written; its done check (a workflow run) waits for the first push
+- [x] **T12 README self-hosting section; backend and frontend READMEs; e2e suite (2 workers); spec status** (AC-27)
