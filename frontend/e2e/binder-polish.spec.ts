@@ -85,7 +85,7 @@ test.describe('Binder polish', () => {
   test('AC-4: S, M and L pocket sizes; facing pages only when both fit; remembered', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
-    await page.setViewportSize({ width: 1000, height: 900 }) // 680 px beside the sidebar
+    await page.setViewportSize({ width: 800, height: 900 }) // 768 px for the pages: two large ones don't fit
     await page.goto(`/locations/${binder}?page=2`)
     const pocket = slot(page, 2, 1)
 
@@ -95,7 +95,7 @@ test.describe('Binder polish', () => {
 
     await page.getByRole('button', { name: 'Large cards' }).click()
     await expect.poll(async () => (await pocket.boundingBox())!.width).toBe(120)
-    await expect(page.getByTestId('binder-page')).toHaveCount(1) // two don't fit next to the sidebar
+    await expect(page.getByTestId('binder-page')).toHaveCount(1) // two don't fit
     await expect(page.getByTestId('binder-pages')).toHaveText('Page 2 of 4')
 
     await page.reload()
@@ -168,14 +168,15 @@ test.describe('Binder polish', () => {
 
     // Drag the Bolt from slot 2 to slot 3: the sidebar opens while dragging, then closes.
     const from = (await slot(page, 1, 2).boundingBox())!
+    const before = (await page.getByTestId('binder-page').first().boundingBox())!
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
     await page.mouse.down()
     await page.mouse.move(from.x + from.width / 2 + 12, from.y + from.height / 2 + 12, { steps: 3 })
     await expect(page.getByTestId('drag-ghost')).toBeVisible()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
     await expect(page.getByTestId('unplaced-tray')).toBeVisible()
-    await page.waitForTimeout(400) // the page slides aside for the sidebar (300 ms)
-    const to = (await slot(page, 1, 3).boundingBox())! // the pages made room for the sidebar
+    expect((await page.getByTestId('binder-page').first().boundingBox())!.x).toBe(before.x) // the page doesn't move
+    const to = (await slot(page, 1, 3).boundingBox())!
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 })
     await page.mouse.up()
     await expect(slot(page, 1, 3)).toHaveAttribute('data-state', 'filled')

@@ -1,19 +1,16 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
-import { useWindowSize } from '@vueuse/core'
+import { computed } from 'vue'
 import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/vue'
 import type { BrowserRow } from '@/components/browser/types'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { DragSource } from '@/composables/useBinderDrag'
 import { usePreference } from '@/composables/usePreference'
 import UnplacedTray from './UnplacedTray.vue'
-import { useDock } from './useDock'
 
 /**
  * The Unplaced sidebar on the window's right edge (spec 009, AC-7, AC-8): an arrow
- * tab shows and hides it, remembered. On wide screens the whole page makes room
- * for it, like a docked panel; on phones it lies over the page. A binder location
- * shows it in every view, so switching views moves nothing.
+ * tab shows and hides it, remembered. It slides over the page and never moves
+ * it. A binder location shows it in every view.
  */
 const props = defineProps<{
   unplaced: { row: BrowserRow; count: number }[]
@@ -31,12 +28,6 @@ const wideScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-wi
 const pref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open', 'closed'] as const)
 const shown = computed(() => pref.value === 'open' || !!props.forceOpen)
 const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
-
-const { width } = useWindowSize()
-const docked = computed(() => shown.value && width.value >= 768)
-const { dock, release } = useDock()
-watch(docked, dock, { immediate: true })
-onBeforeUnmount(release)
 </script>
 
 <template>
