@@ -40,6 +40,10 @@ src/
   lib/deckStats.ts        Stats tab numbers and chart data, computed in the browser
   lib/categories.ts       category suggestions, loaded once
   composables/useCardNavigation.ts  arrow keys between cards
+  components/binder/      binder view (spec 007): pages and spreads, pockets, Unplaced tray,
+                          grid picker and settings, move and stack dialogs, scan-in-order dialog
+  composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
+  lib/binder.ts           slot numbers, spreads, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
   assets/mana/            Scryfall mana symbols
   scanner/                camera, frame loop, sounds; recognition/ is ported from

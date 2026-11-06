@@ -43,6 +43,9 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/catalog/sets/?q=`, `GET /api/catalog/status/` | public | Set search; last price update |
 | `GET/POST /api/locations/` | bearer | Locations with totals (plus Unfiled) / create |
 | `GET/PATCH /api/locations/<id>/`, `POST .../delete/` | bearer | Detail, edit (`deck_format` for a Deck box), delete with move/unfile/delete |
+| `GET/PATCH /api/locations/<id>/binder/` | bearer | Binder layout: settings, sections, slots, rows, unplaced counts / change settings (slots that no longer fit become unplaced) |
+| `POST /api/locations/<id>/binder/move/`, `.../order/` | bearer | Move a placed card or an unplaced copy (`swap` or `share`), or unplace it / order a shared pocket |
+| `GET /api/users/<username>/locations/<id>/binder/` | public | A public binder's layout, read-only |
 | `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
 | `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
 | `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
@@ -109,6 +112,24 @@ only `sol-ring.json` exists there.
 
 Every price in the API also comes in all three currencies (`unit_prices`,
 `values`, `prices_all`, …) so the frontend can show the others in a tooltip.
+
+## Binders
+
+A Binder location has a layout (spec 007): `binder_rows`, `binder_cols`,
+`binder_spread` and an optional `binder_pages` on `Location`, plus
+`BinderSection` rows (a page range, a name and a card browser filter). Each
+placed copy is a `BinderSlot` (page, row, column and a stack position for
+shared pockets); copies without one are the binder's Unplaced ones.
+
+- `collection/binder.py` holds every placement rule. `sync_slots` runs after
+  every collection row save (`post_save`): a row that left the binder or went
+  to the cart loses its slots, and a row with fewer copies than slots loses its
+  highest ones. `edit_item` hands a merging row's slots to the row it merges
+  into.
+- `POST /api/items/` takes `slot` to put one new copy in an empty pocket.
+- Scans into a binder take a `binder` cursor in the target (page, row, column,
+  direction): the copy goes to the first free pocket from there and the
+  result names it, or says `binder_full`. Undo takes the slot id to free.
 
 ## Decks
 

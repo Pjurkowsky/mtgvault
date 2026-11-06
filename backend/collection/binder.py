@@ -21,16 +21,15 @@ def is_binder(location) -> bool:
 
 def sync_slots(item: CollectionItem):
     """A row keeps slots only in its own location, at most one per copy; extra ones go
-    from the end of the binder (highest page and slot first)."""
-    slots = BinderSlot.objects.filter(item_id=item.pk)
-    if item.in_cart or item.location_id is None:
-        slots.delete()
+    from the end of the binder (highest page and slot first). One query for a row without slots."""
+    slots = list(BinderSlot.objects.filter(item_id=item.pk).values_list('id', 'location_id', 'page', 'row', 'col', 'position'))
+    if not slots:
         return
-    slots.exclude(location_id=item.location_id).delete()
-    extra = slots.count() - item.quantity
-    if extra > 0:
-        ids = list(slots.order_by('-page', '-row', '-col', '-position').values_list('id', flat=True)[:extra])
-        BinderSlot.objects.filter(id__in=ids).delete()
+    keep = [] if item.in_cart or item.location_id is None else [s for s in slots if s[1] == item.location_id]
+    keep.sort(key=lambda s: s[2:], reverse=True)
+    drop = {s[0] for s in slots} - {s[0] for s in keep[max(0, len(keep) - item.quantity):]}
+    if drop:
+        BinderSlot.objects.filter(id__in=drop).delete()
 
 
 def move_slots(source: CollectionItem, target: CollectionItem):

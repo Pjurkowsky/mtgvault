@@ -35,4 +35,4 @@ scan order along rows and down columns, binder full.
 ## Phase 5: Tests and wrap up
 
 - [x] **T12 e2e: binder, binder-settings, binder-placing, scanner-binder**
-- [ ] **T13 Full suite, Docker build, READMEs, spec status**
+- [x] **T13 Full suite, Docker build, READMEs, spec status**
