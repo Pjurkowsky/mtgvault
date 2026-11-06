@@ -13,7 +13,7 @@ Spec: [spec.md](spec.md)
 | Settings | `config/settings.py`: when `MTGVAULT_URL` is set, it derives:<br>• `ALLOWED_HOSTS` from the host, plus `localhost` for the health check<br>• `CSRF_TRUSTED_ORIGINS` from the origin<br>• `AUTH_COOKIE_SECURE` from the scheme<br>• `SECURE_PROXY_SSL_HEADER`<br>`USE_X_FORWARDED_HOST` stays off; nginx keeps `Host`. The dev env vars still work when `MTGVAULT_URL` is unset. `SECRET_KEY` falls back to the secret file. |
 | nginx | `docker/nginx.conf`: the current `frontend/nginx.conf`, proxying to `127.0.0.1:8000`. A `map` sets `X-Forwarded-Proto` to `$http_x_forwarded_proto`, or `$scheme` when the header is absent. |
 | First run | Management command `first_run`: when `Card` is empty, it queues `sync_cards` and `sync_scanner_bundle`. It runs in `migrate`. |
-| Paths | `SCANNER_DIR=/data/scanner`. Beat uses `--schedule /data/celerybeat-schedule`. `BACKUP_DIR=/data/backups`. |
+| Paths | `SCANNER_DIR=/data/scanner`. Beat uses `--schedule /data/beat/schedule`. `BACKUP_DIR=/data/backups`. |
 | First admin | `RegisterView` creates the user inside `transaction.atomic()` and takes `pg_advisory_xact_lock` first. If no other user exists, the new one gets `is_staff` and `is_superuser`. |
 | Admin item | `MeSerializer` adds `is_staff` (read-only). `AppLayout` shows Admin, with an icon, in the account menu for staff. It is a plain link to `/admin/`. |
 | Backups | `core/backup.py`: `run_backup()` runs `pg_dump -Fc` with the connection from `DATABASES` into `BACKUP_DIR/mtgvault-YYYY-MM-DD-HHMM.dump`, then deletes all but the newest `BACKUP_KEEP`. It is used by the `core.tasks.backup_database` beat task (03:00 UTC) and the `backup` management command. `docker/bin/backup` wraps the command. |

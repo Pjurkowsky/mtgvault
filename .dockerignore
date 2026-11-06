@@ -1,0 +1,18 @@
+# Build context for the self-hosted image (root Dockerfile, spec 008)
+.git
+.github
+.claude
+specs
+data
+**/node_modules
+**/__pycache__
+**/*.pyc
+backend/.venv
+backend/.env
+backend/var
+backend/staticfiles
+frontend/dist
+frontend/test-results
+frontend/playwright-report
+frontend/.agents
+frontend/.vscode

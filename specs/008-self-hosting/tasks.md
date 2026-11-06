@@ -14,15 +14,15 @@ after API changes.
 
 ## Phase 2: The image
 
-- [ ] **T5 Root `Dockerfile`: frontend build, Python, nginx, Postgres 18, Redis, s6-overlay** (AC-1, AC-3, AC-4)
-- [ ] **T6 s6 services and `mtgvault-init`: URL check, secrets, bundled DB setup, turning bundled off, migrations before web, logs to stdout** (AC-2, AC-5, AC-11, AC-13, AC-16, AC-17, AC-24)
-- [ ] **T7 `docker/nginx.conf`, `HEALTHCHECK`, `manage` and `backup` wrappers** (AC-14, AC-21, AC-23)
-- [ ] **T8 `scripts/selfhost-check.sh aio` passes** (all-in-one rows of the plan's Tests)
+- [x] **T5 Root `Dockerfile`: frontend build, Python, nginx, Postgres 18, Redis, s6-overlay** (AC-1, AC-3, AC-4)
+- [x] **T6 s6 services and `mtgvault-init`: URL check, secrets, bundled DB setup, turning bundled off, migrations before web, logs to stdout** (AC-2, AC-5, AC-11, AC-13, AC-16, AC-17, AC-24)
+- [x] **T7 `docker/nginx.conf`, `HEALTHCHECK`, `manage` and `backup` wrappers** (AC-14, AC-21, AC-23)
+- [x] **T8 `scripts/selfhost-check.sh aio` passes** (all-in-one rows of the plan's Tests)
 
 ## Phase 3: Compose
 
-- [ ] **T9 `compose.yml`, `.env.selfhost.example`; remove `docker-compose.prod.yml`** (AC-6 to AC-10)
-- [ ] **T10 `scripts/selfhost-check.sh compose` passes** (compose rows of the plan's Tests)
+- [x] **T9 `compose.yml`, `.env.selfhost.example`; remove `docker-compose.prod.yml`** (AC-6 to AC-10)
+- [x] **T10 `scripts/selfhost-check.sh compose` passes** (compose rows of the plan's Tests)
 
 ## Phase 4: Publishing and wrap up
 

@@ -1,0 +1,8 @@
+#!/command/with-contenv bash
+# Before the web server starts: wait for the database and Redis, migrate,
+# and start the first sync on an empty catalog (spec 008, AC-17, AC-18).
+set -euo pipefail
+cd /app
+s6-setuidgid mtgvault python manage.py wait_for_services
+s6-setuidgid mtgvault python manage.py migrate --noinput
+s6-setuidgid mtgvault python manage.py first_run

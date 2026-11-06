@@ -1,0 +1,5 @@
+#!/command/with-contenv bash
+# Bundled Postgres; stays idle when DATABASE_URL points elsewhere (spec 008, AC-2).
+if [ "$MTGVAULT_BUNDLED_DB" != 1 ]; then exec sleep infinity; fi
+exec s6-setuidgid postgres /usr/lib/postgresql/18/bin/postgres -D /data/postgres \
+  -c listen_addresses=127.0.0.1 -c unix_socket_directories=/run/postgresql

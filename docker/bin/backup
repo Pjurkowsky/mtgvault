@@ -1,0 +1,3 @@
+#!/command/with-contenv bash
+# docker exec mtgvault backup: write a database dump to /data/backups now (spec 008, AC-23).
+exec /usr/local/mtgvault/bin/manage backup

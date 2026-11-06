@@ -1,0 +1,4 @@
+#!/command/with-contenv bash
+# docker exec -it mtgvault manage createsuperuser
+cd /app
+exec s6-setuidgid mtgvault python manage.py "$@"

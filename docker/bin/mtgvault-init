@@ -1,0 +1,55 @@
+#!/command/with-contenv bash
+# First step of every start (spec 008): check the site URL, make the secrets,
+# set up the bundled database, and hand the connection settings to the other
+# services through the s6 container environment.
+set -euo pipefail
+ENVDIR=/run/s6/container_environment
+log() { echo "[mtgvault] $*"; }
+setenv() { printf '%s' "$2" > "$ENVDIR/$1"; }
+
+case "${MTGVAULT_URL:-}" in
+  https://?*) ;;
+  http://?*) log "WARNING: MTGVAULT_URL is http. Phones can scan cards only over https." ;;
+  "") log "ERROR: set MTGVAULT_URL to the site's address, e.g. https://cards.example.com"; exit 1 ;;
+  *) log "ERROR: MTGVAULT_URL must start with https:// or http:// (got: $MTGVAULT_URL)"; exit 1 ;;
+esac
+
+mkdir -p /data/secrets /data/scanner /data/backups
+chmod 700 /data/secrets
+if [ -z "${SECRET_KEY:-}" ] && [ ! -s /data/secrets/secret_key ]; then
+  python -c 'import secrets; print(secrets.token_urlsafe(50))' > /data/secrets/secret_key
+  log "Generated a secret key in /data/secrets/secret_key"
+fi
+chown -R mtgvault:mtgvault /data/secrets /data/scanner /data/backups
+install -d -o mtgvault -g mtgvault /data/beat
+
+if [ -z "${DATABASE_URL:-}" ]; then
+  setenv MTGVAULT_BUNDLED_DB 1
+  install -d -o postgres -g postgres -m 700 /data/postgres
+  install -d -o postgres -g postgres /run/postgresql
+  if [ ! -s /data/postgres/PG_VERSION ]; then
+    log "Creating the bundled database"
+    python -c 'import secrets; print(secrets.token_hex(24))' > /data/secrets/postgres_password
+    chmod 600 /data/secrets/postgres_password
+    bin=/usr/lib/postgresql/18/bin
+    s6-setuidgid postgres $bin/initdb -D /data/postgres -U postgres --auth-local=peer --auth-host=scram-sha-256 >/dev/null
+    s6-setuidgid postgres $bin/pg_ctl -D /data/postgres -w -o "-c listen_addresses='' -c unix_socket_directories=/run/postgresql" start >/dev/null
+    s6-setuidgid postgres psql -q -h /run/postgresql -U postgres -v ON_ERROR_STOP=1 \
+      -v pw="$(cat /data/secrets/postgres_password)" <<'SQL'
+CREATE ROLE mtgvault LOGIN PASSWORD :'pw';
+CREATE DATABASE mtgvault OWNER mtgvault;
+SQL
+    s6-setuidgid postgres $bin/pg_ctl -D /data/postgres -w stop >/dev/null
+  fi
+  setenv DATABASE_URL "postgres://mtgvault:$(cat /data/secrets/postgres_password)@127.0.0.1:5432/mtgvault"
+else
+  setenv MTGVAULT_BUNDLED_DB 0
+fi
+
+if [ -z "${REDIS_URL:-}" ]; then
+  setenv MTGVAULT_BUNDLED_REDIS 1
+  install -d -o redis -g redis /data/redis
+  setenv REDIS_URL redis://127.0.0.1:6379/0
+else
+  setenv MTGVAULT_BUNDLED_REDIS 0
+fi

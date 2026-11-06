@@ -1,0 +1,51 @@
+# MTG Vault, self-hosted (spec 008). Copy .env.selfhost.example to .env,
+# set MTGVAULT_URL and DB_PASSWORD, then: docker compose up -d
+name: mtgvault
+
+services:
+  mtgvault:
+    image: ghcr.io/pjurkowsky/mtgvault:${MTGVAULT_VERSION:-release}
+    restart: unless-stopped
+    ports:
+      - "${MTGVAULT_PORT:-8080}:80"
+    environment:
+      MTGVAULT_URL: ${MTGVAULT_URL:?Set MTGVAULT_URL in .env}
+      DATABASE_URL: postgres://mtgvault:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/mtgvault
+      REDIS_URL: redis://valkey:6379/0
+      TZ: ${TZ:-UTC}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+    volumes:
+      - ${DATA_LOCATION:-./data}/app:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mtgvault
+      POSTGRES_DB: mtgvault
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - ${DATA_LOCATION:-./data}/postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mtgvault -d mtgvault"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  valkey:
+    image: valkey/valkey:9
+    restart: unless-stopped
+    command: valkey-server --save 60 1
+    volumes:
+      - ${DATA_LOCATION:-./data}/valkey:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
