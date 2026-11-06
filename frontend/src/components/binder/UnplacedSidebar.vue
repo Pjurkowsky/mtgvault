@@ -30,7 +30,6 @@ const wideScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-wi
 const pref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open', 'closed'] as const)
 const shown = computed(() => pref.value === 'open' || !!props.forceOpen)
 const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
-const total = computed(() => props.unplaced.reduce((n, u) => n + u.count, 0))
 
 const PANEL = 288 // w-72
 const { width } = useWindowSize()
@@ -41,11 +40,11 @@ onBeforeUnmount(() => (document.documentElement.style.paddingRight = ''))
 
 <template>
   <aside
-    v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-background shadow-xl"
+    v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-card shadow-xl"
     data-testid="unplaced-sidebar" data-state="open"
   >
     <UnplacedTray
-      id="unplaced-tray" class="h-full overflow-y-auto rounded-none border-0"
+      id="unplaced-tray" class="h-full overflow-y-auto"
       :unplaced="unplaced" :editable="!!draggable" :over="over" :q="q"
       @open="emit('open', $event)" @drag="(s, e) => emit('drag', s, e)"
     />
@@ -55,14 +54,13 @@ onBeforeUnmount(() => (document.documentElement.style.paddingRight = ''))
     <TooltipTrigger as-child>
       <button
         type="button"
-        class="fixed top-1/2 z-30 flex -translate-y-1/2 flex-col items-center gap-1 rounded-l-md border border-r-0 bg-background px-1 py-3 text-xs font-medium shadow-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        class="fixed top-1/2 z-30 flex -translate-y-1/2 items-center rounded-l-xl border border-r-0 bg-background px-1.5 py-6 text-muted-foreground shadow-lg transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         :class="shown ? 'right-72' : 'right-0'"
         :aria-label="shown ? 'Hide Unplaced' : 'Show Unplaced'" :aria-expanded="shown" aria-controls="unplaced-tray"
         data-testid="unplaced-tab" @click="toggle"
       >
-        <ChevronRightIcon v-if="shown" class="size-4" />
-        <ChevronLeftIcon v-else class="size-4" />
-        <span class="tabular-nums" data-testid="unplaced-tab-count">{{ total }}</span>
+        <ChevronRightIcon v-if="shown" class="size-6" />
+        <ChevronLeftIcon v-else class="size-6" />
       </button>
     </TooltipTrigger>
     <TooltipContent side="left">{{ shown ? 'Hide Unplaced' : 'Show Unplaced' }}</TooltipContent>

@@ -57,7 +57,7 @@ opening the sidebar never moves the controls you are about to click.
 ### Unplaced sidebar
 
 - **AC-7** The Unplaced tray is a sidebar on the window's right edge, with an
-  arrow tab (‹ or ›) and the count in the middle of its edge. The tab shows and
+  arrow tab (‹ or ›) in the middle of its edge; the count is in its header. The tab shows and
   hides it; the choice is remembered. On wide screens the page makes room for
   it; on phones it slides over the page. A binder location shows it in every
   view, so switching views moves nothing.

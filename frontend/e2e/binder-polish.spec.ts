@@ -158,7 +158,7 @@ test.describe('Binder polish', () => {
     await page.goto(`/locations/${binder}`)
     await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
     await expect(page.getByTestId('unplaced-tab')).toHaveAccessibleName('Hide Unplaced')
-    await expect(page.getByTestId('unplaced-tab-count')).toHaveText('2')
+    await expect(page.getByTestId('unplaced-count')).toHaveText('2')
 
     await page.getByTestId('unplaced-tab').click()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'closed')
