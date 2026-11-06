@@ -2,6 +2,7 @@
 
 Status: Done
 Depends on: 001-collection, 002-collection-polish, 003-scanner, 005-deck-improvements, 006-deck-views
+Followed by: 009-binder-polish
 
 ## Goal
 
