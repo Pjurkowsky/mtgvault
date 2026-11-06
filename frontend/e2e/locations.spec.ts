@@ -10,6 +10,8 @@ test.describe('Locations', () => {
     await expect(dialog.getByRole('radio', { name: 'Binder' })).toBeChecked()
     await expect(dialog.getByRole('switch', { name: 'Public' })).not.toBeChecked()
     await dialog.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByTestId('location-name')).toHaveText('Blue Binder') // it opens (spec 009, AC-10)
+    await page.goto('/')
     await expect(locationTile(page, 'Blue Binder')).toBeVisible()
     await expect(locationTile(page, 'Blue Binder').getByLabel('Public')).toHaveCount(0)
 

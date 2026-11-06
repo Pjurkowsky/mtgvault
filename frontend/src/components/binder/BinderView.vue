@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMediaQuery } from '@vueuse/core'
-import { ChevronLeftIcon, ChevronRightIcon, InboxIcon, SettingsIcon } from '@lucide/vue'
+import { useElementSize } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import type { BrowserRow, BrowserSource } from '@/components/browser/types'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
-import IconButton from '@/components/IconButton.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBinderDrag, type DragSource, type DropKey } from '@/composables/useBinderDrag'
+import { usePreference } from '@/composables/usePreference'
 import {
-  placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
+  pageWidth, placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
   type Binder, type BinderSlot, type Place,
 } from '@/lib/binder'
+import type { CardSize } from '@/lib/cards'
 import BinderPage from './BinderPage.vue'
+import BinderPagination from './BinderPagination.vue'
 import BinderSettingsDialog from './BinderSettingsDialog.vue'
 import FromUnplacedDialog from './FromUnplacedDialog.vue'
 import MoveToSlotDialog from './MoveToSlotDialog.vue'
@@ -29,8 +29,20 @@ import UnplacedTray from './UnplacedTray.vue'
  * the Unplaced tray, drag and drop and the binder settings. Opening, editing and
  * deleting a card use the card browser's dialogs (emitted).
  */
-const props = defineProps<{ source: BrowserSource; locationId: number; editable: boolean; version: number }>()
+const props = defineProps<{
+  source: BrowserSource
+  locationId: number
+  editable: boolean
+  version: number
+  /** Pocket size (spec 009, AC-4). */
+  size: CardSize
+  /** The browser's search text (AC-5). */
+  q: string
+  /** Binder settings asked for from the ⋯ menu (AC-1). */
+  settingsWanted: boolean
+}>()
 const emit = defineEmits<{
+  'settings-opened': []
   open: [row: BrowserRow]
   edit: [row: BrowserRow]
   delete: [row: BrowserRow]
@@ -65,8 +77,12 @@ const unplaced = computed(() =>
 const unplacedTotal = computed(() => unplaced.value.reduce((n, u) => n + u.count, 0))
 
 // ----- pages (AC-3, AC-4) -----
-const wide = useMediaQuery('(min-width: 768px)')
-const spread = computed(() => !!binder.value?.spread && wide.value)
+// Facing pages only when two pages of this size fit side by side (AC-4).
+const pagesEl = ref<HTMLElement | null>(null)
+const { width: pagesWidth } = useElementSize(pagesEl)
+const onePage = computed(() => (binder.value ? pageWidth(binder.value.cols, props.size) : 0))
+const PAGE_GAP = 12
+const spread = computed(() => !!binder.value?.spread && pagesWidth.value >= 2 * onePage.value + PAGE_GAP)
 const allViews = computed(() => views(binder.value?.page_count ?? 1, spread.value))
 const page = computed(() => Math.max(1, Number(route.query.page) || 1))
 const viewIndex = computed(() => Math.min(viewIndexOf(page.value, spread.value), allViews.value.length - 1))
@@ -82,6 +98,35 @@ function goTo(index: number) {
   if (first !== page.value) router.replace({ query: { ...route.query, page: first > 1 ? String(first) : undefined } })
 }
 const turn = (by: -1 | 1) => goTo(viewIndex.value + by)
+const showPage = (p: number) => goTo(viewIndexOf(p, spread.value))
+
+// ----- search (AC-5): matching pockets ring, the rest fade; Enter and the arrows step through -----
+const needle = computed(() => props.q.trim().toLowerCase())
+const nameOf = (s: BinderSlot) => items.value.get(s.item)?.printing.name.toLowerCase() ?? ''
+const matches = computed<Place[]>(() => {
+  if (!needle.value || !binder.value) return []
+  const seen = new Set<string>()
+  return binder.value.slots
+    .filter((s) => nameOf(s).includes(needle.value))
+    .sort((a, b) => a.page - b.page || a.row - b.row || a.col - b.col)
+    .filter((s) => !seen.has(placeKey(s)) && seen.add(placeKey(s)))
+    .map(({ page, row, col }) => ({ page, row, col }))
+})
+const matchKeys = computed(() => (needle.value ? new Set(matches.value.map(placeKey)) : null))
+const matchIndex = ref(0)
+const current = computed(() => matches.value[matchIndex.value] ?? null)
+watch(needle, () => {
+  matchIndex.value = 0
+  if (current.value) showPage(current.value.page)
+})
+// The binder loads after a search in the URL: jump once it is there.
+watch(binder, (b, before) => !before && b && current.value && showPage(current.value.page))
+function nextMatch(by: -1 | 1) {
+  const n = matches.value.length
+  if (!n) return
+  matchIndex.value = (matchIndex.value + by + n) % n
+  showPage(current.value!.page)
+}
 
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
@@ -129,8 +174,14 @@ async function put(from: { slot?: BinderSlot; item?: number }, to: Place | null)
 }
 
 // ----- drag and drop (AC-15, AC-16) -----
-const pagesEl = ref<HTMLElement | null>(null)
-const trayOpen = ref(false)
+// The Unplaced sidebar (AC-7, AC-8): shown or hidden with its edge tab, remembered;
+// a drag from a pocket opens it as a drop target until the drop.
+// Phones start with it closed: open, it covers the pages.
+const wideScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches
+const trayPref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open', 'closed'] as const)
+const dragOpened = ref(false)
+const trayShown = computed(() => trayPref.value === 'open' || dragOpened.value)
+const toggleTray = () => (trayPref.value = trayShown.value ? 'closed' : 'open')
 const slotsById = computed(() => new Map((binder.value?.slots ?? []).map((s) => [s.id, s])))
 const drag = useBinderDrag({
   edgeEl: () => pagesEl.value,
@@ -145,13 +196,20 @@ const drag = useBinderDrag({
 function startDrag(source: DragSource, event: PointerEvent) {
   drag.start(source, event)
 }
-// On phones the tray is a sheet over the pages: close it once a drag starts.
-watch(drag.source, (s) => s && !wide.value && (trayOpen.value = false))
+watch(drag.source, (s) => {
+  if (s?.slot && trayPref.value === 'closed') dragOpened.value = true
+  if (!s) dragOpened.value = false
+})
 
 // ----- dialogs -----
 /** Dialogs opened from a menu wait a tick, so the menu's focus return doesn't land under them. */
 const later = (fn: () => void) => setTimeout(fn, 0)
 const settingsOpen = ref(false)
+watch([() => props.settingsWanted, binder], ([wanted, b]) => {
+  if (!wanted || !b) return
+  emit('settings-opened')
+  later(() => (settingsOpen.value = true))
+}, { immediate: true })
 const moveOpen = ref(false)
 const moveSlot = ref<BinderSlot | null>(null)
 const stackOpen = ref(false)
@@ -195,49 +253,59 @@ function added() {
   void load()
   emit('changed')
 }
-defineExpose({ reload: load })
+defineExpose({
+  reload: load,
+  nextMatch,
+  matchCount: computed(() => (needle.value ? matches.value.length : null)),
+  matchIndex,
+})
 </script>
 
 <template>
   <div v-if="binder" class="grid gap-4" data-testid="binder">
-    <div class="flex flex-wrap items-center gap-2">
-      <IconButton label="Previous page" variant="outline" :disabled="viewIndex === 0" @click="turn(-1)"><ChevronLeftIcon /></IconButton>
-      <span class="min-w-32 text-center text-sm tabular-nums" data-testid="binder-pages">{{ pageLabel }}</span>
-      <IconButton label="Next page" variant="outline" :disabled="viewIndex >= allViews.length - 1" @click="turn(1)"><ChevronRightIcon /></IconButton>
-      <span v-if="binder.total" class="text-sm text-muted-foreground" data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</span>
-      <div class="ml-auto flex items-center gap-2">
-        <Button v-if="editable && !wide" variant="outline" size="sm" @click="trayOpen = true"><InboxIcon /> Unplaced {{ unplacedTotal }}</Button>
-        <IconButton v-if="editable" label="Binder settings" variant="outline" @click="settingsOpen = true"><SettingsIcon /></IconButton>
+    <div class="flex items-start" :class="editable && 'gap-10'">
+      <div class="grid min-w-0 flex-1 gap-4">
+        <div ref="pagesEl" class="flex justify-center-safe gap-3 overflow-x-auto pb-1" data-testid="binder-spread">
+          <template v-for="(p, i) in shown" :key="p ?? `blank-${i}`">
+            <BinderPage
+              v-if="p !== null"
+              :page="p" :binder="binder" :pockets="pockets" :items="items" :section="sectionOf(p, binder.sections)"
+              :size="size" :matches="matchKeys" :current="current ? placeKey(current) : null"
+              :editable="editable" :has-unplaced="unplaced.length > 0" :over="drag.over.value" :dragging="!!drag.source.value"
+              @open="emit('open', $event)" @stack="openStack" @edit="(r) => later(() => emit('edit', r))" @delete="(r) => later(() => emit('delete', r))"
+              @deck="(r) => later(() => emit('deck', r))" @move="openMove" @unplace="(s) => put({ slot: s }, null)"
+              @add="openAdd" @from-unplaced="openFromUnplaced" @scan="(pl) => emit('scan', pl)" @drag="startDrag"
+            />
+            <div v-else class="flex-none" :style="{ width: `${onePage}px` }" aria-hidden="true" />
+          </template>
+        </div>
+        <BinderPagination :views="allViews" :current="viewIndex" @go="goTo" />
+        <span class="sr-only" aria-live="polite" data-testid="binder-pages">{{ pageLabel }}</span>
+        <p v-if="binder.total" class="text-center text-sm text-muted-foreground" data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</p>
       </div>
+
+      <aside
+        v-if="editable"
+        class="relative shrink-0 self-stretch transition-[width] max-md:fixed max-md:inset-y-0 max-md:right-0 max-md:z-40"
+        :class="trayShown ? 'w-64 max-md:bg-background max-md:shadow-xl xl:w-72' : 'w-0'"
+        data-testid="unplaced-sidebar" :data-state="trayShown ? 'open' : 'closed'"
+      >
+        <div class="sticky top-1/2 z-10 h-0">
+          <button
+            type="button"
+            class="absolute right-full flex -translate-y-1/2 items-center gap-1 rounded-l-md border border-r-0 bg-card px-1.5 py-3 text-xs font-medium shadow-sm [writing-mode:vertical-rl] hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            :aria-expanded="trayShown" aria-controls="unplaced-tray" data-testid="unplaced-tab" @click="toggleTray"
+          >Unplaced {{ unplacedTotal }}</button>
+        </div>
+        <UnplacedTray
+          v-if="trayShown" id="unplaced-tray"
+          class="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto max-md:top-0 max-md:h-full max-md:max-h-none max-md:rounded-none max-md:border-0"
+
+          :unplaced="unplaced" :editable="editable" :over="drag.over.value === 'tray'" :q="q"
+          @open="emit('open', $event)" @drag="startDrag"
+        />
+      </aside>
     </div>
-
-    <div class="grid items-start gap-4" :class="editable && wide && 'grid-cols-[minmax(0,1fr)_14rem] xl:grid-cols-[minmax(0,1fr)_18rem]'">
-      <div ref="pagesEl" class="flex gap-3" data-testid="binder-spread">
-        <template v-for="(p, i) in shown" :key="p ?? `blank-${i}`">
-          <BinderPage
-            v-if="p !== null"
-            :page="p" :binder="binder" :pockets="pockets" :items="items" :section="sectionOf(p, binder.sections)"
-            :editable="editable" :has-unplaced="unplaced.length > 0" :over="drag.over.value" :dragging="!!drag.source.value"
-            @open="emit('open', $event)" @stack="openStack" @edit="(r) => later(() => emit('edit', r))" @delete="(r) => later(() => emit('delete', r))"
-            @deck="(r) => later(() => emit('deck', r))" @move="openMove" @unplace="(s) => put({ slot: s }, null)"
-            @add="openAdd" @from-unplaced="openFromUnplaced" @scan="(pl) => emit('scan', pl)" @drag="startDrag"
-          />
-          <div v-else class="min-w-0 flex-1" aria-hidden="true" />
-        </template>
-      </div>
-      <UnplacedTray
-        v-if="editable && wide" class="sticky top-4" :unplaced="unplaced" :editable="editable" :over="drag.over.value === 'tray'"
-        @open="emit('open', $event)" @drag="startDrag"
-      />
-    </div>
-
-    <Sheet v-if="editable && !wide" v-model:open="trayOpen">
-      <SheetContent side="bottom" class="max-h-[70vh] overflow-y-auto">
-        <SheetHeader><SheetTitle>Unplaced</SheetTitle></SheetHeader>
-        <UnplacedTray class="border-0 p-0" :unplaced="unplaced" :editable="editable" :over="false" @open="emit('open', $event)" @drag="startDrag" />
-      </SheetContent>
-    </Sheet>
-
     <!-- Drag ghost -->
     <img
       v-if="drag.source.value" :src="drag.source.value.image" :alt="drag.source.value.name" aria-hidden="true"

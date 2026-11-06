@@ -125,7 +125,7 @@ export async function choose(page: Page, select: string, option: string) {
 }
 
 /** Open the browser's More (⋯) menu and pick an item (spec 002, AC-19). */
-export async function more(page: Page, item: 'Import' | 'Export') {
+export async function more(page: Page, item: 'Import' | 'Export' | 'Binder settings' | 'Edit location' | 'Delete') {
   await page.getByRole('button', { name: 'More' }).click()
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }

@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input'
 import type { DragSource } from '@/composables/useBinderDrag'
 
 /** The binder's copies without a slot (spec 007, AC-12): small tiles, its own search, a drop target. */
-const props = defineProps<{ unplaced: { row: BrowserRow; count: number }[]; editable: boolean; over: boolean }>()
+/** `q`: the browser's search; while set, only matching cards show (spec 009, AC-5). */
+const props = defineProps<{ unplaced: { row: BrowserRow; count: number }[]; editable: boolean; over: boolean; q?: string }>()
 const emit = defineEmits<{ open: [row: BrowserRow]; drag: [source: DragSource, event: PointerEvent] }>()
 
 const q = ref('')
 const shown = computed(() => {
-  const needle = q.value.trim().toLowerCase()
+  const needle = (props.q?.trim() || q.value.trim()).toLowerCase()
   return needle ? props.unplaced.filter((u) => u.row.printing.name.toLowerCase().includes(needle)) : props.unplaced
 })
 const total = computed(() => props.unplaced.reduce((n, u) => n + u.count, 0))
@@ -30,7 +31,7 @@ function press(row: BrowserRow, event: PointerEvent) {
     <h3 class="flex items-baseline justify-between text-sm font-semibold">
       Unplaced <span class="font-normal text-muted-foreground" data-testid="unplaced-count">{{ total }}</span>
     </h3>
-    <div v-if="unplaced.length > 6" class="relative">
+    <div v-if="unplaced.length > 6 && !props.q?.trim()" class="relative">
       <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
       <Input v-model="q" type="search" aria-label="Search unplaced" placeholder="Search" class="h-8 pl-8" />
     </div>

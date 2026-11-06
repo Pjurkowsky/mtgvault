@@ -19,6 +19,9 @@ const props = defineProps<{
   hasUnplaced: boolean
   over: boolean
   dragging: boolean
+  /** Search (spec 009, AC-5): true rings it, false fades it, null without a search. */
+  match: boolean | null
+  current: boolean
 }>()
 const emit = defineEmits<{
   open: [row: BrowserRow]
@@ -59,7 +62,13 @@ function press(event: PointerEvent) {
 <template>
   <div
     class="relative aspect-[488/680] rounded-[4.75%/3.5%] transition-shadow"
-    :class="[over && 'ring-2 ring-primary ring-offset-2 ring-offset-background', !top && 'border border-dashed border-muted-foreground/30 bg-muted/40']"
+    :class="[
+      (over || match) && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
+      current && 'ring-4',
+      match === false && 'opacity-25',
+      !top && 'border border-dashed border-muted-foreground/30 bg-muted/40',
+    ]"
+    :data-match="match === null ? undefined : match ? (current ? 'current' : 'hit') : 'miss'"
     :data-drop="editable ? placeKey(place) : undefined" :data-place="placeKey(place)" :data-state="top ? 'filled' : 'empty'"
     data-testid="binder-slot"
   >

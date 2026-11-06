@@ -5,7 +5,6 @@ import { ArrowLeftIcon, GlobeIcon } from '@lucide/vue'
 import CardBrowser from '@/components/browser/CardBrowser.vue'
 import DeleteLocationDialog from '@/components/collection/DeleteLocationDialog.vue'
 import LocationDialog from '@/components/collection/LocationDialog.vue'
-import { Button } from '@/components/ui/button'
 import { kindOf } from '@/lib/cards'
 import Price from '@/components/Price.vue'
 import { useLocationsStore } from '@/stores/locations'
@@ -25,6 +24,8 @@ const editOpen = ref(false)
 const deleteOpen = ref(false)
 
 onMounted(store.load)
+// Dialogs opened from a menu wait a tick, so the menu's focus return doesn't land under them.
+const later = (fn: () => void) => setTimeout(fn, 0)
 const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
 </script>
 
@@ -42,17 +43,16 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         <h1 class="text-2xl font-semibold" data-testid="location-name">{{ location?.name ?? (isCart ? 'Cart' : 'Unfiled') }}</h1>
         <span v-if="location" class="text-sm text-muted-foreground" data-testid="location-kind">{{ kindOf(location.kind)?.label }}</span>
         <GlobeIcon v-if="location?.is_public" class="size-4 text-muted-foreground" aria-label="Public" />
-        <div v-if="location" class="ml-auto flex gap-2">
-          <Button variant="outline" size="sm" @click="editOpen = true">Edit</Button>
-          <Button variant="outline" size="sm" class="text-destructive" @click="deleteOpen = true">Delete</Button>
-        </div>
       </div>
       <p v-if="totals" class="text-muted-foreground" data-testid="location-totals">
         {{ cards(totals.card_count) }} · <Price :value="totals.value" :values="totals.values" :currency="store.currency" />
       </p>
     </div>
 
-    <CardBrowser :key="id" :source="{ kind: 'own' }" :location="id" :binder="location?.kind === 'binder'" @changed="store.load" />
+    <CardBrowser
+      :key="id" :source="{ kind: 'own' }" :location="id" :binder="location?.kind === 'binder'" :location-menu="!!location"
+      @changed="store.load" @edit-location="later(() => (editOpen = true))" @delete-location="later(() => (deleteOpen = true))"
+    />
 
     <template v-if="location">
       <LocationDialog v-model:open="editOpen" :location="location" />

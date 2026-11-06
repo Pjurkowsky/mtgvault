@@ -7,6 +7,9 @@ import {
   ArrowUpNarrowWideIcon,
   DownloadIcon,
   EllipsisIcon,
+  PencilIcon,
+  SettingsIcon,
+  Trash2Icon,
   LayoutGridIcon,
   ListIcon,
   PlusIcon,
@@ -16,8 +19,10 @@ import {
 import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/api/client'
+import BinderSearchNav from '@/components/binder/BinderSearchNav.vue'
 import BinderView from '@/components/binder/BinderView.vue'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
+import CardSizeToggle from '@/components/CardSizeToggle.vue'
 import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
 import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
@@ -26,7 +31,9 @@ import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -35,8 +42,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useBrowserQuery, type View } from '@/composables/useBrowserQuery'
 import { useConfirm } from '@/composables/useConfirm'
 import { useInfiniteItems, type Page } from '@/composables/useInfiniteItems'
+import { usePreference } from '@/composables/usePreference'
 import { useSelection, type Selection } from '@/composables/useSelection'
-import { SORTS } from '@/lib/cards'
+import { CARD_SIZES, SORTS, type CardSize } from '@/lib/cards'
 import type { Money } from '@/lib/money'
 import BulkDialog, { type BulkAction } from './BulkDialog.vue'
 import CardGrid from './CardGrid.vue'
@@ -57,8 +65,10 @@ const props = defineProps<{
   readonly?: boolean
   /** The location is a Binder: offer the binder view (spec 007, AC-1). */
   binder?: boolean
+  /** Edit location and Delete in the ⋯ menu (spec 009, AC-1). */
+  locationMenu?: boolean
 }>()
-const emit = defineEmits<{ changed: [] }>()
+const emit = defineEmits<{ changed: []; 'edit-location': []; 'delete-location': [] }>()
 
 const { filter, view, update, setView, clearFilters, activeFilterCount } = useBrowserQuery()
 const selection = useSelection()
@@ -103,7 +113,16 @@ function pickView(next: View) {
   else setView(next)
 }
 const binderVersion = ref(0)
+const binderRef = ref<InstanceType<typeof BinderView> | null>(null)
 const inBinder = computed(() => shownView.value === 'binder' && !!binderId.value)
+// Pocket size, remembered in this browser (spec 009, AC-4).
+const binderSize = usePreference<CardSize>('binder.size', 'md', CARD_SIZES)
+// Binder settings from the ⋯ menu: opens the binder view first (AC-1).
+const settingsWanted = ref(false)
+function openBinderSettings() {
+  if (!inBinder.value) pickView('binder')
+  settingsWanted.value = true
+}
 
 // ----- data -----
 const query = computed(() => ({
@@ -286,27 +305,8 @@ const exportName = computed(() =>
 
 <template>
   <div class="grid gap-4 pb-20">
-    <!-- Toolbar -->
-    <div class="flex flex-wrap items-center gap-2">
-      <div v-if="!inBinder" class="relative min-w-48 flex-1">
-        <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input v-model="search" placeholder="Search" aria-label="Search cards" class="pl-8" type="search" />
-      </div>
-      <FilterPopover v-if="!inBinder" :filter="filter" :active-count="activeFilterCount" :currency="currency" @update="update" @clear="clearFilters" />
-      <Select v-if="!inBinder" :model-value="filter.sort" @update:model-value="(v) => update({ sort: String(v) })">
-        <SelectTrigger class="w-36" aria-label="Sort by"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem v-for="s in SORTS" :key="s.value" :value="s.value">{{ s.label }}</SelectItem>
-        </SelectContent>
-      </Select>
-      <IconButton
-        v-if="!inBinder"
-        :label="filter.dir === 'asc' ? 'Ascending' : 'Descending'"
-        @click="update({ dir: filter.dir === 'asc' ? 'desc' : 'asc' })"
-      >
-        <ArrowUpNarrowWideIcon v-if="filter.dir === 'asc'" />
-        <ArrowDownWideNarrowIcon v-else />
-      </IconButton>
+    <!-- Toolbar: the same in every view, so nothing moves when switching (spec 009, AC-1, AC-2) -->
+    <div class="flex flex-wrap items-center gap-2" data-testid="browser-toolbar">
       <ToggleGroup type="single" variant="outline" :model-value="shownView" @update:model-value="(v) => v && pickView(v as View)">
         <Tooltip v-if="binderId">
           <TooltipTrigger as-child><ToggleGroupItem value="binder" aria-label="Binder view"><BookOpenIcon /></ToggleGroupItem></TooltipTrigger>
@@ -321,23 +321,58 @@ const exportName = computed(() =>
           <TooltipContent>Table view</TooltipContent>
         </Tooltip>
       </ToggleGroup>
+      <!-- Fixed width, so nothing after it moves when the view changes (spec 009, AC-2) -->
+      <div class="relative w-full sm:w-60">
+        <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          v-model="search" placeholder="Search" aria-label="Search cards" type="search"
+          :class="inBinder && binderRef?.matchCount != null ? 'pr-36 pl-8' : 'pl-8'"
+          @keydown.enter="binderRef?.nextMatch($event.shiftKey ? -1 : 1)"
+        />
+        <BinderSearchNav
+          v-if="inBinder && binderRef" class="absolute inset-y-0 right-1"
+          :matches="binderRef.matchCount" :current="binderRef.matchIndex" @step="(by) => binderRef?.nextMatch(by)"
+        />
+      </div>
+      <FilterPopover :filter="filter" :active-count="activeFilterCount" :currency="currency" :disabled="inBinder" @update="update" @clear="clearFilters" />
+      <Select :model-value="filter.sort" :disabled="inBinder" @update:model-value="(v) => update({ sort: String(v) })">
+        <SelectTrigger class="w-32" aria-label="Sort by"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem v-for="s in SORTS" :key="s.value" :value="s.value">{{ s.label }}</SelectItem>
+        </SelectContent>
+      </Select>
+      <IconButton
+        :label="filter.dir === 'asc' ? 'Ascending' : 'Descending'" :disabled="inBinder"
+        @click="update({ dir: filter.dir === 'asc' ? 'desc' : 'asc' })"
+      >
+        <ArrowUpNarrowWideIcon v-if="filter.dir === 'asc'" />
+        <ArrowDownWideNarrowIcon v-else />
+      </IconButton>
+      <!-- Binder view only; elsewhere its space stays, so the buttons after it don't move (AC-2) -->
+      <CardSizeToggle v-if="binderId" v-model="binderSize" :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
 
       <div class="ml-auto flex items-center gap-2">
+        <IconButton v-if="editable" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
+        <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <IconButton label="More"><EllipsisIcon /></IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem v-if="binderId && editable" @select="openBinderSettings"><SettingsIcon /> Binder settings</DropdownMenuItem>
+            <DropdownMenuItem v-if="locationMenu" @select="emit('edit-location')"><PencilIcon /> Edit location</DropdownMenuItem>
             <DropdownMenuItem v-if="canAdd" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
             <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
+            <template v-if="locationMenu">
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="text-destructive" @select="emit('delete-location')"><Trash2Icon class="text-destructive" /> Delete</DropdownMenuItem>
+            </template>
           </DropdownMenuContent>
         </DropdownMenu>
-        <IconButton v-if="editable" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
-        <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
       </div>
     </div>
 
-    <div v-if="page" class="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
+    <div v-if="page && !location && source.kind === 'own'" class="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
       <p data-testid="browser-summary">
         {{ cards(page.total_quantity) }} · <Price :value="page.total_value" :values="totalValues" :currency="currency" />
       </p>
@@ -347,7 +382,9 @@ const exportName = computed(() =>
     <!-- Results -->
     <BinderView
       v-if="inBinder"
+      ref="binderRef"
       :source="source" :location-id="binderId!" :editable="editable" :version="binderVersion"
+      :size="binderSize" :q="filter.q ?? ''" :settings-wanted="settingsWanted" @settings-opened="settingsWanted = false"
       @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck" @scan="openScanner" @changed="refresh"
     />
     <CardGrid

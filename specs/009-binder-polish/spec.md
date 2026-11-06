@@ -34,7 +34,8 @@ opening the sidebar never moves the controls you are about to click.
   view, filters and sort stay in place but are disabled.
 - **AC-3** The card count and value show once, under the location name. The
   browser's own line ("3 cards · PLN 64.20" and "Prices updated …") is hidden
-  on location pages; All cards and the cart keep it.
+  on location pages, the cart and public locations included; All cards keeps
+  it.
 
 ### Binder view
 
@@ -100,3 +101,10 @@ opening the sidebar never moves the controls you are about to click.
 - Sets and price ranges stay out of the inline section filter; sections made
   with them keep working (AC-13).
 - The deck page keeps its own toolbar (spec 006); AC-1 is about location pages.
+- Pockets are 4, 5.5 or 7.5 rem wide, so medium pages still face each other
+  beside the open sidebar on a laptop (AC-4).
+- In Grid and Table view the size toggle keeps its place, invisible, so the
+  buttons after it don't move (AC-2).
+- The sidebar takes its own space; opened by a drag, the pages make room for
+  it once, at the start of the drag (AC-8).
+- Phones start with the sidebar closed (AC-7).

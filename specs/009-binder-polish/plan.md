@@ -10,7 +10,7 @@ Spec: [spec.md](spec.md)
 | One toolbar | `LocationPage` hands its Edit and Delete actions to `CardBrowser` (`menu` items); the browser's ⋯ menu gains them and Binder settings. `BinderView` exposes `openSettings()`. The browser summary line hides when a `location` is given. |
 | Fixed toolbar | Search, filters, sort and direction always render; in binder view filters and sort get `disabled`. The size toggle comes after them, so nothing before it moves. |
 | Search in the binder | The browser's search text (`q`) goes to `BinderView`. Matches are computed in the browser from the binder's rows; the view keeps a match index, jumps to the match's page, and rings or fades pockets. |
-| Card size | `CardSizeToggle` and `usePreference('binder.size')`. A pocket is 5, 7 or 9 rem wide; `BinderView` measures its width (`useElementSize`) and shows facing pages only when two pages fit. |
+| Card size | `CardSizeToggle` and `usePreference('binder.size')`. A pocket is 4, 5.5 or 7.5 rem wide; `BinderView` measures its width (`useElementSize`) and shows facing pages only when two pages fit. |
 | Sidebar | `UnplacedTray` sits in a right panel with an edge tab; open state in `usePreference('binder.tray')`. A drag from a pocket opens it and remembers to close it after. On phones the panel is fixed over the pages. |
 | Pagination | `BinderPagination.vue` under the pages: arrows, view labels (`1`, `2–3`), ellipses around the current view, used slots. |
 | Hover preview | `CardPreview` open delay 800 ms; it ignores opening while `pointerdown` is held or `document.body` has `data-dragging` (set by `useBinderDrag`). |

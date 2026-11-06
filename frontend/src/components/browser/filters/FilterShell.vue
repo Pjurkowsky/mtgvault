@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 /** The Filters button with its active count, and the panel with Clear (collection and decks). */
-defineProps<{ activeCount: number }>()
+defineProps<{ activeCount: number; disabled?: boolean }>()
 const emit = defineEmits<{ clear: [] }>()
 </script>
 
 <template>
   <Popover>
     <PopoverTrigger as-child>
-      <Button variant="outline">
+      <Button variant="outline" :disabled="disabled">
         <SlidersHorizontalIcon /> Filters
         <Badge v-if="activeCount" variant="secondary" class="ml-1 px-1.5">{{ activeCount }}</Badge>
       </Button>

@@ -15,7 +15,7 @@ test.describe('Binder view', () => {
 
     await page.goto(`/locations/${binder}`)
     await expect(page.getByTestId('binder')).toBeVisible()
-    await expect(page.getByLabel('Search cards')).toHaveCount(0) // sort and filters don't apply (AC-5)
+    await expect(page.getByRole('button', { name: 'Filters' })).toBeDisabled() // sort and filters don't apply (spec 009, AC-2)
     await page.getByLabel('Grid view').click()
     await page.goto(`/locations/${binder}`)
     await expect(page.getByTestId('binder')).toHaveCount(0)

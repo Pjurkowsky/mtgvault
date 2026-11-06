@@ -15,6 +15,17 @@ defineOptions({ inheritAttrs: false })
 const open = ref(false)
 const clicked = ref(false)
 const hovering = ref(false)
+// Never while a button is held or a card is dragged (spec 009, AC-9).
+const pressed = ref(false)
+function press() {
+  pressed.value = true
+  open.value = false
+  window.addEventListener('pointerup', () => (pressed.value = false), { once: true })
+}
+const dragging = () => document.body.dataset.dragging !== undefined
+function want(v: boolean) {
+  open.value = v && hovering.value && !pressed.value && !dragging()
+}
 function suppress() {
   clicked.value = true
   open.value = false
@@ -27,8 +38,8 @@ function release() {
 </script>
 
 <template>
-  <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="350" :close-delay="0" @update:open="(v) => (open = v && hovering)">
-    <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerenter="hovering = true" @pointerleave="release"><slot /></HoverCardTrigger>
+  <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="800" :close-delay="0" @update:open="want">
+    <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerdown="press" @pointerenter="hovering = true" @pointerleave="release"><slot /></HoverCardTrigger>
     <HoverCardContent side="right" class="w-auto border-none bg-transparent p-0 shadow-none">
       <div v-if="stack?.length" class="flex gap-2" data-testid="stack-preview">
         <img v-for="(c, i) in stack" :key="i" :src="c.image" :alt="c.name" class="w-48 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />

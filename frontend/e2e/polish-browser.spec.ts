@@ -102,6 +102,36 @@ test.describe('Card browser (spec 002)', () => {
     await expect(page.getByTestId('browser-summary')).toContainText('4 cards')
   })
 
+  test('Spec 009 AC-12: a selected mana symbol is ringed; the others fade', async ({ page }) => {
+    await page.getByRole('button', { name: 'Filters' }).click()
+    const panel = page.getByTestId('filter-panel')
+    const red = panel.getByRole('button', { name: 'Red' })
+    const blue = panel.getByRole('button', { name: 'Blue' })
+    expect(await opacity(blue)).toBe('1')
+    await red.click()
+    await expect(red).toHaveClass(/ring-2/)
+    expect(await opacity(red)).toBe('1')
+    await expect.poll(() => opacity(blue)).toBe('0.4')
+  })
+
+  test('Spec 009 AC-9: the hover preview waits 800 ms and never opens while the mouse is held', async ({ page }) => {
+    await page.getByLabel('Table view').click()
+    const thumb = (name: string) => page.getByRole('row').filter({ hasText: name }).locator('img').first()
+    await thumb('Sol Ring').hover()
+    await page.waitForTimeout(500)
+    await expect(page.getByTestId('card-preview')).toHaveCount(0)
+    await expect(page.getByTestId('card-preview')).toBeVisible()
+    await page.mouse.move(0, 0)
+    await expect(page.getByTestId('card-preview')).toHaveCount(0)
+
+    const box = (await thumb('Lightning Bolt').boundingBox())!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 3)
+    await page.mouse.down()
+    await page.waitForTimeout(1200)
+    await expect(page.getByTestId('card-preview')).toHaveCount(0)
+    await page.mouse.up()
+  })
+
   test('AC-23: the summary reads "N cards · value"', async ({ page }) => {
     // 0.91 + 2 × 1.91 + 3.36 = 8.09
     await expect(page.getByTestId('browser-summary')).toHaveText('4 cards · €8.09')

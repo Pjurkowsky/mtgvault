@@ -11,7 +11,7 @@ import CheckGroup from './filters/CheckGroup.vue'
 import ColorToggles from './filters/ColorToggles.vue'
 import FilterShell from './filters/FilterShell.vue'
 
-const props = defineProps<{ filter: BrowserFilter; activeCount: number; currency: string }>()
+const props = defineProps<{ filter: BrowserFilter; activeCount: number; currency: string; disabled?: boolean }>()
 const emit = defineEmits<{ update: [patch: Record<string, string | string[] | undefined>]; clear: [] }>()
 
 type ListKey = 'color' | 'type' | 'rarity' | 'set' | 'finish' | 'condition'
@@ -52,7 +52,7 @@ watch(setQuery, (q) => {
 </script>
 
 <template>
-  <FilterShell :active-count="activeCount" @clear="emit('clear')">
+  <FilterShell :active-count="activeCount" :disabled="disabled" @clear="emit('clear')">
     <ColorToggles :selected="filter.color ?? []" @change="(v) => emit('update', { color: v })" />
     <Separator />
     <CheckGroup

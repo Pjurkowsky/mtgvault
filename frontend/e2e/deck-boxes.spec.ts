@@ -30,6 +30,8 @@ test.describe('Deck boxes and tabs', () => {
     await dialog.getByRole('combobox', { name: 'Format' }).click()
     await page.getByRole('option', { name: 'Modern' }).click()
     await dialog.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByTestId('location-name')).toHaveText('Burn')
+    await page.goto('/')
     await expect(locationTile(page, 'Burn')).toBeVisible()
 
     const deck = (await api.get('/api/decks/')).decks[0]

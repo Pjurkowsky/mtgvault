@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { binderSlot as slot, signUpAndLogIn } from './helpers'
+import { binderSlot as slot, more, signUpAndLogIn } from './helpers'
 
 // Spec 007: binder settings, resize, page count and sections (AC-6 to AC-11).
 test.describe('Binder settings', () => {
@@ -14,7 +14,7 @@ test.describe('Binder settings', () => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto(`/locations/${binder}`)
 
-    await page.getByRole('button', { name: 'Binder settings' }).click()
+    await more(page, 'Binder settings')
     const dialog = page.getByTestId('binder-settings')
     await expect(dialog.getByTestId('grid-size')).toHaveText('3 × 3')
     await dialog.getByRole('button', { name: '2 rows, 4 columns' }).hover()
@@ -36,7 +36,7 @@ test.describe('Binder settings', () => {
     await expect(page.getByTestId('binder-pages')).toHaveText('Page 1 of 5')
 
     // The shortcuts and facing pages off.
-    await page.getByRole('button', { name: 'Binder settings' }).click()
+    await more(page, 'Binder settings')
     await dialog.getByRole('button', { name: '4 × 4' }).click()
     await expect(dialog.getByTestId('grid-size')).toHaveText('4 × 4')
     await dialog.getByRole('switch', { name: 'Facing pages' }).click()
@@ -57,14 +57,12 @@ test.describe('Binder settings', () => {
     await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto(`/locations/${binder}`)
 
-    await page.getByRole('button', { name: 'Binder settings' }).click()
+    await more(page, 'Binder settings')
     const dialog = page.getByTestId('binder-settings')
     await dialog.getByRole('button', { name: 'Add section' }).click()
     await dialog.getByLabel('Section name').fill('Red')
     await dialog.getByLabel('Last page').fill('2')
-    await dialog.getByRole('button', { name: 'Filters' }).click()
-    await page.getByTestId('filter-panel').getByRole('button', { name: 'Red' }).click()
-    await page.keyboard.press('Escape')
+    await dialog.getByTestId('section-filter').getByRole('button', { name: 'Red' }).click()
     await dialog.getByRole('button', { name: 'Save' }).click()
 
     await expect(page.getByTestId('binder-section').first()).toHaveText('Red')
@@ -72,7 +70,7 @@ test.describe('Binder settings', () => {
     await expect(slot(page, 1, 2).getByTestId('mismatch')).toHaveCount(1) // Sol Ring isn't red, but it stays
 
     // Overlapping sections are refused.
-    await page.getByRole('button', { name: 'Binder settings' }).click()
+    await more(page, 'Binder settings')
     await dialog.getByRole('button', { name: 'Add section' }).click()
     await dialog.getByLabel('Section name').last().fill('Green')
     await dialog.getByLabel('First page').last().fill('2')

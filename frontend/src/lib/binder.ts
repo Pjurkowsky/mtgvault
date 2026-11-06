@@ -6,6 +6,26 @@ export type BinderSlot = Schemas['BinderSlot']
 export type Place = { page: number; row: number; col: number }
 export type Direction = 'rows' | 'columns'
 
+/** Pocket width per card size, in rem (spec 009, AC-4). */
+export const POCKET_REM = { sm: 4, md: 5.5, lg: 7.5 } as const
+
+/** A page's width in px: its pockets, the 0.5rem gaps, 0.75rem padding and the border. */
+export function pageWidth(cols: number, size: keyof typeof POCKET_REM) {
+  return 16 * (cols * POCKET_REM[size] + (cols - 1) * 0.5 + 1.5) + 2
+}
+
+/** Pagination entries (AC-6): every view's label, or '…' between far ones. */
+export function paginate(all: (number | null)[][], current: number): ({ index: number; label: string } | null)[] {
+  const label = (v: (number | null)[]) => v.filter((p) => p !== null).join('–')
+  const keep = (i: number) => i === 0 || i === all.length - 1 || Math.abs(i - current) <= 1
+  const out: ({ index: number; label: string } | null)[] = []
+  all.forEach((v, i) => {
+    if (keep(i)) out.push({ index: i, label: label(v) })
+    else if (out[out.length - 1] !== null) out.push(null)
+  })
+  return out
+}
+
 export const placeKey = (p: Place) => `${p.page}-${p.row}-${p.col}`
 export const samePlace = (a: Place, b: Place) => a.page === b.page && a.row === b.row && a.col === b.col
 

@@ -51,7 +51,8 @@ test.describe('Public locations and directory', () => {
     await locationTile(page, 'Showcase').getByRole('link').click()
     await expect(page.getByTestId('location-name')).toHaveText('Showcase')
     await page.getByLabel('Grid view').click() // binders open in binder view (spec 007)
-    await expect(page.getByTestId('browser-summary')).toContainText('3 cards')
+    await expect(page.getByTestId('location-totals')).toContainText('3 cards')
+    await expect(page.getByTestId('browser-summary')).toHaveCount(0) // totals show once (spec 009, AC-3)
     await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(0)
     await expect(page.getByTestId('select-all')).toHaveCount(0)
     await expect(page.getByTestId('card-checkbox')).toHaveCount(0)
@@ -60,7 +61,7 @@ test.describe('Public locations and directory', () => {
     await expect(page.getByRole('menuitem', { name: 'Export' })).toBeVisible()
     await page.keyboard.press('Escape')
     await page.getByLabel('Search cards').fill('sol')
-    await expect(page.getByTestId('browser-summary')).toContainText('2 cards')
+    await expect(page.getByTestId('card-tile')).toHaveCount(1)
 
     await tile(page, 'Sol Ring').click()
     const detail = page.getByTestId('card-detail')

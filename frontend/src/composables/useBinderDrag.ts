@@ -43,6 +43,7 @@ export function useBinderDrag(opts: {
     pending = null
     pointer.value = { x, y }
     document.body.style.userSelect = 'none'
+    document.body.dataset.dragging = '' // hover previews stay shut (spec 009, AC-9)
     window.addEventListener('touchmove', blockScroll, { passive: false })
   }
 
@@ -113,6 +114,7 @@ export function useBinderDrag(opts: {
     if (edgeTimer) clearTimeout(edgeTimer)
     edgeTimer = null
     document.body.style.userSelect = ''
+    delete document.body.dataset.dragging
     window.removeEventListener('pointermove', move)
     window.removeEventListener('pointerup', up)
     window.removeEventListener('pointercancel', cancel)
