@@ -174,6 +174,7 @@ test.describe('Binder polish', () => {
     await expect(page.getByTestId('drag-ghost')).toBeVisible()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
     await expect(page.getByTestId('unplaced-tray')).toBeVisible()
+    await page.waitForTimeout(400) // the page slides aside for the sidebar (300 ms)
     const to = (await slot(page, 1, 3).boundingBox())! // the pages made room for the sidebar
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 })
     await page.mouse.up()

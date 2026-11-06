@@ -34,27 +34,43 @@ const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
 const PANEL = 288 // w-72
 const { width } = useWindowSize()
 const docked = computed(() => shown.value && width.value >= 768)
-watch(docked, (on) => (document.documentElement.style.paddingRight = on ? `${PANEL}px` : ''), { immediate: true })
-onBeforeUnmount(() => (document.documentElement.style.paddingRight = ''))
+const html = document.documentElement
+watch(docked, (on) => (html.style.paddingRight = on ? `${PANEL}px` : ''), { immediate: true })
+// The page eases aside with the panel; not on first paint, and not with reduced motion.
+const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+const frame = still ? 0 : requestAnimationFrame(() => (html.style.transition = 'padding-right 300ms cubic-bezier(0.32, 0.72, 0, 1)'))
+onBeforeUnmount(() => {
+  cancelAnimationFrame(frame)
+  html.style.paddingRight = ''
+  html.style.transition = ''
+})
 </script>
 
 <template>
-  <aside
-    v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-card shadow-xl"
-    data-testid="unplaced-sidebar" data-state="open"
+  <!-- Slides in from the window's edge (motion-reduce: no slide) -->
+  <Transition
+    enter-active-class="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+    enter-from-class="translate-x-full"
+    leave-active-class="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+    leave-to-class="translate-x-full"
   >
-    <UnplacedTray
-      id="unplaced-tray" class="h-full overflow-y-auto"
-      :unplaced="unplaced" :editable="!!draggable" :over="over" :q="q"
-      @open="emit('open', $event)" @drag="(s, e) => emit('drag', s, e)"
-    />
-  </aside>
-  <span v-else class="hidden" data-testid="unplaced-sidebar" data-state="closed" />
+    <aside
+      v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-card shadow-xl"
+      data-testid="unplaced-sidebar" data-state="open"
+    >
+      <UnplacedTray
+        id="unplaced-tray" class="h-full overflow-y-auto"
+        :unplaced="unplaced" :editable="!!draggable" :over="over" :q="q"
+        @open="emit('open', $event)" @drag="(s, e) => emit('drag', s, e)"
+      />
+    </aside>
+  </Transition>
+  <span v-if="!shown" class="hidden" data-testid="unplaced-sidebar" data-state="closed" />
   <Tooltip>
     <TooltipTrigger as-child>
       <button
         type="button"
-        class="fixed top-1/2 z-30 flex -translate-y-1/2 items-center rounded-l-xl border border-r-0 bg-background px-1.5 py-6 text-muted-foreground shadow-lg transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+        class="fixed top-1/2 z-30 flex -translate-y-1/2 items-center rounded-l-xl border border-r-0 bg-background px-1.5 py-6 text-muted-foreground shadow-lg transition-[right,color,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-muted motion-reduce:transition-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         :class="shown ? 'right-72' : 'right-0'"
         :aria-label="shown ? 'Hide Unplaced' : 'Show Unplaced'" :aria-expanded="shown" aria-controls="unplaced-tray"
         data-testid="unplaced-tab" @click="toggle"
