@@ -1,6 +1,6 @@
 # Spec 010: Want list (decisions so far)
 
-Status: Grilling (2026-11-07). Written into spec.md when done.
+Status: Written into spec.md (2026-11-07).
 
 ## Requests
 
