@@ -10,6 +10,8 @@ export const useLocationsStore = defineStore('locations', () => {
   const locations = ref<Location[]>([])
   const unfiled = ref<Totals>({ card_count: 0, value: null, values: { USD: null, EUR: null, PLN: null } })
   const cart = ref<Totals>({ card_count: 0, value: null, values: { USD: null, EUR: null, PLN: null } })
+  // The want list's tile (spec 010, AC-7).
+  const wants = ref<Totals>({ card_count: 0, value: null, values: { USD: null, EUR: null, PLN: null } })
   const currency = ref('USD')
   const loaded = ref(false)
 
@@ -19,6 +21,7 @@ export const useLocationsStore = defineStore('locations', () => {
     locations.value = data.locations
     unfiled.value = data.unfiled
     cart.value = data.cart
+    wants.value = data.wants
     currency.value = data.currency
     loaded.value = true
   }
@@ -43,5 +46,5 @@ export const useLocationsStore = defineStore('locations', () => {
 
   const byId = (id: number | null | undefined) => locations.value.find((l) => l.id === id)
 
-  return { locations, unfiled, cart, currency, loaded, load, create, update, remove, byId }
+  return { locations, unfiled, cart, wants, currency, loaded, load, create, update, remove, byId }
 })

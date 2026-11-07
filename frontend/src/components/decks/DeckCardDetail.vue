@@ -9,6 +9,7 @@ import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { refreshSuggestions } from '@/lib/categories'
 import { ZONE_LABELS, type DeckCard, type DeckDetail, type Zone } from '@/lib/decks'
+import DeckAddDialog from './DeckAddDialog.vue'
 import DeckSection from './DeckSection.vue'
 
 /**
@@ -74,6 +75,16 @@ async function move(copy: Schemas['FreeCopy'], quantity: number) {
   done(data, error, 'Moved into the deck box.')
 }
 
+// Add from a card opened from an EDHREC tab: into this deck (spec 010, AC-2).
+const deckAddOpen = ref(false)
+const deckAddCard = ref<{ oracle_id: string; name: string } | null>(null)
+const deckAddPrinting = ref<string | null>(null)
+function addToDeck(card: { oracle_id: string; name: string }, printingId: string | null) {
+  deckAddCard.value = card
+  deckAddPrinting.value = printingId
+  deckAddOpen.value = true
+}
+
 // Your copies: the collection's add and edit dialogs (AC-3, AC-4).
 const addOpen = ref(false)
 const editOpen = ref(false)
@@ -102,7 +113,8 @@ async function deleteCopy(itemId: number) {
 <template>
   <CardDetailDialog
     v-model:open="open" :row="null" :oracle-id="card?.printing.oracle_id" :printing-id="card?.printing.id"
-    :currency="deck.currency" :readonly="readonly" choose-printing @choose-printing="choosePrinting"
+    :currency="deck.currency" :readonly="readonly" :want-deck="deck.id" choose-printing @choose-printing="choosePrinting"
+    @add="addToDeck" @changed="refresh"
   >
     <template v-if="card" #deck>
       <DeckSection
@@ -118,4 +130,8 @@ async function deleteCopy(itemId: number) {
     />
     <EditItemDialog v-model:open="editOpen" :row="editRow" @saved="refresh" />
   </template>
+  <DeckAddDialog
+    v-if="!readonly" v-model:open="deckAddOpen" :deck="deck" :card="deckAddCard" :printing-id="deckAddPrinting"
+    @changed="(d) => emit('changed', d)"
+  />
 </template>

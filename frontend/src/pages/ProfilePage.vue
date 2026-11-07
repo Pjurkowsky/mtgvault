@@ -39,8 +39,9 @@ const joined = (iso?: string) =>
       <p class="text-muted-foreground">Joined {{ joined(profile.date_joined) }}</p>
     </div>
     <LocationGrid
-      v-if="locations?.locations.length"
+      v-if="locations?.locations.length || locations?.wants"
       :locations="locations.locations" :currency="locations.currency"
+      :wants="locations.wants" :wants-to="{ name: 'public-wants', params: { username: profile.username } }"
       :to="(l) => ({ name: 'public-location', params: { username: profile!.username, id: l.id } })"
     />
     <section v-if="decks?.decks.length" class="grid gap-3">

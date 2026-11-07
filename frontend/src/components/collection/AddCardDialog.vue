@@ -25,6 +25,9 @@ const props = defineProps<{
   printingId?: string | null
   /** An empty binder pocket: one new copy goes there (spec 007, AC-14). */
   pocket?: { page: number; row: number; col: number } | null
+  /** Start with this many copies and finish: Add to collection from the want list (spec 010, AC-12). */
+  quantity?: number
+  finish?: Finish | null
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ added: [] }>()
@@ -47,7 +50,7 @@ const currency = computed(() => auth.user?.currency ?? 'USD')
 function blankForm(): ItemForm {
   const location = props.defaultLocation
   return {
-    quantity: 1, finish: 'nonfoil', condition: 'NM', language: 'en', purchase_price: '',
+    quantity: props.quantity ?? 1, finish: props.finish ?? 'nonfoil', condition: 'NM', language: 'en', purchase_price: '',
     purchase_currency: auth.user?.currency ?? 'USD',
     location: location === undefined ? '' : location === null ? 'unfiled' : String(location),
   }

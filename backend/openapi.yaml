@@ -4662,12 +4662,14 @@ components:
           $ref: '#/components/schemas/PrintingBrief'
         any_printing:
           type: boolean
+          readOnly: true
         quantity:
           type: integer
-          maximum: 2147483647
-          minimum: 0
+          readOnly: true
         finish:
-          $ref: '#/components/schemas/WantFinishEnum'
+          allOf:
+          - $ref: '#/components/schemas/WantFinishEnum'
+          readOnly: true
         unit_price:
           type: number
           format: double
@@ -4683,8 +4685,11 @@ components:
           readOnly: true
           description: Price per copy in every currency
       required:
+      - any_printing
+      - finish
       - id
       - printing
+      - quantity
       - unit_price
       - unit_prices
     PublicWantPage:
@@ -5161,12 +5166,14 @@ components:
           $ref: '#/components/schemas/PrintingBrief'
         any_printing:
           type: boolean
+          readOnly: true
         quantity:
           type: integer
-          maximum: 2147483647
-          minimum: 0
+          readOnly: true
         finish:
-          $ref: '#/components/schemas/WantFinishEnum'
+          allOf:
+          - $ref: '#/components/schemas/WantFinishEnum'
+          readOnly: true
         unit_price:
           type: number
           format: double
@@ -5183,12 +5190,15 @@ components:
           description: Price per copy in every currency
         deck:
           type: integer
+          readOnly: true
           nullable: true
         deck_name:
           type: string
+          readOnly: true
           nullable: true
         deck_location:
           type: integer
+          readOnly: true
           nullable: true
           description: The linked deck's box, where Add to collection puts copies
         added_at:
@@ -5197,9 +5207,14 @@ components:
           readOnly: true
       required:
       - added_at
+      - any_printing
       - deck
+      - deck_location
+      - deck_name
+      - finish
       - id
       - printing
+      - quantity
       - unit_price
       - unit_prices
     WantFinishEnum:

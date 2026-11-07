@@ -38,7 +38,7 @@ test.describe('Cart', () => {
     expect(publicLocations.locations[0].card_count).toBe(0)
   })
 
-  test('AC-20, AC-22: the cart page is a card browser without Add card or Import; Move to want list is disabled', async ({ page, request }) => {
+  test('AC-20, AC-22: the cart page is a card browser without Add card or Import', async ({ page, request }) => {
     const { scan } = await setup(page, request)
     await scan(SOL_RING_C21)
     await page.goto('/locations/cart')
@@ -58,7 +58,8 @@ test.describe('Cart', () => {
     await expect(page.getByTestId('location-totals')).toContainText('3 cards') // still in the cart
 
     await page.getByTestId('card-checkbox').first().click()
-    await expect(page.getByTestId('selection-bar').getByRole('button', { name: 'Move to want list' })).toBeDisabled()
+    // Scanned cards are bought: no Move to want list (spec 010, AC-19).
+    await expect(page.getByTestId('selection-bar').getByRole('button', { name: 'Move to want list' })).toHaveCount(0)
   })
 
   test('AC-21: Move to sends cart cards into a location, merging with matching rows', async ({ page, request }) => {

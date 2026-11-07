@@ -53,7 +53,8 @@ test.describe('Deck search and filters', () => {
     await expect(page.getByTestId('deck-row')).toHaveCount(4) // Forest is short 2 copies
 
     await deckRow(page, 'Counterspell').click({ button: 'right' })
-    await expect(page.getByRole('menuitem', { name: 'Add to want list' })).toHaveAttribute('data-disabled', '')
+    // It works now (spec 010, AC-15; deck-wants.spec.ts).
+    await expect(page.getByRole('menuitem', { name: 'Add to want list' })).not.toHaveAttribute('data-disabled', '')
     await page.keyboard.press('Escape')
 
     await page.getByRole('button', { name: 'More' }).click()

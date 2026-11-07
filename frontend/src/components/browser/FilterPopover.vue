@@ -4,6 +4,7 @@ import { api, type Schemas } from '@/api/client'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import type { BrowserFilter } from '@/composables/useBrowserQuery'
 import { CONDITIONS, FINISHES, RARITIES, TYPES } from '@/lib/cards'
@@ -11,7 +12,12 @@ import CheckGroup from './filters/CheckGroup.vue'
 import ColorToggles from './filters/ColorToggles.vue'
 import FilterShell from './filters/FilterShell.vue'
 
-const props = defineProps<{ filter: BrowserFilter; activeCount: number; currency: string; disabled?: boolean }>()
+const props = defineProps<{
+  filter: BrowserFilter; activeCount: number; currency: string; disabled?: boolean
+  /** The want list (spec 010, AC-8): no condition; `decks` adds a Deck filter. */
+  wants?: boolean
+  decks?: { id: number; name: string }[]
+}>()
 const emit = defineEmits<{ update: [patch: Record<string, string | string[] | undefined>]; clear: [] }>()
 
 type ListKey = 'color' | 'type' | 'rarity' | 'set' | 'finish' | 'condition'
@@ -56,7 +62,7 @@ watch(setQuery, (q) => {
     <ColorToggles :selected="filter.color ?? []" @change="(v) => emit('update', { color: v })" />
     <Separator />
     <CheckGroup
-      v-for="group in GROUPS" :key="group.key" :label="group.label" :options="group.options"
+      v-for="group in GROUPS.filter((g) => !wants || g.key !== 'condition')" :key="group.key" :label="group.label" :options="group.options"
       :selected="filter[group.key] ?? []" @change="(v) => emit('update', { [group.key]: v })"
     />
     <Separator />
@@ -71,6 +77,19 @@ watch(setQuery, (q) => {
         </label>
       </div>
     </section>
+    <template v-if="decks?.length">
+      <Separator />
+      <section class="grid gap-2">
+        <Label>Deck</Label>
+        <Select :model-value="filter.deck ?? 'all'" @update:model-value="(v) => emit('update', { deck: v === 'all' ? undefined : String(v) })">
+          <SelectTrigger aria-label="Deck" class="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All decks</SelectItem>
+            <SelectItem v-for="d in decks" :key="d.id" :value="String(d.id)">{{ d.name }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+    </template>
     <Separator />
     <section class="grid gap-2">
       <Label>Price ({{ currency }})</Label>

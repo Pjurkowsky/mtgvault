@@ -16,6 +16,8 @@ export type BrowserFilter = {
   condition?: string[]
   price_min?: string
   price_max?: string
+  /** The want list's deck (spec 010, AC-8). */
+  deck?: string
   sort: string
   dir: 'asc' | 'desc'
 }
@@ -50,6 +52,7 @@ export function useBrowserQuery() {
     }
     if (one(q.price_min)) result.price_min = one(q.price_min)!
     if (one(q.price_max)) result.price_max = one(q.price_max)!
+    if (one(q.deck)) result.deck = one(q.deck)!
     return result
   })
 
@@ -74,14 +77,14 @@ export function useBrowserQuery() {
   }
 
   function clearFilters() {
-    const cleared: Record<string, undefined> = { q: undefined, price_min: undefined, price_max: undefined }
+    const cleared: Record<string, undefined> = { q: undefined, price_min: undefined, price_max: undefined, deck: undefined }
     for (const key of LIST_KEYS) cleared[key] = undefined
     update(cleared)
   }
 
   const activeFilterCount = computed(() => {
     const f = filter.value
-    return LIST_KEYS.reduce((n, k) => n + (f[k]?.length ?? 0), 0) + (f.price_min ? 1 : 0) + (f.price_max ? 1 : 0)
+    return LIST_KEYS.reduce((n, k) => n + (f[k]?.length ?? 0), 0) + (f.price_min ? 1 : 0) + (f.price_max ? 1 : 0) + (f.deck ? 1 : 0)
   })
 
   return { filter, view, update, setView, clearFilters, activeFilterCount }

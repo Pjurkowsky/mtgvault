@@ -97,8 +97,9 @@ test.describe('Card detail', () => {
 
     await expect(detail(page).getByRole('heading', { name: 'Rhystic Study' })).toBeVisible()
     await expect(page.getByTestId('owned')).toHaveText('You own 0')
-    await expect(detail(page).getByRole('button', { name: 'Add', exact: true })).toBeDisabled()
-    await expect(detail(page).getByRole('button', { name: 'Add to want list' })).toBeDisabled()
+    // Both buttons work now (spec 010, AC-1; wants.spec.ts).
+    await expect(detail(page).getByRole('button', { name: 'Add', exact: true })).toBeEnabled()
+    await expect(detail(page).getByRole('button', { name: 'Add to want list' })).toBeEnabled()
     await detail(page).getByRole('button', { name: 'Back' }).click()
     await expect(detail(page).getByRole('heading', { name: 'Sol Ring' })).toBeVisible()
     await expect(page.getByTestId('detail-quantity')).toHaveText('1')

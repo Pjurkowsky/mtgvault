@@ -23,7 +23,13 @@ import { useLocationsStore } from '@/stores/locations'
  * Add to a deck: the collection's search, then printing, quantity and zone, and
  * optionally copies for the collection (spec 005, AC-1, AC-2). Stays open for the next card.
  */
-const props = defineProps<{ deck: DeckDetail }>()
+type PickedCard = { oracle_id: string; name: string }
+const props = defineProps<{
+  deck: DeckDetail
+  /** Add this card, skipping the search: Add from the card dialog (spec 010, AC-2). */
+  card?: PickedCard | null
+  printingId?: string | null
+}>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ changed: [deck: DeckDetail] }>()
 const auth = useAuthStore()
@@ -31,7 +37,8 @@ const locations = useLocationsStore()
 const ACTIVE = 'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground'
 
 const query = ref('')
-const card = ref<Schemas['CardSearchResult'] | null>(null)
+const card = ref<PickedCard | null>(null)
+const fixed = computed(() => !!props.card)
 const printings = ref<Schemas['Printing'][]>([])
 const printingId = ref<string | null>(null)
 const quantity = ref(1)
@@ -68,18 +75,19 @@ watch(open, (isOpen) => {
   alsoOwn.value = false
   form.value = blankForm()
   if (!locations.loaded) locations.load()
+  if (props.card) void choose(props.card, props.printingId)
 })
-watch(query, () => (card.value = null))
+watch(query, () => !fixed.value && (card.value = null))
 watch(zones, (list) => !list.includes(zone.value) && (zone.value = 'main'))
 watch(printing, (p) => {
   if (p && !p.finishes.includes(form.value.finish)) form.value.finish = (p.finishes[0] ?? 'nonfoil') as Finish
 })
 
-async function choose(result: Schemas['CardSearchResult']) {
+async function choose(result: PickedCard, preselect?: string | null) {
   card.value = result
   const { data } = await api.GET('/api/catalog/cards/{oracle_id}/printings/', { params: { path: { oracle_id: result.oracle_id } } })
   printings.value = data ?? []
-  printingId.value = printings.value[0]?.id ?? null
+  printingId.value = printings.value.find((p) => p.id === preselect)?.id ?? printings.value[0]?.id ?? null
 }
 
 async function add() {
@@ -115,6 +123,7 @@ async function add() {
   busy.value = false
   toast.success(`Added ${quantity.value} × ${card.value.name} to ${ZONE_LABELS[zone.value]}${alsoOwn.value ? ' and your collection' : ''}.`)
   emit('changed', deck)
+  if (fixed.value) return (open.value = false)
   reset()
   await nextTick()
   search.value?.focus()
@@ -124,11 +133,11 @@ async function add() {
 <template>
   <Dialog v-model:open="open">
     <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-      <DialogHeader><DialogTitle>Add to {{ deck.name }}</DialogTitle></DialogHeader>
-      <CardSearch ref="search" v-model:query="query" :picked="!!card" @choose="choose" />
+      <DialogHeader><DialogTitle>{{ fixed && card ? `Add ${card.name} to ${deck.name}` : `Add to ${deck.name}` }}</DialogTitle></DialogHeader>
+      <CardSearch v-if="!fixed" ref="search" v-model:query="query" :picked="!!card" @choose="choose" />
 
       <template v-if="card">
-        <div class="flex items-center gap-2">
+        <div v-if="!fixed" class="flex items-center gap-2">
           <IconButton label="Back to results" variant="ghost" class="size-7" @click="card = null"><ArrowLeftIcon /></IconButton>
           <span class="font-medium">{{ card.name }}</span>
         </div>

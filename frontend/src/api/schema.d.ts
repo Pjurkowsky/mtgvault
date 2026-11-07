@@ -2036,9 +2036,9 @@ export interface components {
         PublicWant: {
             readonly id: number;
             printing: components["schemas"]["PrintingBrief"];
-            any_printing?: boolean;
-            quantity?: number;
-            finish?: components["schemas"]["WantFinishEnum"];
+            readonly any_printing: boolean;
+            readonly quantity: number;
+            readonly finish: components["schemas"]["WantFinishEnum"];
             /** Format: double */
             readonly unit_price: number | null;
             /** @description Price per copy in every currency */
@@ -2258,17 +2258,17 @@ export interface components {
         Want: {
             readonly id: number;
             printing: components["schemas"]["PrintingBrief"];
-            any_printing?: boolean;
-            quantity?: number;
-            finish?: components["schemas"]["WantFinishEnum"];
+            readonly any_printing: boolean;
+            readonly quantity: number;
+            readonly finish: components["schemas"]["WantFinishEnum"];
             /** Format: double */
             readonly unit_price: number | null;
             /** @description Price per copy in every currency */
             readonly unit_prices: components["schemas"]["Money"];
-            deck: number | null;
-            deck_name?: string | null;
+            readonly deck: number | null;
+            readonly deck_name: string | null;
             /** @description The linked deck's box, where Add to collection puts copies */
-            deck_location?: number | null;
+            readonly deck_location: number | null;
             /** Format: date-time */
             readonly added_at: string;
         };

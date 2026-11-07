@@ -23,19 +23,22 @@ class PublicWantSerializer(serializers.ModelSerializer):
     class Meta:
         model = WantItem
         fields = ['id', 'printing', 'any_printing', 'quantity', 'finish', 'unit_price', 'unit_prices']
+        read_only_fields = fields  # output only; also marks them required in the schema
 
     def get_unit_prices(self, entry) -> MoneySerializer:
         return prices_in_all(entry.printing, priced_finish(entry.finish), self.context['rates'])
 
 
 class WantSerializer(PublicWantSerializer):
-    deck = serializers.IntegerField(source='deck_id', allow_null=True)
-    deck_name = serializers.CharField(source='deck.name', allow_null=True, default=None)
+    deck = serializers.IntegerField(source='deck_id', allow_null=True, read_only=True)
+    deck_name = serializers.CharField(source='deck.name', allow_null=True, default=None, read_only=True)
     deck_location = serializers.IntegerField(source='deck.location_id', allow_null=True, default=None,
+                                             read_only=True,
                                              help_text="The linked deck's box, where Add to collection puts copies")
 
     class Meta(PublicWantSerializer.Meta):
         fields = PublicWantSerializer.Meta.fields + ['deck', 'deck_name', 'deck_location', 'added_at']
+        read_only_fields = fields
 
 
 class WantPageSerializer(serializers.Serializer):

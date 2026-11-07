@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeftIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon,
+  ArrowLeftIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon, HeartIcon,
   PackagePlusIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
@@ -37,7 +37,7 @@ import { usePreference } from '@/composables/usePreference'
 import { CARD_SIZES, type CardSize } from '@/lib/cards'
 import { clearedQuery, filterFromQuery, filterToQuery, matches, type DeckFilter } from '@/lib/deckFilter'
 import { loadScanTarget, saveScanTarget, scannerUrl, type ScanTarget } from '@/lib/scanTarget'
-import { ZONE_LABELS, formatLabel, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
+import { WANT_MISSING, ZONE_LABELS, formatLabel, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
 
 /** A deck: list, owned and missing cards, stats; also the public view (spec 004, AC-16 to AC-28). */
 const route = useRoute()
@@ -168,6 +168,16 @@ async function loadMissing() {
   return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value } }, body: {} })).data
 }
 
+/** Missing cards onto the want list for this deck: one card, or all of them (spec 010, AC-15, AC-16). */
+async function wantMissing(card?: DeckCard) {
+  const { data } = await api.POST('/api/decks/{id}/want-missing/', { params: { path: { id: id.value } }, body: card ? { card: card.id } : {} })
+  if (!data) return toast.error('Could not add to the want list.')
+  changed(data.deck)
+  if (!data.added) return toast.success(card ? `${card.printing.name} is already on the want list.` : 'Nothing is missing from the want list.')
+  toast.success(`Added ${data.added} ${data.added === 1 ? 'card' : 'cards'} to the want list.`)
+}
+provide(WANT_MISSING, (card) => void wantMissing(card))
+
 const counts = computed(() => deck.value?.counts)
 const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== counts.value.target)
 </script>
@@ -199,6 +209,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               <DropdownMenuItem @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
               <DropdownMenuItem @select="exportOpen = true"><DownloadIcon /> Export</DropdownMenuItem>
               <DropdownMenuItem @select="missingOpen = true"><DownloadIcon /> Export missing</DropdownMenuItem>
+              <DropdownMenuItem @select="wantMissing()"><HeartIcon /> Add missing to want list</DropdownMenuItem>
               <DropdownMenuItem @select="editOpen = true"><PencilIcon /> Edit</DropdownMenuItem>
               <DropdownMenuItem v-if="!deck.location" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
               <DropdownMenuSeparator />

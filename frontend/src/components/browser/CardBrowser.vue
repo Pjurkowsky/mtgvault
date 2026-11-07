@@ -18,7 +18,7 @@ import {
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
-import { api } from '@/api/client'
+import { api, type Schemas } from '@/api/client'
 import BinderSearchNav from '@/components/binder/BinderSearchNav.vue'
 import BinderView from '@/components/binder/BinderView.vue'
 import UnplacedSidebar from '@/components/binder/UnplacedSidebar.vue'
@@ -34,7 +34,7 @@ import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,7 +53,10 @@ import CardGrid from './CardGrid.vue'
 import CardTable from './CardTable.vue'
 import ExportDialog from './ExportDialog.vue'
 import FilterPopover from './FilterPopover.vue'
-import type { BrowserRow, BrowserSource } from './types'
+import WantDialog from '@/components/wants/WantDialog.vue'
+import WantSection from '@/components/wants/WantSection.vue'
+import type { MenuItem } from './CardMenu.vue'
+import { wantRow, type BrowserRow, type BrowserSource, type WantRow } from './types'
 
 /**
  * The one card browser (spec 001 principle P-2): All cards, location pages and
@@ -77,13 +80,20 @@ const selection = useSelection()
 const confirm = useConfirm()
 const router = useRouter()
 const route = useRoute()
-const editable = computed(() => props.source.kind === 'own' && !props.readonly)
+// The want list (spec 010): its own rows, menu and dialogs; no selection, scanning or import.
+const isWants = computed(() => props.source.kind === 'wants' || props.source.kind === 'public-wants')
+const editable = computed(() => (props.source.kind === 'own' || props.source.kind === 'wants') && !props.readonly)
+const selectable = computed(() => editable.value && !isWants.value)
 // The cart (spec 003): scanned cards waiting to be moved into the collection.
 const isCart = computed(() => props.location === 'cart')
 // Adding and importing don't fit the cart.
 const canAdd = computed(() => editable.value && !isCart.value)
 const selecting = computed(() => selection.count.value > 0)
-const defaultLocation = computed(() => (props.location && props.location !== 'unfiled' ? Number(props.location) : null))
+// The want list has no location of its own: the user picks one (spec 010, AC-3).
+const defaultLocation = computed(() =>
+  isWants.value ? undefined : props.location && props.location !== 'unfiled' ? Number(props.location) : null)
+const menuItems = computed<MenuItem[] | undefined>(() =>
+  !isWants.value ? undefined : editable.value ? ['open', 'edit', 'collect', 'delete'] : ['open'])
 
 // ----- binder view (spec 007, AC-1, AC-5) -----
 const binderId = computed(() =>
@@ -151,6 +161,12 @@ async function fetchPage(offset: number, limit: number): Promise<BrowserPage | u
   const pageQuery = { ...query.value, offset: String(offset), limit: String(limit) }
   if (props.source.kind === 'own') {
     return (await api.GET('/api/items/', { params: { query: pageQuery } })).data
+  }
+  if (props.source.kind === 'wants' || props.source.kind === 'public-wants') {
+    const { data } = props.source.kind === 'wants'
+      ? await api.GET('/api/wants/', { params: { query: pageQuery } })
+      : await api.GET('/api/users/{username}/wants/', { params: { path: { username: props.source.username }, query: pageQuery } })
+    return data && { ...data, results: data.results.map(wantRow) }
   }
   const { username, locationId } = props.source
   return (await api.GET('/api/users/{username}/locations/{id}/items/', {
@@ -241,6 +257,67 @@ function openDetail(row: BrowserRow) {
   detailRow.value = row
   detailOpen.value = true
 }
+
+// ----- Add from the card dialog, or Add to collection from the want list (spec 010, AC-2, AC-3, AC-12) -----
+type AddPreset = { card: { oracle_id: string; name: string }; printingId: string | null; quantity?: number
+  finish?: Schemas['FinishEnum'] | null; location?: number | null }
+const addPreset = ref<AddPreset | null>(null)
+function openAdd(preset: AddPreset | null = null) {
+  addPreset.value = preset
+  addOpen.value = true
+}
+function addFromDetail(card: { oracle_id: string; name: string }, printingId: string | null) {
+  openAdd({ card, printingId, location: defaultLocation.value })
+}
+
+// ----- want list entries (spec 010, AC-9 to AC-12) -----
+const wantOpen = ref(false)
+const wantEntry = ref<WantRow | null>(null)
+function openWant(row: BrowserRow | null) {
+  wantEntry.value = (row?.want as WantRow | undefined) ?? null
+  wantOpen.value = true
+}
+function collect(row: BrowserRow) {
+  const w = row.want as WantRow
+  openAdd({
+    card: { oracle_id: w.printing.oracle_id, name: w.printing.name }, printingId: w.printing.id, quantity: w.quantity,
+    finish: w.finish === 'any' ? null : w.finish, location: w.deck_location ?? undefined,
+  })
+}
+async function deleteWant(row: BrowserRow) {
+  const ok = await confirm({ title: `Delete ${row.printing.name}?`, description: 'This removes it from your want list.' })
+  if (!ok) return
+  const { error } = await api.DELETE('/api/wants/{id}/', { params: { path: { id: row.id } } })
+  if (error) return toast.error('Could not delete.')
+  toast.success(`Deleted ${row.printing.name} from the want list.`)
+  if (detailRow.value?.id === row.id) detailOpen.value = false
+  refresh()
+}
+/** After saving: the open entry shows its new state, or closes if it merged away or was bought. */
+async function afterWant() {
+  refresh()
+  if (!detailOpen.value || !detailRow.value?.want) return
+  const { data } = await api.GET('/api/wants/{id}/', { params: { path: { id: detailRow.value.id } } })
+  if (data) detailRow.value = wantRow(data)
+  else detailOpen.value = false
+}
+const wantsPublic = ref(false)
+const decks = ref<{ id: number; name: string }[]>([])
+onMounted(async () => {
+  if (props.source.kind !== 'wants') return
+  const [settings, list] = await Promise.all([api.GET('/api/wants/settings/'), api.GET('/api/decks/')])
+  wantsPublic.value = settings.data?.is_public ?? false
+  decks.value = list.data?.decks ?? []
+})
+async function setWantsPublic(on: boolean) {
+  const { data } = await api.PATCH('/api/wants/settings/', { body: { is_public: on } })
+  if (!data) return toast.error('Could not change it.')
+  wantsPublic.value = data.is_public
+  toast.success(data.is_public ? 'Your want list is public.' : 'Your want list is private.')
+  emit('changed')
+}
+const onEdit = (row: BrowserRow) => (isWants.value ? openWant(row) : openEdit(row))
+const onDelete = (row: BrowserRow) => (isWants.value ? deleteWant(row) : deleteRow(row))
 
 function openEdit(row: BrowserRow) {
   editRow.value = row
@@ -349,7 +426,10 @@ const exportName = computed(() =>
           :matches="binderRef.matchCount" :current="binderRef.matchIndex" @step="(by) => binderRef?.nextMatch(by)"
         />
       </div>
-      <FilterPopover :filter="filter" :active-count="activeFilterCount" :currency="currency" :disabled="inBinder" @update="update" @clear="clearFilters" />
+      <FilterPopover
+        :filter="filter" :active-count="activeFilterCount" :currency="currency" :disabled="inBinder" :wants="isWants" :decks="decks"
+        @update="update" @clear="clearFilters"
+      />
       <Select :model-value="filter.sort" :disabled="inBinder" @update:model-value="(v) => update({ sort: String(v) })">
         <SelectTrigger class="w-32" aria-label="Sort by"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -367,8 +447,8 @@ const exportName = computed(() =>
       <CardSizeToggle v-if="binderId" v-model="binderSize" :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
 
       <div class="ml-auto flex items-center gap-2">
-        <IconButton v-if="editable" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
-        <Button v-if="canAdd" @click="addOpen = true"><PlusIcon /> Add card</Button>
+        <IconButton v-if="editable && !isWants" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
+        <Button v-if="canAdd" @click="isWants ? openWant(null) : openAdd()"><PlusIcon /> Add card</Button>
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <IconButton label="More"><EllipsisIcon /></IconButton>
@@ -376,8 +456,11 @@ const exportName = computed(() =>
           <DropdownMenuContent align="end">
             <DropdownMenuItem v-if="binderId && editable" @select="openBinderSettings"><SettingsIcon /> Binder settings</DropdownMenuItem>
             <DropdownMenuItem v-if="locationMenu" @select="emit('edit-location')"><PencilIcon /> Edit location</DropdownMenuItem>
-            <DropdownMenuItem v-if="canAdd" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
-            <DropdownMenuItem @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
+            <DropdownMenuCheckboxItem v-if="source.kind === 'wants'" :model-value="wantsPublic" @update:model-value="setWantsPublic">
+              Public
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuItem v-if="canAdd && !isWants" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
+            <DropdownMenuItem v-if="!isWants" @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
             <template v-if="locationMenu">
               <DropdownMenuSeparator />
               <DropdownMenuItem class="text-destructive" @select="emit('delete-location')"><Trash2Icon class="text-destructive" /> Delete</DropdownMenuItem>
@@ -404,14 +487,14 @@ const exportName = computed(() =>
     />
     <CardGrid
       v-else-if="shownView === 'grid' && rows.length"
-      :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
-      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
+      :rows="rows" :currency="currency" :editable="editable" :selectable="selectable" :menu="menuItems" :selecting="selecting" :is-selected="selection.isSelected"
+      @click="onCardClick" @check="check" @open="openDetail" @edit="onEdit" @delete="onDelete" @deck="openAddToDeck" @collect="collect"
     />
     <CardTable
       v-else-if="rows.length"
-      :rows="rows" :currency="currency" :editable="editable" :selecting="selecting" :is-selected="selection.isSelected"
-      :show-location="source.kind === 'own' && !location" :select-all-state="selectAllState"
-      @click="onCardClick" @check="check" @open="openDetail" @edit="openEdit" @delete="deleteRow" @deck="openAddToDeck"
+      :rows="rows" :currency="currency" :editable="editable" :selectable="selectable" :menu="menuItems" :selecting="selecting" :is-selected="selection.isSelected"
+      :show-location="source.kind === 'own' && !location" :select-all-state="selectAllState" :wants="isWants"
+      @click="onCardClick" @check="check" @open="openDetail" @edit="onEdit" @delete="onDelete" @deck="openAddToDeck" @collect="collect"
       @select-all="toggleSelectAll"
     />
     <p v-else-if="!loading && page && !inBinder" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
@@ -439,7 +522,6 @@ const exportName = computed(() =>
         </label>
         <div class="ml-auto flex flex-wrap gap-2">
           <Button size="sm" variant="outline" @click="openBulk('move')">{{ isCart ? 'Move to' : 'Move' }}</Button>
-          <Button v-if="isCart" size="sm" variant="outline" disabled>Move to want list</Button>
           <Button size="sm" variant="outline" @click="openBulk('edit')">Edit</Button>
           <Button v-if="!isCart" size="sm" variant="outline" @click="openAddToDeck()">Add to deck</Button>
           <Button size="sm" variant="outline" @click="openExport(true)">Export</Button>
@@ -449,13 +531,25 @@ const exportName = computed(() =>
     </div>
 
     <CardDetailDialog
-      v-model:open="detailOpen" :row="detailRow" :currency="currency" :readonly="!editable"
-      @changed="refresh" @edit="openEdit" @delete="deleteRow"
-    />
+      v-model:open="detailOpen" :row="isWants ? null : detailRow" :oracle-id="detailRow?.printing.oracle_id" :printing-id="detailRow?.printing.id"
+      :currency="currency" :readonly="!editable"
+      @changed="refresh" @edit="openEdit" @delete="deleteRow" @add="addFromDetail"
+    >
+      <template v-if="isWants && detailRow?.want" #want>
+        <WantSection
+          :want="detailRow.want" :currency="currency" :readonly="!editable"
+          @edit="openWant(detailRow)" @collect="collect(detailRow)" @delete="deleteWant(detailRow)"
+        />
+      </template>
+    </CardDetailDialog>
     <template v-if="editable">
       <EditItemDialog v-model:open="editOpen" :row="editRow" @saved="onSaved" />
-      <AddCardDialog v-model:open="addOpen" :default-location="defaultLocation" @added="refresh" />
-      <ImportDialog v-model:open="importOpen" :default-location="defaultLocation" @imported="refresh" />
+      <AddCardDialog
+        v-model:open="addOpen" :card="addPreset?.card" :printing-id="addPreset?.printingId" :quantity="addPreset?.quantity"
+        :finish="addPreset?.finish" :default-location="addPreset ? addPreset.location : defaultLocation" @added="isWants ? afterWant() : refresh()"
+      />
+      <WantDialog v-if="isWants" v-model:open="wantOpen" :entry="wantEntry" @saved="afterWant" />
+      <ImportDialog v-if="!isWants" v-model:open="importOpen" :default-location="defaultLocation ?? null" @imported="refresh" />
       <AddToDeckDialog v-model:open="deckOpen" :selection="deckSelection" @done="selection.clear()" />
       <BulkDialog v-model:open="bulkOpen" :action="bulkAction" :selection="selection.toSelection" @done="afterBulk" />
     </template>

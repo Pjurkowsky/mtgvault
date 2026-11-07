@@ -31,12 +31,16 @@ const props = defineProps<{
   printingId?: string | null
   /** Reprints pick a printing (emits choose-printing) instead of switching the row's. */
   choosePrinting?: boolean
+  /** Add to want list links this deck (spec 010, AC-4). */
+  wantDeck?: number | null
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{
   changed: []; edit: [row: BrowserRow]; delete: [row: BrowserRow]; 'choose-printing': [printing: Schemas['Printing']]
+  /** Add copies of a card you don't own (spec 010, AC-2, AC-3): the page opens its Add dialog. */
+  add: [card: { oracle_id: string; name: string }, printingId: string | null]
 }>()
-defineSlots<{ deck?: () => unknown }>()
+defineSlots<{ deck?: () => unknown; want?: () => unknown }>()
 const confirm = useConfirm()
 
 type Entry = { oracleId: string; row: BrowserRow | null }
@@ -106,6 +110,22 @@ function back() {
   load()
 }
 
+// Add to want list: one more copy, any printing and finish (spec 010, AC-4).
+const wanting = ref(false)
+async function want() {
+  if (!card.value || !shown.value) return
+  wanting.value = true
+  const { data } = await api.POST('/api/wants/', { body: { printing: shown.value.id, deck: props.wantDeck ?? null } })
+  wanting.value = false
+  if (!data) return toast.error('Could not add to the want list.')
+  card.value = { ...card.value, wanted: data.wanted }
+  toast.success(`Added ${shown.value.name} to the want list.`)
+  emit('changed')
+}
+function add() {
+  if (card.value) emit('add', { oracle_id: card.value.oracle_id, name: card.value.name }, shown.value?.id ?? null)
+}
+
 // Switch the row to another printing (AC-27).
 async function switchTo(printing: Schemas['Printing']) {
   if (picking.value) return emit('choose-printing', printing)
@@ -171,6 +191,8 @@ const tabs = computed(() => [
         <div class="grid content-start gap-6">
           <!-- A deck card: the deck section (spec 005, AC-3) -->
           <slot v-if="$slots.deck && atRoot" name="deck" />
+          <!-- A want list entry (spec 010, AC-10) -->
+          <slot v-else-if="$slots.want && atRoot" name="want" />
           <!-- Your copies (AC-25), or what you own of a card from a tab (AC-33, AC-34) -->
           <section v-else-if="row" class="grid gap-4" data-testid="copies">
             <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
@@ -192,8 +214,12 @@ const tabs = computed(() => [
           </section>
           <section v-else-if="card" class="flex flex-wrap items-center gap-3" data-testid="copies">
             <span class="text-sm" data-testid="owned">You own {{ card.owned }}</span>
-            <Button disabled>Add</Button>
-            <Button variant="outline" disabled>Add to want list</Button>
+            <template v-if="!readonly">
+              <Button @click="add">Add</Button>
+              <Button variant="outline" :disabled="wanting" data-testid="add-want" @click="want">
+                Add to want list<template v-if="card.wanted"> ({{ card.wanted }})</template>
+              </Button>
+            </template>
           </section>
 
           <!-- EDHREC tabs (AC-28 to AC-36) -->

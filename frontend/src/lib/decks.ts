@@ -1,3 +1,4 @@
+import type { InjectionKey } from 'vue'
 import type { Schemas } from '@/api/client'
 
 export type DeckDetail = Schemas['DeckDetail']
@@ -5,6 +6,9 @@ export type DeckCard = Schemas['DeckCard']
 export type DeckSummary = Schemas['DeckSummary']
 export type Zone = 'commander' | 'main' | 'side' | 'maybe'
 export type OwnState = 'in_box' | 'owned' | 'other_decks' | 'missing'
+
+/** Put a missing deck card on the want list, provided by the deck page (spec 010, AC-15). */
+export const WANT_MISSING: InjectionKey<(card: Schemas['DeckCard']) => void> = Symbol('wantMissing')
 
 export const FORMATS = [
   { value: 'commander', label: 'Commander', commander: true },
