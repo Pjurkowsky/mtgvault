@@ -39,8 +39,9 @@ export function zonesForCard(format: string, printing: { can_command: { commande
 }
 
 export const OWN_STATES: Record<OwnState, { label: string; dot: string }> = {
-  in_box: { label: 'In deck box', dot: 'bg-emerald-500' },
-  owned: { label: 'Owned', dot: 'bg-sky-500' },
+  // Names from spec 012: Owned is what's in this deck's box.
+  in_box: { label: 'Owned', dot: 'bg-emerald-500' },
+  owned: { label: 'Free in collection', dot: 'bg-sky-500' },
   other_decks: { label: 'In other decks', dot: 'bg-amber-500' },
   missing: { label: 'Missing', dot: 'bg-red-500' },
 }

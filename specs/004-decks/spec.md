@@ -71,6 +71,8 @@ where they are, and keep a deck's physical cards together in its deck box.
   needs several copies:
   - **In deck box**: enough copies are in this deck's box
   - **Owned**: free copies cover the rest; shows which locations
+
+  Spec 012 renames In deck box to Owned and Owned to Free in collection.
   - **In other decks**: the remaining copies are only in other decks' boxes;
     shows which decks
   - **Missing**: not enough copies anywhere

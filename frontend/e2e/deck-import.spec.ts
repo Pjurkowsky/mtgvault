@@ -99,7 +99,7 @@ test.describe('Deck import, export and public decks', () => {
 
     await deckRow(page, 'Sol Ring').click()
     const dialog = page.getByTestId('card-detail')
-    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('Owned')
+    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('Free in collection')
     await expect(dialog).not.toContainText('Private binder')
     await expect(dialog.getByRole('button', { name: 'Save' })).toHaveCount(0)
     await closeCardDialog(page)

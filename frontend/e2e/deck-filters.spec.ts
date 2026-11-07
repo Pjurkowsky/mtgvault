@@ -46,9 +46,14 @@ test.describe('Deck search and filters', () => {
     await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', 'Stats'])
 
     await page.getByRole('button', { name: 'Filters' }).click()
-    await page.getByTestId('filter-panel').locator('label').filter({ hasText: 'Owned' }).getByRole('checkbox').click()
+    // Spec 012: free copies are Free in collection; Owned is what's in the deck box.
+    const panel = page.getByTestId('filter-panel')
+    for (const name of ['Owned', 'Free in collection', 'In other decks', 'Missing']) await expect(panel.getByText(name, { exact: true })).toBeVisible()
+    await expect(panel.getByText('In deck box')).toHaveCount(0)
+    await panel.locator('label').filter({ hasText: 'Free in collection' }).getByRole('checkbox').click()
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('deck-row')).toHaveText([/Sol Ring/])
+    await expect(deckRow(page, 'Sol Ring').getByTestId('ownership')).toContainText('Free in collection')
     await page.goto(`/decks/${deck.id}?own=missing`)
     await expect(page.getByTestId('deck-row')).toHaveCount(4) // Forest is short 2 copies
 
