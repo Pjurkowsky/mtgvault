@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # Self-hosted MTG Vault (spec 008): frontend, backend, Celery, nginx, and a
 # bundled Postgres and Redis that stay off when DATABASE_URL / REDIS_URL are set.
+# Debian's nginx doesn't know .mjs; the scanner's ONNX runtime loads one as a module.
 #   docker build -t mtgvault .
 
 FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend
@@ -25,6 +26,7 @@ RUN apt-get update \
  && apt-get update \
  && apt-get install -y --no-install-recommends postgresql-18 postgresql-client-18 \
  && rm -rf /var/lib/apt/lists/* /etc/nginx/sites-enabled/default \
+ && sed -i 's|application/javascript *js;|application/javascript js mjs;|' /etc/nginx/mime.types \
  && ln -sf /dev/stdout /var/log/nginx/access.log && ln -sf /dev/stderr /var/log/nginx/error.log
 
 RUN case "${TARGETARCH:-amd64}" in amd64) arch=x86_64 ;; arm64) arch=aarch64 ;; *) echo "unsupported ${TARGETARCH}" && exit 1 ;; esac \

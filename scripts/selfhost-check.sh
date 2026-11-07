@@ -100,6 +100,11 @@ case "$MODE" in
     pass "secrets generated in /data/secrets (AC-15, AC-16)"
     logs_have "$NAME" 'card sync and scanner bundle download queued' || fail "first sync not queued"
     pass "first sync queued on an empty catalog (AC-18)"
+    # The scanner's ONNX runtime imports an .mjs module; browsers refuse it unless it is JavaScript.
+    mjs=$(docker exec "$NAME" sh -c 'ls /srv/frontend/assets | grep "\.mjs$" | head -1')
+    curl -s -o /dev/null -D - "http://127.0.0.1:$PORT/assets/$mjs" | grep -qi '^content-type: application/javascript' \
+      || fail "$mjs is not served as JavaScript"
+    pass "scanner modules served as JavaScript (spec 003)"
     accounts_and_proxy
     backup_check "$NAME"
 
