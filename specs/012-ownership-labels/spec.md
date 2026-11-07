@@ -1,6 +1,6 @@
 # Spec 012: Ownership labels
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 006-deck-views
 
 ## Goal

@@ -164,7 +164,8 @@ copies (`decks.services.fill_from_box`, called from `save_item` and
 
 - `decks/ownership.py`: per deck card, copies in this box, free copies
   (outside every deck box, not in the cart), copies in other decks' boxes,
-  and the state (`in_box`, `owned`, `other_decks`, `missing`). Commander,
+  and the state (`in_box`, `owned`, `other_decks`, `missing`; the app shows
+  them as Owned, Free in collection, In other decks, Missing). Commander,
   Mainboard and Sideboard count; the Maybeboard never does.
 - `decks/legality.py`: the formats table, Scryfall card legality (from
   `Printing.legalities`), size, copies, sideboard, commander pairing and
