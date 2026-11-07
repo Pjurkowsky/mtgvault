@@ -49,7 +49,7 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
 | `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
 | `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
-| `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists |
+| `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists; export takes `printings` (off: quantity and name only, merged) |
 | `GET /api/users/` | public | Directory of users with public locations or decks |
 | `GET /api/users/<username>/locations/[<id>/[items/]]`, `POST .../export/` | public | Public locations, read-only; deck boxes are left out of the list |
 | `GET/POST /api/decks/` | bearer | Deck tiles / create (`create_box`, optional `text` to import) |
@@ -61,8 +61,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/<id>/cards/<cid>/apply-swap/` | bearer | Apply a candidate: it takes the old card's zone and quantity; the old card becomes its candidate |
 | `POST /api/decks/<id>/box/` | bearer | Create the deck box and move free copies into it |
 | `POST /api/decks/add-from-collection/` | bearer | One copy of each selected card into a deck |
-| `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings |
-| `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text |
+| `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings` and `categories` |
+| `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text; export takes `printings` and `other_decks` |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
 | `GET/PATCH /api/wants/settings/` | bearer | The want list's Public switch |

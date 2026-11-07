@@ -1,6 +1,6 @@
 # Spec 014: Export options and steady layout
 
-Status: Draft
+Status: Done
 Depends on: 001-collection, 004-decks, 012-ownership-labels
 
 ## Goal

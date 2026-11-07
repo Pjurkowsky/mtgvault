@@ -21,7 +21,8 @@ src/
   router/     routes and the login guard
   layouts/    AppLayout (top bar) and AuthLayout (centered card)
   pages/      one component per route
-  components/browser/     the shared card browser (spec 001, principle P-2)
+  components/browser/     the shared card browser (spec 001, principle P-2); ExportDialog
+                          (fixed text box, Printings/Categories/other decks options, remembered)
   components/collection/  locations, add card, edit, card detail with EDHREC tabs (right-click
                           menu with Propose swap), import, PrintingPicker (finish filter,
                           sort and prices, remembered per browser)
