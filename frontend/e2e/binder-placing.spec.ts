@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { binderSlot as slot, signUpAndLogIn } from './helpers'
+import { binderSlot as slot, showUnplaced, signUpAndLogIn } from './helpers'
 
 // Spec 007: the Unplaced tray, placing and moving cards, shared pockets (AC-12 to AC-19).
 const LIST = '2 Sol Ring (C21) 263\n1 Lightning Bolt (FDC) 163\n1 Llanowar Elves (FDC) 213'
@@ -26,6 +26,7 @@ async function setUp(page: Page, request: Parameters<typeof signUpAndLogIn>[1]) 
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto(`/locations/${binder}`)
   await expect(page.getByTestId('binder')).toBeVisible()
+  await showUnplaced(page)
   return { api, binder }
 }
 

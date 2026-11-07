@@ -108,6 +108,7 @@ opening the sidebar never moves the controls you are about to click.
   buttons after it don't move (AC-2).
 - In Grid and Table view, cards in the sidebar open on click but don't drag
   (AC-7).
-- Phones start with the sidebar closed (AC-7).
+- The sidebar starts closed on every screen: open, it lies over the toolbar's
+  right end (AC-7).
 - The sidebar slides in and out over 300 ms; no motion with reduced motion
   turned on (AC-7).

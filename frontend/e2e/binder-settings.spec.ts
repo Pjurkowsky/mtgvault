@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { binderSlot as slot, more, signUpAndLogIn } from './helpers'
+import { binderSlot as slot, more, showUnplaced, signUpAndLogIn } from './helpers'
 
 // Spec 007: binder settings, resize, page count and sections (AC-6 to AC-11).
 test.describe('Binder settings', () => {
@@ -31,9 +31,11 @@ test.describe('Binder settings', () => {
     await expect(page.getByTestId('binder-page').first().getByTestId('binder-slot')).toHaveCount(8)
     await expect(slot(page, 1, 1, 4)).toHaveAttribute('data-state', 'filled')
     await expect(slot(page, 1, 6, 4)).toHaveAttribute('data-state', 'filled') // row 2, column 2 kept its place
+    await showUnplaced(page)
     await expect(page.getByTestId('unplaced-count')).toHaveText('1')
     await expect(page.getByTestId('binder-used')).toHaveText('2 / 40 slots')
     await expect(page.getByTestId('binder-pages')).toHaveText('Page 1 of 5')
+    await page.getByRole('button', { name: 'Hide Unplaced' }).click() // open, it lies over the toolbar's end
 
     // The shortcuts and facing pages off.
     await more(page, 'Binder settings')

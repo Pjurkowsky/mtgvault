@@ -168,6 +168,14 @@ export async function deckMenu(page: Page, item: 'Import' | 'Export' | 'Edit' | 
   await page.getByRole('menuitem', { name: item, exact: true }).click()
 }
 
+/** Open the Unplaced sidebar; it starts closed (spec 009, AC-7). */
+export async function showUnplaced(page: Page) {
+  await page.getByRole('button', { name: 'Show Unplaced' }).click()
+  await expect(page.getByTestId('unplaced-sidebar')).toHaveAttribute('data-state', 'open')
+  // A trial click waits until the slide-in has stopped, so positions are final.
+  await page.getByTestId('unplaced-tray').click({ trial: true, position: { x: 4, y: 4 } })
+}
+
 /** A binder pocket by page and slot number (spec 007); slots count left to right, top to bottom. */
 export const binderSlot = (page: Page, p: number, n: number, cols = 3) =>
   page.locator(`[data-testid="binder-slot"][data-place="${p}-${Math.floor((n - 1) / cols) + 1}-${((n - 1) % cols) + 1}"]`)

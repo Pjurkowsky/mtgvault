@@ -23,14 +23,15 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ open: [row: BrowserRow]; drag: [source: DragSource, event: PointerEvent] }>()
 
-// Phones start with it closed: open, it covers the page.
-const wideScreen = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 768px)').matches
-const pref = usePreference('binder.tray', wideScreen ? 'open' : 'closed', ['open', 'closed'] as const)
+// It starts closed: open, it lies over the page and its toolbar's right end.
+const pref = usePreference('binder.tray', 'closed', ['open', 'closed'] as const)
 const shown = computed(() => pref.value === 'open' || !!props.forceOpen)
 const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
 </script>
 
 <template>
+  <!-- One element carries the state, so a closing slide never shows two -->
+  <div class="contents" data-testid="unplaced-sidebar" :data-state="shown ? 'open' : 'closed'">
   <!-- Slides in from the window's edge (motion-reduce: no slide) -->
   <Transition
     enter-active-class="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
@@ -38,10 +39,7 @@ const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
     leave-active-class="transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
     leave-to-class="translate-x-full"
   >
-    <aside
-      v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-card shadow-xl"
-      data-testid="unplaced-sidebar" data-state="open"
-    >
+    <aside v-if="shown" class="fixed inset-y-0 right-0 z-30 w-72 border-l bg-card shadow-xl">
       <UnplacedTray
         id="unplaced-tray" class="h-full overflow-y-auto"
         :unplaced="unplaced" :editable="!!draggable" :over="over" :q="q"
@@ -49,7 +47,6 @@ const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
       />
     </aside>
   </Transition>
-  <span v-if="!shown" class="hidden" data-testid="unplaced-sidebar" data-state="closed" />
   <Tooltip>
     <TooltipTrigger as-child>
       <button
@@ -65,4 +62,5 @@ const toggle = () => (pref.value = shown.value ? 'closed' : 'open')
     </TooltipTrigger>
     <TooltipContent side="left">{{ shown ? 'Hide Unplaced' : 'Show Unplaced' }}</TooltipContent>
   </Tooltip>
+  </div>
 </template>

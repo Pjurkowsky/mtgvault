@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { apiAs, binderSlot as slot, createUser, signUpAndLogIn, uniqueUser } from './helpers'
+import { apiAs, binderSlot as slot, createUser, showUnplaced, signUpAndLogIn, uniqueUser } from './helpers'
 
 // Spec 007: the binder view, pages and the public view (AC-1 to AC-5, AC-24).
 
@@ -42,6 +42,7 @@ test.describe('Binder view', () => {
     await expect(slot(page, 1, 1).getByRole('button')).toHaveAccessibleName('Page 1, slot 1: Sol Ring')
     await expect(slot(page, 1, 2)).toHaveAttribute('data-state', 'filled')
     await expect(slot(page, 1, 3)).toHaveAttribute('data-state', 'empty')
+    await showUnplaced(page)
     await expect(page.getByTestId('unplaced-count')).toHaveText('2') // one Sol Ring and the Bolt
 
     await slot(page, 1, 1).getByRole('button').hover()

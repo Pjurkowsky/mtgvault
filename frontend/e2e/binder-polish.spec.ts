@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { binderSlot as slot, signUpAndLogIn } from './helpers'
+import { binderSlot as slot, showUnplaced, signUpAndLogIn } from './helpers'
 
 // Spec 009: binder polish (AC-1 to AC-8, AC-10, AC-11, AC-13, AC-14).
 
@@ -53,7 +53,7 @@ test.describe('Binder polish', () => {
 
     await page.getByLabel('Grid view').click()
     await expect(filters).toBeEnabled()
-    await expect(page.getByTestId('unplaced-sidebar')).toHaveAttribute('data-state', 'open') // in every view (AC-7)
+    await expect(page.getByTestId('unplaced-tab')).toBeVisible() // in every view (AC-7)
     expect(await x(search)).toBe(inBinder.search)
     expect(await x(filters)).toBe(inBinder.filters)
     expect(await x(more(page))).toBe(inBinder.more)
@@ -108,6 +108,7 @@ test.describe('Binder polish', () => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
     await page.goto(`/locations/${binder}`)
+    await showUnplaced(page)
 
     await page.getByLabel('Search cards').fill('sol')
     await expect(page.getByTestId('binder-match-count')).toHaveText('1 of 3')
@@ -156,9 +157,14 @@ test.describe('Binder polish', () => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
     await page.goto(`/locations/${binder}`)
+    // Closed at first: open, it covers the toolbar's right end.
+    await expect(sidebar(page)).toHaveAttribute('data-state', 'closed')
+    await page.getByTestId('unplaced-tab').click()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
     await expect(page.getByTestId('unplaced-tab')).toHaveAccessibleName('Hide Unplaced')
     await expect(page.getByTestId('unplaced-count')).toHaveText('2')
+    await page.reload()
+    await expect(sidebar(page)).toHaveAttribute('data-state', 'open')
 
     await page.getByTestId('unplaced-tab').click()
     await expect(sidebar(page)).toHaveAttribute('data-state', 'closed')
