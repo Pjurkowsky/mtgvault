@@ -1,6 +1,6 @@
 # Spec 020: Scanner model source
 
-Status: Draft
+Status: Done
 Depends on: 003-scanner, 008 (staff Admin item), Oracle 001-binder-glare
 
 ## Goal

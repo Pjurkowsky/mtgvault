@@ -53,6 +53,17 @@ Everything, including the database, lives in the `/data` volume. Set
   register; admins get an Admin item in the account menu (`/admin/`).
 - Another admin: `docker compose exec mtgvault manage createsuperuser`.
 
+### Your own scanner model
+
+The scanner uses ManaVault's published models by default. To use bundles you train
+with [Oracle](https://github.com/cfbender/oracle) (for example its binder-glare
+model, see Oracle's `docs/binder-glare.md`), copy Oracle's output folder onto the
+server, for example to `./data/app/bundles` (seen inside the container as
+`/data/bundles`). Then, as an admin, open **Settings → Scanner model**, choose
+**Server folder**, enter `/data/bundles` and **Save**. The newest bundle in the
+folder installs at once and the daily sync keeps following the folder; choose
+**GitHub releases** to go back.
+
 ### Settings
 
 | Variable | Default | |

@@ -72,6 +72,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
+| `GET/PUT /api/scanner/source/` | staff | Where the recognition model comes from (GitHub repository or server folder), installed version, last sync; PUT installs at once |
+| `POST /api/scanner/source/sync/` | staff | Install the newest model from the saved source again |
 | `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets, glare hint and sensitivity, combine frames, suggest guesses) |
 | `GET /api/scanner/locked-illustrations/` | bearer | Artwork printed in the locked sets |
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
@@ -212,12 +214,16 @@ collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
 ## Scanner
 
-The `scanner` app installs manavault's published recognition models
-(`scanner-bundle-*` GitHub releases, MPL-2.0) into `SCANNER_DIR`
-(default `var/scanner`). `manage.py sync_scanner_bundle` installs the newest
-one (`--from-dir` for a local copy, `--if-missing` to skip when installed);
-Celery beat runs it daily at 04:00 UTC. Every file is checked against the
-manifest's SHA-256 before `current` switches; the previous version is kept.
+The `scanner` app installs recognition models into `SCANNER_DIR` (default
+`var/scanner`) from the source staff pick on Settings → Scanner model (spec 020,
+`ScannerSource`): `scanner-bundle-*` GitHub releases of a repository (default
+manavault's, MPL-2.0), or a server folder of bundles exported by Oracle, where the
+newest subfolder by its manifest's `created` wins. `manage.py sync_scanner_bundle`
+installs the newest from that source (`--from-dir` for one local bundle,
+`--if-missing` to skip when installed); Celery beat runs it daily at 04:00 UTC,
+and saving the source or Sync now runs it at once in the background. Every file
+is checked against the manifest's SHA-256 before `current` switches; the previous
+version is kept, and a failed install is shown on the Settings section.
 
 Recognition runs in the browser. The server resolves recognized artwork to a
 printing (`scanner/resolve.py`, needs `Printing.illustration_id` from the card

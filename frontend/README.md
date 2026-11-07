@@ -58,6 +58,7 @@ src/
                           the first tap anywhere), glare check, combined frames, guesses; recognition/ is
                           ported from manavault (MPL-2.0, see the root README)
   components/scanner/     result bar, guess strip, scanner settings sheet
+  components/settings/    Scanner model section (staff): model source, installed version, Sync now
   components/wants/       want list (spec 010): add and edit dialog, the entry in the card dialog;
                           the page is CardBrowser with a `wants` source (pages/WantsPage.vue)
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
