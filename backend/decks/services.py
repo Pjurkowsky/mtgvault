@@ -267,6 +267,8 @@ def create_box(deck: Deck, moves: list[dict]) -> Location:
 def delete_deck(deck: Deck, box_action: str | None):
     """AC-6: keep the box as a Box, move its cards to Unfiled, or delete them too."""
     box = deck.location
+    from wants.services import unlink_deck  # its want list entries stay (spec 010, AC-17)
+    unlink_deck(deck)
     if box is not None:
         if box_action not in ('keep', 'unfile', 'delete'):
             raise ValidationError({'box': ['Choose what happens to the deck box.']})

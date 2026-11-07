@@ -7,8 +7,8 @@ after API changes.
 
 ## Phase 1: Data and API
 
-- [ ] **T1 WantItem model, merge services, want list API and settings** (AC-5, AC-6, AC-8, AC-18)
-- [ ] **T2 Lowering on new copies; deck delete unlinks; want-missing endpoint; wanted counts** (AC-13, AC-14 to AC-17)
+- [x] **T1 WantItem model, merge services, want list API and settings** (AC-5, AC-6, AC-8, AC-18)
+- [x] **T2 Lowering on new copies; deck delete unlinks; want-missing endpoint; wanted counts** (AC-13, AC-14 to AC-17)
 
 ## Phase 2: Want list page
 

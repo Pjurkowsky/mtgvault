@@ -25,6 +25,8 @@ class User(AbstractUser):
     )
     email = models.EmailField()
     currency = models.CharField(max_length=3, choices=Currency.choices)
+    # The want list's Public switch (spec 010, AC-18).
+    wants_public = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = ['email', 'currency']
 

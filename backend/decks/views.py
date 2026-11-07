@@ -84,6 +84,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             ownership['free_copies'] = []
             ownership['box_copies'] = []
             ownership['other_decks'] = []
+            ownership['wanted'] = 0
         out_cards.append({
             'id': c.id, 'zone': c.zone, 'quantity': c.quantity, 'printing': c.printing,
             'price': price(c.printing, finish, ctx['currency'], ctx['rates']),
@@ -239,11 +240,13 @@ class MarkOwnedView(APIView):
                 printing = new.get('printing') or card.printing
                 if printing.oracle_id != card.oracle_id:
                     raise ValidationError({'new': ['Pick a printing of the same card.']})
-                save_item(
+                row, _ = save_item(
                     request.user, printing=printing, finish=new.get('finish') or preferred_finish(printing),
                     condition=new['condition'], language=new['language'], location=deck.location,
                     copies=Copies(d['quantity']),
                 )
+                from wants.services import fulfil  # spec 010, AC-13
+                fulfil(request.user, printing, row.finish, d['quantity'], deck.location)
         return detail_response(request, deck)
 
 

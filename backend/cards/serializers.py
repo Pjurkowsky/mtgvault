@@ -79,6 +79,7 @@ class CardDetailSerializer(serializers.Serializer):
     oracle_id = serializers.UUIDField()
     name = serializers.CharField()
     owned = serializers.IntegerField(help_text="Copies the viewer owns across printings (0 when logged out)")
+    wanted = serializers.IntegerField(help_text="Copies on the viewer's want list (spec 010, AC-4)")
     printings = PrintingSerializer(many=True)
 
 

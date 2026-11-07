@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'collection',
     'scanner',
     'decks',
+    'wants',
 ]
 
 MIDDLEWARE = [
@@ -231,6 +232,7 @@ SPECTACULAR_SETTINGS = {
         'LanguageEnum': 'collection.models.Language',
         'LocationKindEnum': 'collection.models.Location.Kind',
         'FormatEnum': 'decks.models.Deck.Format',
+        'WantFinishEnum': 'wants.models.FINISH_CHOICES',
     },
 }
 

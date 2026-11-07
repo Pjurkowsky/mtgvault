@@ -40,6 +40,9 @@ def deck_ownership(deck, cards) -> dict[int, dict]:
         if c.zone in COUNTED:
             needed[c.oracle_id] += c.quantity
 
+    from wants.services import wanted_counts  # spec 010, AC-14
+    wanted = wanted_counts(deck.user_id, oracles, deck)
+
     result = {}
     for c in cards:
         need = needed[c.oracle_id] if c.zone in COUNTED else c.quantity
@@ -61,6 +64,7 @@ def deck_ownership(deck, cards) -> dict[int, dict]:
             'free': free_n,
             'in_other_decks': other_n,
             'missing': max(0, need - box_n - free_n - other_n),
+            'wanted': wanted.get(c.oracle_id, 0),
             'free_copies': free[c.oracle_id],
             'box_copies': box[c.oracle_id],
             'other_decks': [{'deck': name, 'quantity': q} for name, q in other[c.oracle_id].items()],

@@ -41,6 +41,18 @@ from .serializers import (
 )
 from .services import Copies, edit_item, save_item
 
+
+def want_totals(user, ctx):
+    """The want list tile's totals (spec 010, AC-7). Imported here: wants builds on collection."""
+    from wants.models import WantItem
+    from wants.views import want_totals as totals
+    return totals(WantItem.objects.filter(user=user), ctx)
+
+
+def fulfil(user, printing, finish, quantity, location):
+    from wants.services import fulfil as lower  # new copies lower the want list (spec 010, AC-13)
+    lower(user, printing, finish, quantity, location)
+
 PAGE_DEFAULT, PAGE_MAX = 60, 200
 NOT_FOUND = 'Not found.'
 
@@ -142,6 +154,7 @@ class LocationListView(APIView):
             'currency': ctx['currency'],
             'unfiled': totals.get(None, EMPTY_TOTALS),
             'cart': cart.get(None, EMPTY_TOTALS),
+            'wants': want_totals(request.user, ctx),
             'locations': LocationSerializer(locations, many=True, context={**ctx, 'totals': totals, 'request': request}).data,
         })
 
@@ -224,6 +237,7 @@ class ItemListView(APIView):
                 language=d['language'], location=d.get('location'), rates=ctx['rates'],
                 copies=Copies(d['quantity'], d.get('purchase_price'), d.get('purchase_currency')),
             )
+            fulfil(request.user, row.printing, row.finish, d['quantity'], d.get('location'))
             if d.get('slot'):  # Add card from an empty binder slot (spec 007, AC-14)
                 from .binder import place_new
                 place_new(d['location'], row, d['slot'])
@@ -343,6 +357,7 @@ class ImportCommitView(APIView):
                     language=d['language'], location=d.get('location'), rates=rates,
                     copies=Copies(row.quantity, d.get('purchase_price'), d.get('purchase_currency')),
                 )
+                fulfil(request.user, row.printing, row.finish, row.quantity, d.get('location'))
         return Response({'rows': len(rows), 'cards': sum(r.quantity for r in rows)})
 
 
@@ -367,7 +382,7 @@ class DirectoryView(APIView):
             .annotate(public_locations=Count('locations', filter=Q(locations__is_public=True, locations__deck__isnull=True),
                                              distinct=True),
                       public_decks=Count('decks', filter=Q(decks__is_public=True), distinct=True))
-            .filter(Q(public_locations__gt=0) | Q(public_decks__gt=0))
+            .filter(Q(public_locations__gt=0) | Q(public_decks__gt=0) | Q(wants_public=True))
             .order_by('username')
         )
         if q := request.query_params.get('q', '').strip():
@@ -388,6 +403,8 @@ class PublicLocationListView(APIView):
         return Response({
             'currency': ctx['currency'],
             'locations': PublicLocationSerializer(locations, many=True, context={'totals': totals}).data,
+            # A public want list shows on the profile (spec 010, AC-18).
+            'wants': want_totals(user, ctx) if user.wants_public else None,
         })
 
 

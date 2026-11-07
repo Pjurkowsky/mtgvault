@@ -39,9 +39,9 @@ class ItemFilterSerializer(serializers.Serializer):
         return value
 
 
-def with_unit_price(items, currency, rates):
+def with_unit_price(items, currency, rates, finish_field='finish'):
     """Annotate `unit_price`: market price per copy in `currency`."""
-    return items.annotate(unit_price=price_expression(currency, rates))
+    return items.annotate(unit_price=price_expression(currency, rates, finish_field=finish_field))
 
 
 def _color_rank():
@@ -75,10 +75,11 @@ SORT_KEYS = {
 }
 
 
-def apply_filters(items, params: dict, currency: str, rates: dict):
+def apply_filters(items, params: dict, currency: str, rates: dict, *, finish_field='finish', collection=True):
     """Filter and sort `items` (already scoped to one user or public location).
-    Expects validated ItemFilterSerializer data."""
-    items = with_unit_price(items, currency, rates)
+    Expects validated ItemFilterSerializer data. With collection=False (the want
+    list, spec 010) there is no cart, location, condition or deck-cards filter."""
+    items = with_unit_price(items, currency, rates, finish_field)
 
     if q := (params.get('q') or '').strip():
         items = items.filter(Q(printing__name__icontains=q) | Q(printing__front_name__icontains=q))
@@ -95,12 +96,14 @@ def apply_filters(items, params: dict, currency: str, rates: dict):
         items = items.filter(printing__set_id__in=[s.lower() for s in sets])
     if finishes := params.get('finish'):
         items = items.filter(finish__in=finishes)
-    if conditions := params.get('condition'):
-        items = items.filter(condition__in=conditions)
     if params.get('price_min') is not None:
         items = items.filter(unit_price__gte=params['price_min'])
     if params.get('price_max') is not None:
         items = items.filter(unit_price__lte=params['price_max'])
+    if not collection:
+        return _sorted(items, params)
+    if conditions := params.get('condition'):
+        items = items.filter(condition__in=conditions)
     if deck := params.get('deck'):
         from decks.models import DeckCard  # decks depends on collection
         items = items.filter(printing__oracle_id__in=DeckCard.objects.filter(deck_id=deck).values('oracle_id'))
@@ -111,7 +114,10 @@ def apply_filters(items, params: dict, currency: str, rates: dict):
         items = items.filter(location__isnull=True)
     elif location and location != 'cart':
         items = items.filter(location_id=int(location))
+    return _sorted(items, params)
 
+
+def _sorted(items, params):
     descending = params.get('dir') == 'desc'
     keys = SORT_KEYS[params.get('sort') or 'name']()
     ordering = [k.desc(nulls_last=True) if descending else k.asc(nulls_last=True) for k in keys]

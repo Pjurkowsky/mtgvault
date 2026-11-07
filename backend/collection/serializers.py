@@ -84,6 +84,7 @@ class LocationListSerializer(serializers.Serializer):
     currency = serializers.CharField()
     unfiled = TotalsSerializer()
     cart = TotalsSerializer(help_text='Scanned cards waiting in the cart (not part of the collection)')
+    wants = TotalsSerializer(help_text='The want list (spec 010, not part of the collection)')
     locations = LocationSerializer(many=True)
 
 
@@ -317,6 +318,7 @@ class PublicLocationSerializer(serializers.ModelSerializer):
 class PublicLocationListSerializer(serializers.Serializer):
     currency = serializers.CharField()
     locations = PublicLocationSerializer(many=True)
+    wants = TotalsSerializer(allow_null=True, help_text='The public want list; null when private')
 
 
 # ---------- binders (spec 007) ----------

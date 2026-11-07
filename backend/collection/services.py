@@ -129,6 +129,7 @@ def edit_item(row: CollectionItem, rates=None, **changes):
     this one is deleted. Returns (resulting row, merged)."""
     rates = rates or latest_rates()
     row = CollectionItem.objects.select_for_update().get(pk=row.pk)
+    was_in_cart = row.in_cart
 
     # Giving a cart row a location (or Unfiled) moves it into the collection (spec 003, AC-21).
     if 'location' in changes:
@@ -142,6 +143,11 @@ def edit_item(row: CollectionItem, rates=None, **changes):
         raise ValidationError({'quantity': [f'Use 1 to {MAX_QUANTITY}.']})
     if row.purchase_price is None:
         row.purchase_currency = None
+
+    if was_in_cart and not row.in_cart:
+        # Bought: copies leaving the cart lower the want list (spec 010, AC-13).
+        from wants.services import fulfil
+        fulfil(row.user, row.printing, row.finish, row.quantity, row.location)
 
     key = {field: getattr(row, field) for field in ROW_KEY}
     other = _find_row(row.user, key, exclude_id=row.pk)

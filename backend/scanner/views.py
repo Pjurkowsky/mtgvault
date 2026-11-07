@@ -158,6 +158,9 @@ class ScanView(APIView):
                 request.user, printing=printing, finish=default_finish(printing), condition='NM',
                 language='en', location=location, copies=Copies(1), rates=ctx['rates'], in_cart=in_cart,
             )
+            if not in_cart:  # the cart lowers the want list once its cards are moved (spec 010, AC-13)
+                from wants.services import fulfil
+                fulfil(request.user, printing, row.finish, 1, location)
             # Scan in order: the copy takes the next free pocket from the cursor (spec 007, AC-20, AC-23).
             if target.get('binder') and binder.is_binder(location):
                 place = binder.next_free(location, target['binder'])

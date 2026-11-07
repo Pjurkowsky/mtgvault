@@ -379,6 +379,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/want-missing/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A deck's missing cards onto the want list, for the deck (AC-15, AC-16). */
+        post: operations["decks_want_missing_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/add-from-collection/": {
         parameters: {
             query?: never;
@@ -923,6 +940,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/wants/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_wants_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wants/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["wants_list"];
+        put?: never;
+        post: operations["wants_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wants/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["wants_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["wants_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["wants_partial_update"];
+        trace?: never;
+    };
+    "/api/wants/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The want list's Public switch (AC-18). */
+        get: operations["wants_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description The want list's Public switch (AC-18). */
+        patch: operations["wants_settings_partial_update"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1101,6 +1184,8 @@ export interface components {
             name: string;
             /** @description Copies the viewer owns across printings (0 when logged out) */
             owned: number;
+            /** @description Copies on the viewer's want list (spec 010, AC-4) */
+            wanted: number;
             printings: components["schemas"]["Printing"][];
         };
         CardSearchResult: {
@@ -1592,6 +1677,8 @@ export interface components {
             unfiled: components["schemas"]["Totals"];
             /** @description Scanned cards waiting in the cart (not part of the collection) */
             cart: components["schemas"]["Totals"];
+            /** @description The want list (spec 010, not part of the collection) */
+            wants: components["schemas"]["Totals"];
             locations: components["schemas"]["Location"][];
         };
         LockedIllustrations: {
@@ -1668,6 +1755,8 @@ export interface components {
             free: number;
             in_other_decks: number;
             missing: number;
+            /** @description On the want list, for this deck or no deck (spec 010); 0 for visitors */
+            wanted: number;
             /** @description Empty for visitors */
             free_copies: components["schemas"]["FreeCopy"][];
             /** @description Rows in this deck's box; empty for visitors */
@@ -1778,6 +1867,27 @@ export interface components {
             ding_high?: number;
             show_total?: boolean;
             locked_sets?: string[];
+        };
+        PatchedWantSettings: {
+            is_public?: boolean;
+        };
+        PatchedWantWrite: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing?: string;
+            /**
+             * @description False pins `printing`
+             * @default true
+             */
+            any_printing?: boolean;
+            /** @default any */
+            finish?: components["schemas"]["WantFinishEnum"];
+            /** @description The deck this card is for */
+            deck?: number | null;
+            /** @default 1 */
+            quantity?: number;
         };
         /** @description Price per copy for each finish, in the viewer's currency. Null = no price. */
         Prices: {
@@ -1913,12 +2023,39 @@ export interface components {
         PublicLocationList: {
             currency: string;
             locations: components["schemas"]["PublicLocation"][];
+            /** @description The public want list; null when private */
+            wants: components["schemas"]["Totals"] | null;
         };
         /** @description What anyone may see about a user. Never add private fields here. */
         PublicUser: {
             username: string;
             /** Format: date-time */
             date_joined?: string;
+        };
+        /** @description What visitors see of a public want list (AC-18): no decks. */
+        PublicWant: {
+            readonly id: number;
+            printing: components["schemas"]["PrintingBrief"];
+            any_printing?: boolean;
+            quantity?: number;
+            finish?: components["schemas"]["WantFinishEnum"];
+            /** Format: double */
+            readonly unit_price: number | null;
+            /** @description Price per copy in every currency */
+            readonly unit_prices: components["schemas"]["Money"];
+        };
+        PublicWantPage: {
+            currency: string;
+            /** Format: date-time */
+            prices_updated_at: string | null;
+            /** @description Matching entries */
+            count: number;
+            /** @description Cards in matching entries */
+            total_quantity: number;
+            /** Format: double */
+            total_value: number | null;
+            total_values: components["schemas"]["Money"];
+            results: components["schemas"]["PublicWant"][];
         };
         /**
          * @description * `common` - Common
@@ -2116,6 +2253,81 @@ export interface components {
             total: components["schemas"]["Money"];
             owned: components["schemas"]["Money"];
             missing: components["schemas"]["Money"];
+        };
+        /** @description What visitors see of a public want list (AC-18): no decks. */
+        Want: {
+            readonly id: number;
+            printing: components["schemas"]["PrintingBrief"];
+            any_printing?: boolean;
+            quantity?: number;
+            finish?: components["schemas"]["WantFinishEnum"];
+            /** Format: double */
+            readonly unit_price: number | null;
+            /** @description Price per copy in every currency */
+            readonly unit_prices: components["schemas"]["Money"];
+            deck: number | null;
+            deck_name?: string | null;
+            /** @description The linked deck's box, where Add to collection puts copies */
+            deck_location?: number | null;
+            /** Format: date-time */
+            readonly added_at: string;
+        };
+        /**
+         * @description * `any` - Any
+         *     * `nonfoil` - Nonfoil
+         *     * `foil` - Foil
+         *     * `etched` - Etched
+         * @enum {string}
+         */
+        WantFinishEnum: "any" | "nonfoil" | "foil" | "etched";
+        WantMissingRequest: {
+            /** @description One deck card; omit for every missing card */
+            card?: number;
+        };
+        WantMissingResult: {
+            /** @description Copies put on the want list */
+            added: number;
+            deck: components["schemas"]["DeckDetail"];
+        };
+        WantPage: {
+            currency: string;
+            /** Format: date-time */
+            prices_updated_at: string | null;
+            /** @description Matching entries */
+            count: number;
+            /** @description Cards in matching entries */
+            total_quantity: number;
+            /** Format: double */
+            total_value: number | null;
+            total_values: components["schemas"]["Money"];
+            results: components["schemas"]["Want"][];
+        };
+        WantSaveResult: {
+            want: components["schemas"]["Want"];
+            merged: boolean;
+            /** @description Copies of this card on the want list now */
+            wanted: number;
+        };
+        WantSettings: {
+            is_public: boolean;
+        };
+        WantWrite: {
+            /**
+             * Format: uuid
+             * @description Scryfall id
+             */
+            printing: string;
+            /**
+             * @description False pins `printing`
+             * @default true
+             */
+            any_printing?: boolean;
+            /** @default any */
+            finish?: components["schemas"]["WantFinishEnum"];
+            /** @description The deck this card is for */
+            deck?: number | null;
+            /** @default 1 */
+            quantity?: number;
         };
         /**
          * @description * `commander` - Commander
@@ -2766,6 +2978,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    decks_want_missing_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["WantMissingRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["WantMissingRequest"];
+                "multipart/form-data": components["schemas"]["WantMissingRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantMissingResult"];
                 };
             };
         };
@@ -3757,6 +3996,215 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicItemPage"];
+                };
+            };
+        };
+    };
+    users_wants_list: {
+        parameters: {
+            query?: {
+                color?: string[];
+                condition?: string[];
+                deck?: string;
+                dir?: string;
+                finish?: string[];
+                limit?: string;
+                location?: string;
+                offset?: string;
+                price_max?: string;
+                price_min?: string;
+                q?: string;
+                rarity?: string[];
+                set?: string[];
+                sort?: string;
+                type?: string[];
+            };
+            header?: never;
+            path: {
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicWantPage"];
+                };
+            };
+        };
+    };
+    wants_list: {
+        parameters: {
+            query?: {
+                color?: string[];
+                condition?: string[];
+                deck?: string;
+                dir?: string;
+                finish?: string[];
+                limit?: string;
+                location?: string;
+                offset?: string;
+                price_max?: string;
+                price_min?: string;
+                q?: string;
+                rarity?: string[];
+                set?: string[];
+                sort?: string;
+                type?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantPage"];
+                };
+            };
+        };
+    };
+    wants_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WantWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["WantWrite"];
+                "multipart/form-data": components["schemas"]["WantWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantSaveResult"];
+                };
+            };
+        };
+    };
+    wants_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Want"];
+                };
+            };
+        };
+    };
+    wants_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wants_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedWantWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedWantWrite"];
+                "multipart/form-data": components["schemas"]["PatchedWantWrite"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantSaveResult"];
+                };
+            };
+        };
+    };
+    wants_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantSettings"];
+                };
+            };
+        };
+    };
+    wants_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedWantSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedWantSettings"];
+                "multipart/form-data": components["schemas"]["PatchedWantSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WantSettings"];
                 };
             };
         };

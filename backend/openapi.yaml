@@ -728,6 +728,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExportResult'
           description: ''
+  /api/decks/{id}/want-missing/:
+    post:
+      operationId: decks_want_missing_create
+      description: A deck's missing cards onto the want list, for the deck (AC-15,
+        AC-16).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WantMissingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WantMissingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WantMissingRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantMissingResult'
+          description: ''
   /api/decks/add-from-collection/:
     post:
       operationId: decks_add_from_collection_create
@@ -1853,6 +1886,316 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicItemPage'
           description: ''
+  /api/users/{username}/wants/:
+    get:
+      operationId: users_wants_list
+      parameters:
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: deck
+        schema:
+          type: string
+      - in: query
+        name: dir
+        schema:
+          type: string
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: limit
+        schema:
+          type: string
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: price_max
+        schema:
+          type: string
+      - in: query
+        name: price_min
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicWantPage'
+          description: ''
+  /api/wants/:
+    get:
+      operationId: wants_list
+      parameters:
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: deck
+        schema:
+          type: string
+      - in: query
+        name: dir
+        schema:
+          type: string
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: limit
+        schema:
+          type: string
+      - in: query
+        name: location
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: string
+      - in: query
+        name: price_max
+        schema:
+          type: string
+      - in: query
+        name: price_min
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: sort
+        schema:
+          type: string
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      tags:
+      - wants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantPage'
+          description: ''
+    post:
+      operationId: wants_create
+      tags:
+      - wants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WantWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WantWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WantWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantSaveResult'
+          description: ''
+  /api/wants/{id}/:
+    get:
+      operationId: wants_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Want'
+          description: ''
+    patch:
+      operationId: wants_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWantWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWantWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWantWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantSaveResult'
+          description: ''
+    delete:
+      operationId: wants_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - wants
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/wants/settings/:
+    get:
+      operationId: wants_settings_retrieve
+      description: The want list's Public switch (AC-18).
+      tags:
+      - wants
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantSettings'
+          description: ''
+    patch:
+      operationId: wants_settings_partial_update
+      description: The want list's Public switch (AC-18).
+      tags:
+      - wants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWantSettings'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWantSettings'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWantSettings'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WantSettings'
+          description: ''
 components:
   schemas:
     AccessToken:
@@ -2257,6 +2600,9 @@ components:
         owned:
           type: integer
           description: Copies the viewer owns across printings (0 when logged out)
+        wanted:
+          type: integer
+          description: Copies on the viewer's want list (spec 010, AC-4)
         printings:
           type: array
           items:
@@ -2266,6 +2612,7 @@ components:
       - oracle_id
       - owned
       - printings
+      - wanted
     CardSearchResult:
       type: object
       properties:
@@ -3450,6 +3797,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/Totals'
           description: Scanned cards waiting in the cart (not part of the collection)
+        wants:
+          allOf:
+          - $ref: '#/components/schemas/Totals'
+          description: The want list (spec 010, not part of the collection)
         locations:
           type: array
           items:
@@ -3459,6 +3810,7 @@ components:
       - currency
       - locations
       - unfiled
+      - wants
     LockedIllustrations:
       type: object
       properties:
@@ -3618,6 +3970,10 @@ components:
           type: integer
         missing:
           type: integer
+        wanted:
+          type: integer
+          description: On the want list, for this deck or no deck (spec 010); 0 for
+            visitors
         free_copies:
           type: array
           items:
@@ -3643,6 +3999,7 @@ components:
       - needed
       - other_decks
       - state
+      - wanted
     PasswordChange:
       type: object
       properties:
@@ -3856,6 +4213,35 @@ components:
           items:
             type: string
             maxLength: 10
+    PatchedWantSettings:
+      type: object
+      properties:
+        is_public:
+          type: boolean
+    PatchedWantWrite:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        any_printing:
+          type: boolean
+          default: true
+          description: False pins `printing`
+        finish:
+          allOf:
+          - $ref: '#/components/schemas/WantFinishEnum'
+          default: any
+        deck:
+          type: integer
+          nullable: true
+          description: The deck this card is for
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
     Prices:
       type: object
       description: Price per copy for each finish, in the viewer's currency. Null
@@ -4243,9 +4629,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PublicLocation'
+        wants:
+          allOf:
+          - $ref: '#/components/schemas/Totals'
+          nullable: true
+          description: The public want list; null when private
       required:
       - currency
       - locations
+      - wants
     PublicUser:
       type: object
       description: What anyone may see about a user. Never add private fields here.
@@ -4259,6 +4651,79 @@ components:
           format: date-time
       required:
       - username
+    PublicWant:
+      type: object
+      description: 'What visitors see of a public want list (AC-18): no decks.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+        any_printing:
+          type: boolean
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        finish:
+          $ref: '#/components/schemas/WantFinishEnum'
+        unit_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+          nullable: true
+        unit_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
+          description: Price per copy in every currency
+      required:
+      - id
+      - printing
+      - unit_price
+      - unit_prices
+    PublicWantPage:
+      type: object
+      properties:
+        currency:
+          type: string
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        count:
+          type: integer
+          description: Matching entries
+        total_quantity:
+          type: integer
+          description: Cards in matching entries
+        total_value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        total_values:
+          $ref: '#/components/schemas/Money'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicWant'
+      required:
+      - count
+      - currency
+      - prices_updated_at
+      - results
+      - total_quantity
+      - total_value
+      - total_values
     RarityEnum:
       enum:
       - common
@@ -4685,6 +5150,171 @@ components:
       - missing
       - owned
       - total
+    Want:
+      type: object
+      description: 'What visitors see of a public want list (AC-18): no decks.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+        any_printing:
+          type: boolean
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        finish:
+          $ref: '#/components/schemas/WantFinishEnum'
+        unit_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+          nullable: true
+        unit_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
+          description: Price per copy in every currency
+        deck:
+          type: integer
+          nullable: true
+        deck_name:
+          type: string
+          nullable: true
+        deck_location:
+          type: integer
+          nullable: true
+          description: The linked deck's box, where Add to collection puts copies
+        added_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - added_at
+      - deck
+      - id
+      - printing
+      - unit_price
+      - unit_prices
+    WantFinishEnum:
+      enum:
+      - any
+      - nonfoil
+      - foil
+      - etched
+      type: string
+      description: |-
+        * `any` - Any
+        * `nonfoil` - Nonfoil
+        * `foil` - Foil
+        * `etched` - Etched
+    WantMissingRequest:
+      type: object
+      properties:
+        card:
+          type: integer
+          description: One deck card; omit for every missing card
+    WantMissingResult:
+      type: object
+      properties:
+        added:
+          type: integer
+          description: Copies put on the want list
+        deck:
+          $ref: '#/components/schemas/DeckDetail'
+      required:
+      - added
+      - deck
+    WantPage:
+      type: object
+      properties:
+        currency:
+          type: string
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        count:
+          type: integer
+          description: Matching entries
+        total_quantity:
+          type: integer
+          description: Cards in matching entries
+        total_value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        total_values:
+          $ref: '#/components/schemas/Money'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Want'
+      required:
+      - count
+      - currency
+      - prices_updated_at
+      - results
+      - total_quantity
+      - total_value
+      - total_values
+    WantSaveResult:
+      type: object
+      properties:
+        want:
+          $ref: '#/components/schemas/Want'
+        merged:
+          type: boolean
+        wanted:
+          type: integer
+          description: Copies of this card on the want list now
+      required:
+      - merged
+      - want
+      - wanted
+    WantSettings:
+      type: object
+      properties:
+        is_public:
+          type: boolean
+      required:
+      - is_public
+    WantWrite:
+      type: object
+      properties:
+        printing:
+          type: string
+          format: uuid
+          description: Scryfall id
+        any_printing:
+          type: boolean
+          default: true
+          description: False pins `printing`
+        finish:
+          allOf:
+          - $ref: '#/components/schemas/WantFinishEnum'
+          default: any
+        deck:
+          type: integer
+          nullable: true
+          description: The deck this card is for
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+      required:
+      - printing
     ZoneEnum:
       enum:
       - commander
