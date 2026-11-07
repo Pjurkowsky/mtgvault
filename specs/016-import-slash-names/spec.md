@@ -1,6 +1,6 @@
 # Spec 016: Single-slash card names in imports
 
-Status: Draft
+Status: Done
 Depends on: 001-collection, 004-decks
 
 ## Goal
