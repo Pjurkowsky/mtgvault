@@ -1,5 +1,9 @@
 # MTG Vault
 
+> **Vibe-coded.** This whole project, code, tests, specs and docs, was written
+> by an AI (Claude) from conversation, with no hand-written code. Use it
+> accordingly.
+
 - `frontend/` — Vue 3 + Vite + shadcn-vue ([details](frontend/README.md))
 - `backend/` — Django 6.1 + DRF + PostgreSQL ([details](backend/README.md))
 - `specs/` — feature specs. Each has `spec.md` (what), `plan.md` (how) and
@@ -198,3 +202,12 @@ keep that license and name their source files; the rest of MTG Vault is not
 affected. Card data and images come from [Scryfall](https://scryfall.com),
 EDHREC data from [EDHREC](https://edhrec.com). Mana symbols in
 `frontend/src/assets/mana/` are Scryfall's card symbol images.
+
+## License
+
+MTG Vault is licensed under the [GNU Affero General Public License v3.0](LICENSE)
+(AGPL-3.0-or-later). You may use, change and share it; if you run a changed
+version for others over a network, you must offer them its source.
+
+The scanner files ported from ManaVault keep their own license, the
+[Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/) (see Credits).
