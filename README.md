@@ -183,8 +183,9 @@ pnpm e2e                                            # or pnpm e2e:ui
 
 The scanner tests (`scanner` project) use the real recognition models
 (downloaded once into `backend/var/scanner-e2e`, about 50 MB) and Chromium's
-fake camera showing a Sol Ring (`e2e/camera.setup.ts`, built once into
-`e2e/.cache/`). Both need network the first time.
+fake camera showing a Sol Ring: plain, with glare over its art, and out of
+focus (`e2e/camera.setup.ts`, built once into `e2e/.cache/`). Both need
+network the first time.
 
 The tests load a fixed card sample (`backend/cards/fixtures/`) with fixed
 exchange rates, so they need no network. Timing tests (`performance.spec.ts`)

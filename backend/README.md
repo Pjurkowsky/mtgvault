@@ -72,7 +72,7 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
-| `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets) |
+| `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets, glare hint and sensitivity, combine frames, suggest guesses) |
 | `GET /api/scanner/locked-illustrations/` | bearer | Artwork printed in the locked sets |
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
 | `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |

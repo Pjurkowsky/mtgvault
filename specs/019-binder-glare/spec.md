@@ -1,6 +1,6 @@
 # Spec 019: Scanning through binder glare
 
-Status: Draft
+Status: Done
 Depends on: 003-scanner, 007-binder-view, 017-scanner-small-phones
 
 ## Goal
