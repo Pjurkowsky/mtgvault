@@ -125,3 +125,17 @@ class SetSerializer(serializers.ModelSerializer):
 
 class CatalogStatusSerializer(serializers.Serializer):
     prices_updated_at = serializers.DateTimeField(allow_null=True)
+
+
+class TokenSerializer(serializers.Serializer):
+    """A token, emblem or marker a card makes (spec 015)."""
+
+    id = serializers.UUIDField()
+    oracle_id = serializers.UUIDField(allow_null=True)
+    name = serializers.CharField()
+    type_line = serializers.CharField()
+    set_code = serializers.CharField()
+    collector_number = serializers.CharField()
+    image_small = serializers.CharField()
+    image_normal = serializers.CharField()
+    image_large = serializers.CharField()

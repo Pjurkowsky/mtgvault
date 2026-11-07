@@ -179,6 +179,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/Printing'
           description: ''
+  /api/catalog/printings/{printing_id}/tokens/:
+    get:
+      operationId: catalog_printings_tokens_list
+      description: Tokens, emblems and markers a printing makes, one per kind (spec
+        015, AC-7).
+      parameters:
+      - in: path
+        name: printing_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+          description: ''
   /api/catalog/sets/:
     get:
       operationId: catalog_sets_list
@@ -574,6 +600,12 @@ paths:
           type: boolean
           default: true
         description: Write set and number (spec 014, AC-3)
+      - in: query
+        name: tokens
+        schema:
+          type: boolean
+          default: false
+        description: End with a Tokens section (spec 015, AC-8)
       tags:
       - decks
       security:
@@ -2905,6 +2937,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DeckCard'
+        tokens:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckToken'
+          description: Made by Commander, Mainboard and Sideboard cards, one per kind
+            (spec 015)
         legality:
           $ref: '#/components/schemas/Legality'
         stats:
@@ -2922,6 +2960,7 @@ components:
       - location_name
       - name
       - stats
+      - tokens
       - username
       - value
       - values
@@ -3131,6 +3170,47 @@ components:
           type: string
       required:
       - text
+    DeckToken:
+      type: object
+      description: A token, emblem or marker a card makes (spec 015).
+      properties:
+        id:
+          type: string
+          format: uuid
+        oracle_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        type_line:
+          type: string
+        set_code:
+          type: string
+        collector_number:
+          type: string
+        image_small:
+          type: string
+        image_normal:
+          type: string
+        image_large:
+          type: string
+        makers:
+          type: array
+          items:
+            type: integer
+          description: Deck cards that make it, by name
+      required:
+      - collector_number
+      - id
+      - image_large
+      - image_normal
+      - image_small
+      - makers
+      - name
+      - oracle_id
+      - set_code
+      - type_line
     DeckWrite:
       type: object
       properties:
@@ -5215,6 +5295,41 @@ components:
           description: The card to propose
       required:
       - printing
+    Token:
+      type: object
+      description: A token, emblem or marker a card makes (spec 015).
+      properties:
+        id:
+          type: string
+          format: uuid
+        oracle_id:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+        type_line:
+          type: string
+        set_code:
+          type: string
+        collector_number:
+          type: string
+        image_small:
+          type: string
+        image_normal:
+          type: string
+        image_large:
+          type: string
+      required:
+      - collector_number
+      - id
+      - image_large
+      - image_normal
+      - image_small
+      - name
+      - oracle_id
+      - set_code
+      - type_line
     Totals:
       type: object
       properties:

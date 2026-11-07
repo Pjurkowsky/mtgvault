@@ -17,6 +17,7 @@ import DeckList from '@/components/decks/DeckList.vue'
 import DeckSwaps from '@/components/decks/DeckSwaps.vue'
 import DeckText from '@/components/decks/DeckText.vue'
 import DeckToolbar, { type DeckOption, type Layout } from '@/components/decks/DeckToolbar.vue'
+import DeckTokens from '@/components/decks/DeckTokens.vue'
 import OptimizeDialog from '@/components/decks/OptimizeDialog.vue'
 import ProposeSwapDialog from '@/components/decks/ProposeSwapDialog.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
@@ -285,6 +286,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
         />
         <p v-else class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
+        <DeckTokens :tokens="deck.tokens" :cards="shown" />
       </TabsContent>
 
       <TabsContent value="swaps" class="pt-2">
@@ -307,7 +309,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       />
       <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :card="swapCard" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />
-      <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" :options="['printings', 'categories']" />
+      <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" :options="['printings', 'categories', 'tokens']" />
       <OptimizeDialog v-model:open="optimizeOpen" :deck="deck" :changes="optimizeChanges" @changed="changed" />
       <ExportDialog v-model:open="missingOpen" :load="loadMissing" :filename="`${deck.name} missing`" :options="['printings', 'other_decks']" />
       <EditDeckDialog v-model:open="editOpen" :deck="deck" @changed="changed" />

@@ -6,6 +6,7 @@ import { api, fieldErrors, type Schemas } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
 import ExpandButton from '@/components/ExpandButton.vue'
 import EdhrecCardGrid from './EdhrecCardGrid.vue'
+import TokenTiles from '@/components/decks/TokenTiles.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
@@ -70,6 +71,15 @@ const shown = computed(() => {
   const printings = card.value?.printings ?? []
   const wanted = row.value?.printing.id ?? (atRoot.value ? props.printingId : null)
   return printings.find((p) => p.id === wanted) ?? printings[0] ?? null
+})
+
+// Tokens the shown printing makes (spec 015, AC-7).
+const tokens = ref<Schemas['Token'][]>([])
+watch(() => shown.value?.id, async (id) => {
+  tokens.value = []
+  if (!id) return
+  const { data } = await api.GET('/api/catalog/printings/{printing_id}/tokens/', { params: { path: { printing_id: id } } })
+  if (shown.value?.id === id) tokens.value = data ?? []
 })
 
 async function load() {
@@ -189,6 +199,10 @@ const tabs = computed(() => [
             </component>
             </div>
           </div>
+          <section v-if="tokens.length" class="grid gap-2" data-testid="card-tokens">
+            <h3 class="text-sm font-medium">Tokens</h3>
+            <TokenTiles :tokens="tokens" size="sm" />
+          </section>
         </div>
 
         <div class="grid content-start gap-6">

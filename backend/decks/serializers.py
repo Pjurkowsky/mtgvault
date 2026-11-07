@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from cards.models import Finish, Printing
-from cards.serializers import CanCommandSerializer, MoneySerializer, can_command
+from cards.serializers import CanCommandSerializer, MoneySerializer, TokenSerializer, can_command
 from collection.filters import ItemFilterSerializer
 from collection.models import Condition, Language
 from collection.serializers import ImportErrorSerializer, PrintingBriefSerializer, SelectionSerializer
@@ -118,10 +118,15 @@ class DeckSummarySerializer(serializers.Serializer):
     values = MoneySerializer()
 
 
+class DeckTokenSerializer(TokenSerializer):
+    makers = serializers.ListField(child=serializers.IntegerField(), help_text='Deck cards that make it, by name')
+
+
 class DeckDetailSerializer(DeckSummarySerializer):
     username = serializers.CharField()
     currency = serializers.CharField()
     cards = DeckCardSerializer(many=True)
+    tokens = DeckTokenSerializer(many=True, help_text='Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015)')
     legality = LegalitySerializer()
     stats = StatsSerializer()
 
@@ -232,6 +237,7 @@ class MissingExportSerializer(serializers.Serializer):
 class DeckExportParamsSerializer(serializers.Serializer):
     printings = serializers.BooleanField(default=True, help_text='Write set and number (spec 014, AC-3)')
     categories = serializers.BooleanField(default=True, help_text='Write categories as #tags (spec 014, AC-4)')
+    tokens = serializers.BooleanField(default=False, help_text='End with a Tokens section (spec 015, AC-8)')
 
 
 class OptimizeChangeSerializer(serializers.Serializer):

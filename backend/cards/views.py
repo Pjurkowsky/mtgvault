@@ -9,7 +9,9 @@ from rest_framework.views import APIView
 from .models import Printing, Set
 from .pricing import latest_rates, prices_updated_at
 from .edhrec import edhrec_for
+from .tokens import tokens_for
 from .serializers import (
+    TokenSerializer,
     CardDetailSerializer,
     EdhrecSerializer,
     CardSearchResultSerializer,
@@ -129,3 +131,17 @@ class CardEdhrecView(APIView):
         if printing is None:
             raise Http404('No such card.')
         return Response(EdhrecSerializer(edhrec_for(printing.name)).data)
+
+
+class PrintingTokensView(APIView):
+    """Tokens, emblems and markers a printing makes, one per kind (spec 015, AC-7)."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=TokenSerializer(many=True))
+    def get(self, request, printing_id):
+        try:
+            printing = Printing.objects.get(pk=printing_id)
+        except Printing.DoesNotExist:
+            raise Http404 from None
+        return Response(TokenSerializer(tokens_for(printing), many=True).data)

@@ -51,7 +51,7 @@ def parse(text: str):
     return rows_out, errors_out
 
 
-def format_deck(cards, printings: bool = True, categories: bool = True) -> str:
+def format_deck(cards, printings: bool = True, categories: bool = True, tokens: list[dict] | None = None) -> str:
     """Text with zone headings, one line per card: `1 Sol Ring (C21) 263 #Ramp`.
     Without printings: `1 Sol Ring`; without categories: no #tags (spec 014, AC-3, AC-4)."""
     blocks = []
@@ -65,4 +65,7 @@ def format_deck(cards, printings: bool = True, categories: bool = True) -> str:
             lines.append(line)
         if lines:
             blocks.append(LABELS[zone] + '\n' + '\n'.join(lines))
+    if tokens:  # spec 015, AC-8
+        blocks.append('Tokens\n' + '\n'.join(
+            f"1 {t['name']} ({t['set_code'].upper()}) {t['collector_number']}" if printings else f"1 {t['name']}" for t in tokens))
     return '\n\n'.join(blocks) + '\n'

@@ -9,12 +9,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { usePreference } from '@/composables/usePreference'
 
 /** A checkbox the export passes to `load`, ticked unless remembered off (spec 014, AC-3 to AC-6). */
-export type ExportOption = 'printings' | 'categories' | 'other_decks'
+export type ExportOption = 'printings' | 'categories' | 'other_decks' | 'tokens'
 export type ExportOptions = Partial<Record<ExportOption, boolean>>
 
 const LABELS: Record<ExportOption, string> = {
-  printings: 'Printings', categories: 'Categories', other_decks: 'Include cards in other decks',
+  printings: 'Printings', categories: 'Categories', other_decks: 'Include cards in other decks', tokens: 'Tokens',
 }
+// Tokens start off (spec 015, AC-8); the rest start on.
+const OFF_BY_DEFAULT: ExportOption[] = ['tokens']
 
 const props = withDefaults(defineProps<{
   load: (options: ExportOptions) => Promise<{ text: string; rows: number } | undefined>
@@ -28,7 +30,7 @@ const text = ref('')
 const rows = ref(0)
 // Remembered in this browser, shared by every export (AC-6).
 const prefs = Object.fromEntries((Object.keys(LABELS) as ExportOption[])
-  .map((key) => [key, usePreference<'on' | 'off'>(`export.${key}`, 'on', ['on', 'off'])])) as Record<ExportOption, ReturnType<typeof usePreference<'on' | 'off'>>>
+  .map((key) => [key, usePreference<'on' | 'off'>(`export.${key}`, OFF_BY_DEFAULT.includes(key) ? 'off' : 'on', ['on', 'off'])])) as Record<ExportOption, ReturnType<typeof usePreference<'on' | 'off'>>>
 const chosen = computed<ExportOptions>(() => Object.fromEntries(props.options.map((key) => [key, prefs[key].value === 'on'])))
 
 let request = 0

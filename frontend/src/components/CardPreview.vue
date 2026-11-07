@@ -5,7 +5,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/h
 
 /** Large card image on hover (AC-9, AC-32). Wraps whatever shows the card. */
 /** `stack`: every card of a shared binder pocket, shown side by side (spec 007, AC-19). */
-defineProps<{ image?: string | null; name: string; disabled?: boolean; stack?: { image: string; name: string }[] }>()
+/** `caption`: a line under the image, such as the cards that make a token (spec 015, AC-3). */
+defineProps<{ image?: string | null; name: string; disabled?: boolean; stack?: { image: string; name: string }[]; caption?: string }>()
 // Listeners from a wrapping trigger (the card menu) reach the card itself.
 defineOptions({ inheritAttrs: false })
 
@@ -54,6 +55,7 @@ function release() {
         <img v-for="(c, i) in stack" :key="i" :src="c.image" :alt="c.name" class="w-48 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
       </div>
       <img v-else :src="image" :alt="name" class="w-64 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />
+      <p v-if="caption" class="mt-2 w-64 rounded-md bg-popover px-2 py-1 text-xs text-popover-foreground shadow" data-testid="preview-caption">{{ caption }}</p>
     </HoverCardContent>
   </HoverCard>
   <Slot v-else v-bind="$attrs"><slot /></Slot>

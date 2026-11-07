@@ -136,6 +136,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/printings/{printing_id}/tokens/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Tokens, emblems and markers a printing makes, one per kind (spec 015, AC-7). */
+        get: operations["catalog_printings_tokens_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/catalog/sets/": {
         parameters: {
             query?: never;
@@ -1311,6 +1328,8 @@ export interface components {
             username: string;
             currency: string;
             cards: components["schemas"]["DeckCard"][];
+            /** @description Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015) */
+            tokens: components["schemas"]["DeckToken"][];
             legality: components["schemas"]["Legality"];
             stats: components["schemas"]["Stats"];
         };
@@ -1379,6 +1398,22 @@ export interface components {
         };
         DeckText: {
             text: string;
+        };
+        /** @description A token, emblem or marker a card makes (spec 015). */
+        DeckToken: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            oracle_id: string | null;
+            name: string;
+            type_line: string;
+            set_code: string;
+            collector_number: string;
+            image_small: string;
+            image_normal: string;
+            image_large: string;
+            /** @description Deck cards that make it, by name */
+            makers: number[];
         };
         DeckWrite: {
             name: string;
@@ -2282,6 +2317,20 @@ export interface components {
              */
             printing: string;
         };
+        /** @description A token, emblem or marker a card makes (spec 015). */
+        Token: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            oracle_id: string | null;
+            name: string;
+            type_line: string;
+            set_code: string;
+            collector_number: string;
+            image_small: string;
+            image_normal: string;
+            image_large: string;
+        };
         Totals: {
             card_count: number;
             /** Format: double */
@@ -2602,6 +2651,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Printing"][];
+                };
+            };
+        };
+    };
+    catalog_printings_tokens_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                printing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Token"][];
                 };
             };
         };
@@ -2952,6 +3022,8 @@ export interface operations {
                 categories?: boolean;
                 /** @description Write set and number (spec 014, AC-3) */
                 printings?: boolean;
+                /** @description End with a Tokens section (spec 015, AC-8) */
+                tokens?: boolean;
             };
             header?: never;
             path: {

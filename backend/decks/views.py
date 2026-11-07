@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cards.pricing import CURRENCIES, price, prices_in_all, prices_updated_at
+from cards.tokens import deck_tokens
 from cards.views import price_context
 from collection.filters import ItemFilterSerializer, apply_filters
 from collection.serializers import ExportResultSerializer, PublicItemPageSerializer, PublicItemSerializer
@@ -98,7 +99,8 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'categories': c.categories,
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
-            'legality': {'legal': not problems, 'issues': problems}, 'stats': st}
+            'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
+            'tokens': deck_tokens([c for c in cards if c.zone in COUNTED])}
 
 
 def own_deck(request, pk) -> Deck:
@@ -335,7 +337,9 @@ class DeckExportView(APIView):
         cards = deck_cards(own_deck(request, pk))
         params = DeckExportParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
-        text = textlist.format_deck(cards, **params.validated_data)
+        d = params.validated_data
+        text = textlist.format_deck(cards, d['printings'], d['categories'],
+                                    deck_tokens([c for c in cards if c.zone in COUNTED]) if d['tokens'] else None)
         return Response({'text': text, 'rows': len(cards)})
 
 
