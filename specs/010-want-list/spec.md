@@ -1,6 +1,6 @@
 # Spec 010: Want list
 
-Status: Draft
+Status: Done
 Depends on: 001-collection, 002-collection-polish, 004-decks, 005-deck-improvements, 006-deck-views
 
 ## Goal

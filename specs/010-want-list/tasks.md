@@ -23,4 +23,4 @@ after API changes.
 ## Phase 4: Tests and wrap up
 
 - [x] **T7 e2e: wants and deck wants; update older tests**
-- [ ] **T8 Full suite (2 workers), READMEs, spec status**
+- [x] **T8 Full suite (2 workers), READMEs, spec status**

@@ -51,6 +51,8 @@ src/
   scanner/                camera, frame loop, sounds; recognition/ is ported from
                           manavault (MPL-2.0, see the root README)
   components/scanner/     result bar, scanner settings sheet
+  components/wants/       want list (spec 010): add and edit dialog, the entry in the card dialog;
+                          the page is CardBrowser with a `wants` source (pages/WantsPage.vue)
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)
 e2e/          Playwright tests, one file per area, named by acceptance criterion
 ```

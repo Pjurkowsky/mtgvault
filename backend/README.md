@@ -64,6 +64,10 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
+| `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
+| `GET/PATCH /api/wants/settings/` | bearer | The want list's Public switch |
+| `POST /api/decks/<id>/want-missing/` | bearer | A deck's missing cards (or `card`) onto the want list for the deck, up to the missing count |
+| `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
 | `GET/PATCH /api/scanner/settings/` | bearer | Scanner settings (fast, sounds, thresholds, total, locked sets) |
@@ -179,6 +183,24 @@ copies (`decks.services.fill_from_box`, called from `save_item` and
   (underscores for spaces; Moxfield's `#!` prefix is accepted).
 - Printings carry `produced_mana` (Scryfall's, WUBRGC only) for the deck
   stats' mana sources.
+
+## Want list
+
+The `wants` app keeps `WantItem`s: a card (`oracle_id`), a quantity, a
+`printing` (pinned when `any_printing` is false, otherwise just the one shown
+and priced), a `finish` (`any` or one) and an optional `deck`. It is never part
+of the collection. Every write goes through `wants/services.py`:
+
+- `add_want`, `edit_want`: an entry matching another (card, pinned printing or
+  Any, finish, deck) merges into it.
+- `fulfil`: new copies entering the collection (add, import, scanning into a
+  location, leaving the cart, Mark owned) lower matching entries: the deck
+  whose box got them first, then entries without a deck, then other decks.
+- `want_missing`: tops a deck's entries up to its missing counts.
+- `unlink_deck`: runs before a deck is deleted; its entries stay, merged.
+
+`collection.filters.apply_filters(..., finish_field='price_finish',
+collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
 ## Scanner
 
