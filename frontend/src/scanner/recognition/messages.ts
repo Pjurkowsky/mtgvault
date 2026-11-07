@@ -43,10 +43,24 @@ export type WorkerRequest =
       height: number
       /** Part of the gallery to search; `"all"` when omitted. */
       scope?: SearchScope
+      options?: IdentifyOptions
     }
+
+/** Spec 019: skip glare frames, average still frames. */
+export interface IdentifyOptions {
+  /** Washed-out share of the card above which the frame is not identified; null = never. */
+  glareLimit: number | null
+  combine: boolean
+}
 
 export interface Identification {
   quad: Quad
+  /** Washed-out share of the card, 0–1 (spec 019). */
+  glare: number
+  /** Over the glare limit: the frame was not identified. */
+  glared: boolean
+  /** Frames whose embeddings were averaged for these candidates (1 without Combine frames). */
+  combined: number
   /** Share of detector views that agreed the card is upright, 0–1 (roughly). */
   upVote: number
   candidates: Candidate[]

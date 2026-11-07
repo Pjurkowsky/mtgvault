@@ -1,4 +1,4 @@
-import type { BundleInfo, Identification, WorkerResponse } from './messages'
+import type { BundleInfo, Identification, IdentifyOptions, WorkerResponse } from './messages'
 import type { RgbaImage } from './pipeline'
 
 export type LoadProgress = { loaded: number; total: number; cached: boolean }
@@ -29,12 +29,12 @@ export class RecognizerClient {
   }
 
   /** Identify one frame. The pixel buffer is transferred to the worker (not copied). */
-  identify(image: RgbaImage): Promise<Identification> {
+  identify(image: RgbaImage, options?: IdentifyOptions): Promise<Identification> {
     const id = this.nextId++
     const buffer = image.data.buffer as ArrayBuffer
     return new Promise((resolve, reject) => {
       this.pending.set(id, { resolve, reject })
-      this.worker.postMessage({ type: 'identify', id, rgba: buffer, width: image.width, height: image.height }, [buffer])
+      this.worker.postMessage({ type: 'identify', id, rgba: buffer, width: image.width, height: image.height, options }, [buffer])
     })
   }
 

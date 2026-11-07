@@ -14,6 +14,66 @@ export const CAMERA_HELP: Record<CameraError, string> = {
   failed: 'The camera could not start. Close other apps using it and try again.',
 }
 
+/** A camera setting's range, as the camera reports it. */
+export type Range = { min: number; max: number; step: number }
+
+/** What this camera lets the scanner change (spec 019, AC-9); missing = not supported. */
+export type CameraControls = {
+  exposure?: Range
+  zoom?: Range
+  /** Manual focus distance; `autoFocus` says whether it can go back to continuous focus. */
+  focus?: Range
+  autoFocus: boolean
+}
+
+/** Values the user set; missing = the camera's own. `focus: 'auto'` is continuous focus. */
+export type CameraValues = { exposure?: number; zoom?: number; focus?: 'auto' | number }
+
+/** Saved on this device, not the account: each phone's camera has its own ranges (AC-10). */
+const CAMERA_STORAGE = 'mtgvault.scanner-camera'
+
+function loadValues(): CameraValues {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(CAMERA_STORAGE) ?? '{}')
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+type Capabilities = MediaTrackCapabilities & {
+  exposureCompensation?: Range; exposureMode?: string[]; zoom?: Range; focusDistance?: Range; focusMode?: string[]
+}
+
+function controlsOf(caps: Capabilities): CameraControls {
+  const range = (r?: Range) => (r && r.max > r.min ? { min: r.min, max: r.max, step: r.step || (r.max - r.min) / 100 } : undefined)
+  const manualFocus = caps.focusMode?.includes('manual') ? range(caps.focusDistance) : undefined
+  return {
+    exposure: range(caps.exposureCompensation),
+    zoom: range(caps.zoom),
+    focus: manualFocus,
+    autoFocus: !!caps.focusMode?.includes('continuous'),
+  }
+}
+
+/** The constraints that set `values`, falling back to `defaults` (the camera's own at start). */
+function constraintsFor(values: CameraValues, defaults: CameraValues, controls: CameraControls) {
+  const c: Record<string, unknown> = {}
+  if (controls.exposure) {
+    c.exposureMode = 'continuous'
+    c.exposureCompensation = values.exposure ?? defaults.exposure ?? 0
+  }
+  if (controls.zoom) c.zoom = values.zoom ?? defaults.zoom ?? controls.zoom.min
+  const focus = values.focus ?? 'auto'
+  if (typeof focus === 'number' && controls.focus) {
+    c.focusMode = 'manual'
+    c.focusDistance = focus
+  } else if (controls.autoFocus) {
+    c.focusMode = 'continuous'
+  }
+  return c
+}
+
 /**
  * The rear camera (spec 003, AC-2). `grabFrame` fits the whole video into a
  * 640 px square, so a card anywhere in view is found (as in manavault).
@@ -25,6 +85,51 @@ export function useCamera() {
   let stream: MediaStream | null = null
   let canvas: HTMLCanvasElement | null = null
   let generation = 0
+  // Spec 019, AC-9, AC-10: what the camera can change, and what the user set.
+  const controls = ref<CameraControls>({ autoFocus: false })
+  const values = ref<CameraValues>(loadValues())
+  let defaults: CameraValues = {}
+
+  function track() {
+    return stream?.getVideoTracks()[0] ?? null
+  }
+
+  async function apply() {
+    const t = track()
+    if (!t) return
+    const constraints = constraintsFor(values.value, defaults, controls.value)
+    if (Object.keys(constraints).length) await t.applyConstraints({ advanced: [constraints] }).catch(() => {})
+  }
+
+  /** Change one camera value at once and remember it on this device. */
+  async function setControl(next: CameraValues) {
+    values.value = { ...values.value, ...next }
+    try {
+      localStorage.setItem(CAMERA_STORAGE, JSON.stringify(values.value))
+    } catch {
+      // Private mode: the value still applies until the scanner closes.
+    }
+    await apply()
+  }
+
+  /** Back to the camera's own settings. */
+  async function resetControls() {
+    values.value = {}
+    try {
+      localStorage.removeItem(CAMERA_STORAGE)
+    } catch {
+      // Nothing saved.
+    }
+    await apply()
+  }
+
+  function readControls() {
+    const t = track()
+    if (!t?.getCapabilities) return
+    controls.value = controlsOf(t.getCapabilities() as Capabilities)
+    const now = t.getSettings() as MediaTrackSettings & { exposureCompensation?: number; zoom?: number }
+    defaults = { exposure: now.exposureCompensation, zoom: now.zoom }
+  }
 
   async function start() {
     const mine = ++generation
@@ -39,6 +144,8 @@ export function useCamera() {
       })
       if (mine !== generation) return next.getTracks().forEach((t) => t.stop())
       stream = next
+      readControls()
+      await apply()
       if (video.value) {
         video.value.srcObject = stream
         await video.value.play().catch(() => {})
@@ -83,5 +190,5 @@ export function useCamera() {
   }
 
   onBeforeUnmount(stop)
-  return { video, status, error, start, stop, grabFrame }
+  return { video, status, error, start, stop, grabFrame, controls, values, setControl, resetControls }
 }

@@ -4,7 +4,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * Ported from cfbender/manavault `assets/react/src/pages/scan/scan-decision.ts`
- * (MPL-2.0). Changes for MTG Vault: tokens mode removed (tokens are out of scope); import paths.
+ * (MPL-2.0). Changes for MTG Vault: tokens mode removed (tokens are out of scope); import paths;
+ * glare outcome and guesses (spec 019).
  */
 /**
  * Turns per-frame recognition results into scan events. Pure, so the thresholds and the
@@ -100,6 +101,8 @@ export type FrameOutcome =
   | { type: "empty" }
   /** A card is in view but not yet confidently identified. */
   | { type: "tracking"; candidate: Candidate | null }
+  /** A card is in view but washed out by glare; not identified (spec 019, AC-3). */
+  | { type: "glare" }
   /** Identified, but it is the card that was just logged. */
   | { type: "duplicate"; candidate: Candidate }
   /** Clearly a card from outside the locked sets; not logged. */
@@ -132,6 +135,11 @@ export function evaluateFrame(
   const reset = { ...tracker, streakKey: null, streak: 0, streakQuad: null }
   if (!cardInView(result)) {
     return { tracker: reset, outcome: { type: "empty" } }
+  }
+
+  // Glare frames neither log nor break the run of agreeing frames (spec 019, AC-3).
+  if (result.glared) {
+    return { tracker, outcome: { type: "glare" } }
   }
 
   const best = result.candidates[0]
@@ -199,6 +207,52 @@ export function frameInterval(outcome: FrameOutcome["type"], msSinceCard: number
   if (outcome === "duplicate") return FRAME_PACING.relaxedMs
   if (outcome === "empty" && msSinceCard >= FRAME_PACING.settleMs) return FRAME_PACING.relaxedMs
   return FRAME_PACING.activeMs
+}
+
+/**
+ * Suggest guesses (spec 019, AC-6, AC-8): a card held still this long without being logged, whose
+ * best allowed match scores at least `minScore`, offers its top `count` allowed candidates. A
+ * card that can be identified logs well within this time (2-3 agreeing frames); one still
+ * unlogged is either below the logging score or its frames keep disagreeing, which is what
+ * glare does (measured: wrong cards at 0.63-0.67 that change from frame to frame).
+ */
+export const GUESSES = { afterMs: 1500, minScore: 0.45, count: 3 } as const
+
+export interface GuessTracker {
+  /** When the still card came into view, and where it is. */
+  since: number | null
+  quad: Quad | null
+  /** The guesses on show, kept until the strip closes. */
+  shown: Candidate[] | null
+  /** Closed with X: not offered again for this still card. */
+  dismissed: boolean
+}
+
+export const INITIAL_GUESSES: GuessTracker = { since: null, quad: null, shown: null, dismissed: false }
+
+export function trackGuesses(
+  guesses: GuessTracker,
+  result: Identification,
+  outcome: FrameOutcome,
+  now: number,
+  allowed: (candidate: Candidate) => boolean = () => true,
+): GuessTracker {
+  // A logged card, or no card: the strip closes and timing starts over.
+  if (outcome.type === "empty" || outcome.type === "accept" || outcome.type === "duplicate") {
+    return INITIAL_GUESSES
+  }
+  const same = guesses.quad !== null && cardStill(guesses.quad, result.quad)
+  // Glare frames keep the card's place but say nothing about its match.
+  const next: GuessTracker = same
+    ? { ...guesses, quad: outcome.type === "glare" ? guesses.quad : result.quad }
+    : { since: now, quad: result.quad, shown: null, dismissed: false }
+  if (next.shown || next.dismissed || outcome.type !== "tracking") return next
+  const candidates = result.candidates.filter((c) => allowed(c) && !BLANK_ARTS.has(c.id))
+  const best = candidates[0]
+  if (best && best.score >= GUESSES.minScore && now - next.since! >= GUESSES.afterMs) {
+    return { ...next, shown: candidates.slice(0, GUESSES.count) }
+  }
+  return next
 }
 
 /** After the last logged scan is deleted, the same card may be scanned again. */

@@ -243,3 +243,60 @@ export function windowsAgree(seed: DetectorWindow, next: DetectorWindow): boolea
   const ratio = next.side / seed.side
   return moved <= seed.side * 0.1 && ratio >= 0.8 && ratio <= 1.25
 }
+
+/**
+ * Share of the card's art that is washed out (spec 019, AC-3): pixels whose every channel is at
+ * least `WASHED_OUT`, so bright and nearly colourless, as sleeve glare is. Recognition leans on
+ * the art; glare on the text box barely changes a match, so only the art box is sampled.
+ */
+export const WASHED_OUT = 235
+
+/** The art box of an upright card, as shares of its width and height. */
+export const ART_BOX = { left: 0.1, right: 0.9, top: 0.12, bottom: 0.55 } as const
+
+export function glareShare(image: RgbaImage, quad: Quad, cols = 24, rows = 16): number {
+  const { data, width, height } = image
+  const { left, right, top, bottom } = ART_BOX
+  let washed = 0
+  let total = 0
+  for (let j = 0; j < rows; j += 1) {
+    const v = top + ((bottom - top) * (j + 0.5)) / rows
+    for (let i = 0; i < cols; i += 1) {
+      const u = left + ((right - left) * (i + 0.5)) / cols
+      const x =
+        (1 - u) * (1 - v) * quad[0][0] + u * (1 - v) * quad[1][0] + u * v * quad[2][0] + (1 - u) * v * quad[3][0]
+      const y =
+        (1 - u) * (1 - v) * quad[0][1] + u * (1 - v) * quad[1][1] + u * v * quad[2][1] + (1 - u) * v * quad[3][1]
+      const px = Math.round(x)
+      const py = Math.round(y)
+      if (px < 0 || py < 0 || px >= width || py >= height) continue
+      const o = (py * width + px) * 4
+      total += 1
+      if (data[o]! >= WASHED_OUT && data[o + 1]! >= WASHED_OUT && data[o + 2]! >= WASHED_OUT) washed += 1
+    }
+  }
+  return total ? washed / total : 0
+}
+
+/** Glare sensitivity 0 (Low) to 100 (High) → the washed-out share above which a frame is glare:
+ * 40% at Low, 5% at High, about 20% in the middle (spec 019, AC-4). */
+export function glareLimit(sensitivity: number): number {
+  const s = Math.min(100, Math.max(0, sensitivity))
+  return 0.4 - (0.35 * s) / 100
+}
+
+/** Frames of a still card whose embeddings are averaged (spec 019, AC-5). */
+export const COMBINE_FRAMES = 5
+
+/** Mean of embeddings, scaled back to their mean length so scores stay comparable. */
+export function averageEmbedding(vectors: readonly Float32Array[]): Float32Array {
+  const out = new Float32Array(vectors[0]?.length ?? 0)
+  let length = 0
+  for (const vector of vectors) {
+    length += Math.hypot(...vector) / vectors.length
+    for (let i = 0; i < out.length; i += 1) out[i]! += vector[i]!
+  }
+  const norm = Math.hypot(...out) || 1
+  for (let i = 0; i < out.length; i += 1) out[i]! *= length / norm
+  return out
+}

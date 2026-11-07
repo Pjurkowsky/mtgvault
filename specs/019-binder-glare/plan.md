@@ -5,9 +5,9 @@ Spec: [spec.md](spec.md)
 | Topic | Choice |
 |---|---|
 | Settings | `ScannerSettings`: `glare_hint`, `glare_sensitivity` (0-100, default 50), `combine_frames`, `suggest_guesses`; `fast` default True. Migration adds rows with `fast=False` for users without one. |
-| Glare | Worker samples a grid inside the card quad (inset past the border) and returns the washed-out share. With a limit set, a frame over it skips embedding and returns `glare: true`. Limit = 0.40 - 0.35 × sensitivity / 100. |
+| Glare | Worker samples a grid over the card's art box and returns the washed-out share. With a limit set, a frame over it skips embedding and returns `glare: true`. Limit = 0.40 - 0.35 × sensitivity / 100. |
 | Combine | Worker keeps the embeddings of frames whose refined window agrees with the previous one (up to 5), averages and normalises them, and searches the average. |
-| Decision | `evaluateFrame` returns a `glare` outcome that keeps the tracker as is. `trackGuesses` (pure) times a still, unsure card and yields the top 3 allowed candidates. |
+| Decision | `evaluateFrame` returns a `glare` outcome that keeps the tracker as is. `trackGuesses` (pure) times a still card that has not logged and yields the top 3 allowed candidates. |
 | Guesses UI | `GuessStrip.vue` above the result bar; a tap calls `useScanner.pick` (`markLogged`, then the usual log). |
 | Camera | `useCamera` reads `getCapabilities`/`getSettings`, applies `exposureCompensation`, `zoom`, `focusMode`/`focusDistance` with `applyConstraints`, saves to localStorage, resets to the values read at start. |
 | Slider | shadcn-vue `Slider` on reka-ui. |
@@ -27,8 +27,9 @@ Spec: [spec.md](spec.md)
 
 | Test | ACs |
 |---|---|
-| `e2e/scanner-glare.spec.ts` (scanner project; glare camera feed) | AC-1 to AC-8 |
-| `e2e/scanner-settings.spec.ts` | AC-1, AC-4, AC-9, AC-10, AC-11 |
+| `e2e/scanner-glare.spec.ts` (glare feed; camera capabilities stubbed as on Android) | AC-1 to AC-5, AC-8 to AC-10 |
+| `e2e/scanner-guesses.spec.ts` (out-of-focus feed) | AC-6 to AC-8 |
+| `e2e/scanner-settings.spec.ts` | AC-11 |
 
 ## Order
 

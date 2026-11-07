@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * Ported from cfbender/manavault `assets/react/src/pages/scan/recognition/recognizer.ts`
- * (MPL-2.0). Changes for MTG Vault: import paths only.
+ * (MPL-2.0). Changes for MTG Vault: import paths; glare check and combined frames (spec 019).
  */
 /**
  * Runs the three bundle graphs on one frame. Ported from the-gathering's
@@ -25,9 +25,12 @@
  * calibration script (`onnxruntime-web`) share this code.
  */
 import type * as Ort from "onnxruntime-web"
-import type { Identification } from "./messages"
+import type { Identification, IdentifyOptions } from "./messages"
 import {
+  averageEmbedding,
   cardInView,
+  COMBINE_FRAMES,
+  glareShare,
   EMPTY_UP_VOTE,
   fromWindow,
   galleryMask,
@@ -55,7 +58,7 @@ export interface Recognizer {
    * `search.onnx` takes a gallery mask; an older bundle searches everything and the caller
    * filters the top results itself.
    */
-  identify: (image: RgbaImage, scope?: SearchScope) => Promise<Identification>
+  identify: (image: RgbaImage, scope?: SearchScope, options?: IdentifyOptions) => Promise<Identification>
   /** Whether `search.onnx` declares the `mask` input, so scopes narrow the search itself. */
   readonly masked: boolean
 }
@@ -126,8 +129,7 @@ export async function createRecognizer(
     }
   }
 
-  async function embedAndSearch(image: RgbaImage, quad: Quad, scope: SearchScope) {
-    const started = performance.now()
+  async function embedCard(image: RgbaImage, quad: Quad) {
     const embeddings = await embed.run({
       scene: new ort.Tensor("uint8", new Uint8Array(image.data.buffer), [
         image.height,
@@ -136,14 +138,15 @@ export async function createRecognizer(
       ]),
       quad: new ort.Tensor("float32", Float32Array.from(quad.flat()), [4, 2]),
     })
-    const embedded = performance.now()
     const vectors = Object.values(embeddings)[0]
     if (!vectors) throw new Error("embed graph returned nothing")
+    return vectors
+  }
+
+  async function searchGallery(vectors: Ort.Tensor, scope: SearchScope) {
     const ranked = await search.run(
       masks ? { embeddings: vectors, mask: masks[scope] } : { embeddings: vectors },
     )
-    const finished = performance.now()
-
     const indices = ranked.indices?.data as BigInt64Array | Int32Array
     const scores = ranked.scores?.data as Float32Array
     const candidates: Candidate[] = []
@@ -155,11 +158,46 @@ export async function createRecognizer(
       const art = arts[index]
       if (art) candidates.push({ ...art, index, score })
     }
-    return { candidates, embed: embedded - started, search: finished - embedded }
+    return candidates
   }
 
-  async function identify(image: RgbaImage, scope: SearchScope = "all"): Promise<Identification> {
+  async function embedAndSearch(image: RgbaImage, quad: Quad, scope: SearchScope) {
     const started = performance.now()
+    const vectors = await embedCard(image, quad)
+    const embedded = performance.now()
+    const candidates = await searchGallery(vectors, scope)
+    return { candidates, embed: embedded - started, search: performance.now() - embedded }
+  }
+
+  /** Embeddings of the still card's latest frames, oldest first (spec 019, AC-5). */
+  let recent: Float32Array[] = []
+
+  /** Embed the card, average it with its latest still frames, then search. */
+  async function embedCombinedAndSearch(image: RgbaImage, quad: Quad, scope: SearchScope) {
+    const started = performance.now()
+    const vectors = await embedCard(image, quad)
+    const embedded = performance.now()
+    let query = vectors
+    if (vectors.type === "float32") {
+      recent = [...recent, Float32Array.from(vectors.data as Float32Array)].slice(-COMBINE_FRAMES)
+      if (recent.length > 1) query = new ort.Tensor("float32", averageEmbedding(recent), vectors.dims)
+    }
+    const candidates = await searchGallery(query, scope)
+    return {
+      candidates,
+      combined: Math.max(1, recent.length),
+      embed: embedded - started,
+      search: performance.now() - embedded,
+    }
+  }
+
+  async function identify(
+    image: RgbaImage,
+    scope: SearchScope = "all",
+    options: IdentifyOptions = { glareLimit: null, combine: false },
+  ): Promise<Identification> {
+    const started = performance.now()
+    const previous = tracked
 
     // While a card sits still, one pass on the previous frame's refined window is this frame's
     // refined pass. Anything else (card moved, gone, or the periodic re-anchor) takes the
@@ -185,13 +223,24 @@ export async function createRecognizer(
     const inView = cardInView(fine.upVote, fine.quad)
     tracked = inView ? refineWindow(fine, constants) : null
     trackedFrames = inView && seed ? trackedFrames + 1 : 0
-    const result = inView
-      ? await embedAndSearch(image, fine.quad, scope)
-      : { candidates: [], embed: 0, search: 0 }
+    // Another card, or one that moved, starts a new average.
+    if (!inView || !options.combine || !previous || !windowsAgree(previous, tracked!)) recent = []
+
+    const glare = inView ? glareShare(image, fine.quad) : 0
+    const glared = inView && options.glareLimit !== null && glare > options.glareLimit
+    const result =
+      !inView || glared
+        ? { candidates: [], combined: 0, embed: 0, search: 0 }
+        : options.combine
+          ? await embedCombinedAndSearch(image, fine.quad, scope)
+          : { ...(await embedAndSearch(image, fine.quad, scope)), combined: 1 }
 
     return {
       quad: fine.quad,
       upVote: fine.upVote,
+      glare,
+      glared,
+      combined: result.combined,
       candidates: result.candidates,
       timings: {
         detector: detected - started,

@@ -2,16 +2,17 @@ import { onBeforeUnmount, ref, shallowRef } from 'vue'
 import { api, type Schemas } from '@/api/client'
 import type { ScanTarget } from '@/lib/scanTarget'
 import { useCamera } from './camera'
-import { evaluateFrame, FRAME_PACING, forgetLastLogged, frameInterval, INITIAL_TRACKER, type FrameOutcome, type ScanTracker } from './decision'
+import { cardKey, evaluateFrame, FRAME_PACING, forgetLastLogged, frameInterval, INITIAL_GUESSES, INITIAL_TRACKER, markLogged, trackGuesses, type FrameOutcome, type GuessTracker, type ScanTracker } from './decision'
 import { RecognizerClient, type LoadProgress } from './recognition/client'
 import type { BundleInfo } from './recognition/messages'
-import type { Candidate } from './recognition/pipeline'
+import { glareLimit, type Candidate } from './recognition/pipeline'
 import { playSound } from './sounds'
 
 export type ScannerStatus =
   | { kind: 'loading'; progress: LoadProgress | null }
   | { kind: 'looking' }
   | { kind: 'steady'; name: string | null }
+  | { kind: 'glare' }
   | { kind: 'logged'; name: string }
   | { kind: 'outside'; name: string }
   | { kind: 'paused' }
@@ -44,9 +45,12 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
   // Totals of where cards go: the cart, a location or a decklist.
   const cart = ref<Totals | null>(null)
   const ready = ref<{ version: string; threads: number } | null>(null)
+  // Spec 019, AC-6: the best guesses for an unsure card, while on show.
+  const guesses = shallowRef<Candidate[] | null>(null)
 
   let client: RecognizerClient | null = null
   let tracker: ScanTracker = INITIAL_TRACKER
+  let guessTracker: GuessTracker = INITIAL_GUESSES
   let locked = new Set<string>()
   let running = false
   let lastCardAt = performance.now()
@@ -111,11 +115,21 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
       const frame = camera.grabFrame()
       if (frame) {
         try {
-          const result = await client.identify(frame)
+          const s = settings.value
+          const result = await client.identify(frame, {
+            glareLimit: s?.glare_hint ? glareLimit(s.glare_sensitivity ?? 50) : null,
+            combine: !!s?.combine_frames,
+          })
           if (!running) break
           const decision = evaluateFrame(tracker, result, allowed)
           tracker = decision.tracker
           outcome = decision.outcome.type
+          if (s?.suggest_guesses) {
+            guessTracker = trackGuesses(guessTracker, result, decision.outcome, performance.now(), allowed)
+            guesses.value = guessTracker.shown
+          } else if (guesses.value) {
+            closeGuesses()
+          }
           await react(decision.outcome)
         } catch {
           // One failed frame is not fatal; the next one usually works.
@@ -137,6 +151,8 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
       if (status.value.kind !== 'logged') status.value = { kind: 'looking' }
     } else if (outcome.type === 'tracking') {
       status.value = { kind: 'steady', name: outcome.candidate?.name ?? null }
+    } else if (outcome.type === 'glare') {
+      status.value = { kind: 'glare' }
     } else if (outcome.type === 'outside-lock') {
       status.value = { kind: 'outside', name: outcome.candidate.name }
     } else if (outcome.type === 'accept') {
@@ -160,6 +176,19 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
     hooks.logged?.(data)
     status.value = { kind: 'logged', name: (data.item ?? data.deck_card)?.printing.name ?? candidate.name }
     if (settings.value?.sounds) void playSound(data.sound)
+  }
+
+  /** Log a tapped guess like a scan; the card counts as just logged (spec 019, AC-7). */
+  async function pick(candidate: Candidate) {
+    closeGuesses()
+    tracker = markLogged({ ...tracker, streakKey: null, streak: 0, streakQuad: null }, cardKey(candidate.id))
+    await log(candidate)
+  }
+
+  /** Close the strip; it stays shut for this still card (spec 019, AC-8). */
+  function closeGuesses() {
+    guessTracker = { ...guessTracker, shown: null, dismissed: true }
+    guesses.value = null
   }
 
   /** Result bar actions (AC-11). */
@@ -289,7 +318,7 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
   })
 
   return {
-    camera, status, settings, lastScan, lastDeckCard, cart, ready,
-    start, resume, plusOne, setFinish, undo, replaceLast, saveSettings, retarget,
+    camera, status, settings, lastScan, lastDeckCard, cart, ready, guesses,
+    start, resume, plusOne, setFinish, undo, replaceLast, saveSettings, retarget, pick, closeGuesses,
   }
 }

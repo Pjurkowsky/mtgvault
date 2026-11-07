@@ -2,20 +2,25 @@
 import { computed, ref, watch } from 'vue'
 import { XIcon } from '@lucide/vue'
 import { api, type Schemas } from '@/api/client'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
+import type { useCamera } from '@/scanner/camera'
 
-/** Scanner settings, saved to the account (spec 003, AC-12, AC-15, AC-16). */
+/** Scanner settings, saved to the account (spec 003, AC-12, AC-15, AC-16; spec 019, AC-1, AC-4). */
 const props = defineProps<{
   settings: Schemas['ScannerSettings']
   currency: string
   ready: { version: string; threads: number } | null
   save: (patch: Partial<Schemas['ScannerSettings']>) => Promise<boolean>
+  /** Camera controls, saved on this device (spec 019, AC-9, AC-10). */
+  camera?: ReturnType<typeof useCamera>
 }>()
 const open = defineModel<boolean>('open', { required: true })
 
@@ -35,6 +40,17 @@ async function saveThresholds() {
   const ok = await props.save({ ding_low: Number(low.value), ding_high: Number(high.value) })
   if (!ok) error.value = 'The high threshold must be at least the low one.'
 }
+
+// Glare sensitivity: saved when the thumb is let go (spec 019, AC-4).
+const sensitivity = ref([props.settings.glare_sensitivity ?? 50])
+watch(() => props.settings.glare_sensitivity, (v) => (sensitivity.value = [v ?? 50]))
+
+// Camera: only what this camera supports (spec 019, AC-9).
+const controls = computed(() => props.camera?.controls.value ?? { autoFocus: false })
+const values = computed(() => props.camera?.values.value ?? {})
+const hasCamera = computed(() => !!(controls.value.exposure || controls.value.zoom || controls.value.focus))
+const middle = (r: { min: number; max: number }) => (r.min + r.max) / 2
+const manualFocus = computed(() => typeof values.value.focus === 'number')
 
 // Locked sets: search, tick to lock (AC-8).
 const query = ref('')
@@ -81,6 +97,66 @@ function toggleSet(code: string, on: boolean) {
           <Switch id="scan-total" :model-value="settings.show_total" @update:model-value="(v) => save({ show_total: v })" />
           <Label for="scan-total" class="font-normal">Running total</Label>
         </div>
+        <Separator />
+        <!-- Help through binder glare (spec 019, AC-1 to AC-8) -->
+        <div class="grid gap-3">
+          <div class="flex items-center gap-3">
+            <Switch id="glare-hint" :model-value="settings.glare_hint" @update:model-value="(v) => save({ glare_hint: v })" />
+            <Label for="glare-hint" class="font-normal">Glare hint</Label>
+          </div>
+          <div v-if="settings.glare_hint" class="grid gap-2 pl-11" data-testid="glare-sensitivity">
+            <span class="text-sm">Glare sensitivity</span>
+            <div class="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>Low</span>
+              <Slider v-model="sensitivity" label="Glare sensitivity" :min="0" :max="100" :step="5" @value-commit="(v) => save({ glare_sensitivity: v[0] })" />
+              <span>High</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <Switch id="combine-frames" :model-value="settings.combine_frames" @update:model-value="(v) => save({ combine_frames: v })" />
+            <Label for="combine-frames" class="font-normal">Combine frames</Label>
+          </div>
+          <div class="flex items-center gap-3">
+            <Switch id="suggest-guesses" :model-value="settings.suggest_guesses" @update:model-value="(v) => save({ suggest_guesses: v })" />
+            <Label for="suggest-guesses" class="font-normal">Suggest guesses</Label>
+          </div>
+        </div>
+        <template v-if="camera && hasCamera">
+          <Separator />
+          <section class="grid gap-3" data-testid="camera-controls">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium">Camera</span>
+              <Button size="sm" variant="outline" @click="camera.resetControls()">Reset</Button>
+            </div>
+            <div v-if="controls.exposure" class="grid gap-2">
+              <span class="text-sm">Exposure</span>
+              <Slider
+                label="Exposure" :min="controls.exposure.min" :max="controls.exposure.max" :step="controls.exposure.step"
+                :model-value="[values.exposure ?? 0]" @update:model-value="(v) => v && camera!.setControl({ exposure: v[0] })"
+              />
+            </div>
+            <div v-if="controls.zoom" class="grid gap-2">
+              <span class="text-sm">Zoom</span>
+              <Slider
+                label="Zoom" :min="controls.zoom.min" :max="controls.zoom.max" :step="controls.zoom.step"
+                :model-value="[values.zoom ?? controls.zoom.min]" @update:model-value="(v) => v && camera!.setControl({ zoom: v[0] })"
+              />
+            </div>
+            <div v-if="controls.focus" class="grid gap-2">
+              <div class="flex items-center gap-3">
+                <Switch
+                  id="auto-focus" :model-value="!manualFocus"
+                  @update:model-value="(auto) => camera!.setControl({ focus: auto ? 'auto' : middle(controls.focus!) })"
+                />
+                <Label for="auto-focus" class="font-normal">Auto focus</Label>
+              </div>
+              <Slider
+                v-if="manualFocus" label="Focus distance" :min="controls.focus.min" :max="controls.focus.max" :step="controls.focus.step"
+                :model-value="[values.focus as number]" @update:model-value="(v) => v && camera!.setControl({ focus: v[0] })"
+              />
+            </div>
+          </section>
+        </template>
         <Separator />
         <section class="grid gap-2">
           <Label for="locked-search">Locked sets</Label>

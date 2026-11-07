@@ -7,6 +7,7 @@ import type { BrowserRow } from '@/components/browser/types'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
+import GuessStrip from '@/components/scanner/GuessStrip.vue'
 import ResultBar from '@/components/scanner/ResultBar.vue'
 import ScannerSettingsSheet from '@/components/scanner/ScannerSettingsSheet.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
@@ -73,7 +74,7 @@ const scanner = useScanner(binderTarget, {
     binderFull.value = false
   },
 })
-const { camera, status, settings, lastScan, lastDeckCard, cart, ready } = scanner
+const { camera, status, settings, lastScan, lastDeckCard, cart, ready, guesses } = scanner
 const currency = computed(() => auth.user?.currency ?? 'USD')
 const settingsOpen = ref(false)
 const editOpen = ref(false)
@@ -147,6 +148,7 @@ const statusText = computed(() => {
   const s = status.value
   if (s.kind === 'looking') return 'Hold a card in view'
   if (s.kind === 'steady') return s.name ? `Hold steady… ${s.name}?` : 'Hold steady'
+  if (s.kind === 'glare') return 'Glare: tilt the phone'
   if (s.kind === 'logged') return `Added ${s.name}`
   if (s.kind === 'outside') return `Not in locked sets: ${s.name}`
   return ''
@@ -241,15 +243,17 @@ function onEdited(item: BrowserRow) {
     </button>
 
     <!-- Last logged card (AC-11) -->
-    <div class="absolute inset-x-0 bottom-0 p-3 text-foreground" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
+    <div class="absolute inset-x-0 bottom-0 grid gap-2 p-3 text-foreground" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))">
+      <!-- Best guesses for an unsure card (spec 019, AC-6) -->
+      <GuessStrip v-if="guesses?.length" class="mx-auto w-full max-w-xl" :guesses="guesses" @pick="scanner.pick" @close="scanner.closeGuesses()" />
       <ResultBar
-        v-if="lastScan || lastDeckCard" class="mx-auto max-w-xl" :item="lastScan" :deck-card="lastDeckCard" :currency="currency"
+        v-if="lastScan || lastDeckCard" class="mx-auto w-full max-w-xl" :item="lastScan" :deck-card="lastDeckCard" :currency="currency"
         :place="lastSlot && binderGrid ? placeLabel(lastSlot, binderGrid.cols) : null"
         @plus="scanner.plusOne()" @undo="scanner.undo()" @finish="scanner.setFinish" @printing="editOpen = true"
       />
     </div>
 
-    <ScannerSettingsSheet v-if="settings" v-model:open="settingsOpen" :settings="settings" :currency="currency" :ready="ready" :save="scanner.saveSettings" />
+    <ScannerSettingsSheet v-if="settings" v-model:open="settingsOpen" :settings="settings" :currency="currency" :ready="ready" :save="scanner.saveSettings" :camera="camera" />
     <EditItemDialog v-model:open="editOpen" :row="lastScan" @saved="onEdited" />
     <BinderScanDialog
       v-if="binderId && binderGrid" v-model:open="binderOpen" :current="binderScan" :rows="binderGrid.rows" :cols="binderGrid.cols"

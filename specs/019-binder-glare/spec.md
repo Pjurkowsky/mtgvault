@@ -19,13 +19,14 @@ when unsure, and tune the camera. Fast scanning is on for new accounts.
 
 ### Glare
 
-- **AC-3** With Glare hint on, a frame where much of the card is washed out
-  white is not used to identify it, and the status says
+- **AC-3** With Glare hint on, a frame where much of the card's art is washed
+  out white is not used to identify it, and the status says
   "Glare: tilt the phone". Such frames neither log a card nor break a run of
   agreeing frames.
 - **AC-4** A "Glare sensitivity" slider (Low to High, default in the middle)
   shows under Glare hint while it is on. High counts a small washed-out area
-  as glare (about 5% of the card), Low only a large one (about 40%).
+  as glare (about 5% of the art), the middle about 20%, Low only a large one
+  (about 40%).
 
 ### Combine frames
 
@@ -35,9 +36,9 @@ when unsure, and tune the camera. Fast scanning is on for new accounts.
 
 ### Suggest guesses
 
-- **AC-6** With Suggest guesses on, a card held still for 1.5 s whose best
-  match stays unsure (0.45 to under 0.6) shows a strip of its 3 best guesses
-  above the result bar: art, name and set, plus a close button. Guesses
+- **AC-6** With Suggest guesses on, a card held still for 1.5 s without being
+  logged, whose best match scores at least 0.45, shows a strip of its 3 best
+  guesses above the result bar: art, name and set, plus a close button. Guesses
   outside locked sets are left out.
 - **AC-7** Tapping a guess logs it like a scan (sound, result bar, binder
   pocket), and the scanner treats that card as just logged.
@@ -66,8 +67,12 @@ when unsure, and tune the camera. Fast scanning is on for new accounts.
 
 ## Assumptions (filled in during writing, not grilled)
 
-- Washed-out means a pixel bright and nearly colourless; the card's outer edge
-  (the border) is not measured (AC-3).
+- Washed-out means a pixel bright and nearly colourless. Only the art box is
+  measured: glare on the text box barely changed a match on real frames, glare
+  on the art broke it from about 20% (AC-3, AC-4).
+- Guesses: grilled as "best match 0.45 to under 0.6". On real frames glare gives
+  wrong cards at 0.63-0.67 that change between frames, so the strip opens for
+  any still card not logged after 1.5 s (AC-6).
 - The guess strip keeps the guesses it opened with until it closes (AC-6).
 - After the strip is closed with X, it does not reopen for the same still card (AC-8).
 - Existing accounts that never saved scanner settings keep Fast scanning off (AC-11).

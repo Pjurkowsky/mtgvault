@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
  * Ported from cfbender/manavault `assets/react/src/pages/scan/recognition/recognizer.worker.ts`
- * (MPL-2.0). Changes for MTG Vault: none.
+ * (MPL-2.0). Changes for MTG Vault: identify options (spec 019).
  */
 /// <reference lib="webworker" />
 /**
@@ -107,7 +107,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       reply({
         type: "identified",
         id: request.id,
-        result: await recognizer.identify(image, request.scope ?? "all"),
+        result: await recognizer.identify(image, request.scope ?? "all", request.options),
       })
     }
   } catch (error) {

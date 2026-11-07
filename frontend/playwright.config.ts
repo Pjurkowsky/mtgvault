@@ -6,6 +6,15 @@ const WEB_PORT = 5180
 export const RATES = { EUR: 4.4, USD: 4.0 }
 /** Fake camera for the scanner tests: Sol Ring on a table (built by e2e/camera.setup.ts). */
 export const CAMERA_FEED = new URL('./e2e/.cache/camera.mjpeg', import.meta.url).pathname
+/** Spec 019: Sol Ring with sleeve glare over its art, and out of focus so the model is unsure. */
+export const GLARE_FEED = new URL('./e2e/.cache/glare.mjpeg', import.meta.url).pathname
+export const UNSURE_FEED = new URL('./e2e/.cache/unsure.mjpeg', import.meta.url).pathname
+/** Chromium flags for a fake camera playing `feed`. */
+export const fakeCamera = (feed: string) => [
+  '--use-fake-device-for-media-stream',
+  '--use-fake-ui-for-media-stream',
+  `--use-file-for-fake-video-capture=${feed}`,
+]
 export const DATABASE_URL =
   process.env.E2E_DATABASE_URL ?? 'postgres://mtgvault:mtgvault@localhost:5432/mtgvault_e2e'
 
@@ -23,7 +32,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/performance\.spec\.ts/, /scanner(-deck|-binder|-small)?\.spec\.ts/, /\.setup\.ts/],
+      testIgnore: [/performance\.spec\.ts/, /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/, /\.setup\.ts/],
     },
     // Timing tests run alone after the rest, so parallel tests don't skew them.
     {
@@ -36,18 +45,14 @@ export default defineConfig({
     // Real recognition models with Chromium's fake camera (spec 003).
     {
       name: 'scanner',
-      testMatch: /scanner(-deck|-binder|-small)?\.spec\.ts/,
+      testMatch: /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/,
       // After the timing tests: recognition is CPU-heavy and would skew them.
       dependencies: ['camera', 'performance'],
       use: {
         ...devices['Desktop Chrome'],
         permissions: ['camera'],
         launchOptions: {
-          args: [
-            '--use-fake-device-for-media-stream',
-            '--use-fake-ui-for-media-stream',
-            `--use-file-for-fake-video-capture=${CAMERA_FEED}`,
-          ],
+          args: fakeCamera(CAMERA_FEED),
         },
       },
     },
