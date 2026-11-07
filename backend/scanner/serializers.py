@@ -10,7 +10,8 @@ from .models import ScannerSettings
 class ScannerSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScannerSettings
-        fields = ['fast', 'sounds', 'ding_low', 'ding_high', 'show_total', 'locked_sets']
+        fields = ['fast', 'sounds', 'ding_low', 'ding_high', 'show_total', 'locked_sets',
+                  'glare_hint', 'glare_sensitivity', 'combine_frames', 'suggest_guesses']
 
     def validate_locked_sets(self, value):
         codes = sorted({code.lower() for code in value})

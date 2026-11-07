@@ -4490,6 +4490,16 @@ components:
           items:
             type: string
             maxLength: 10
+        glare_hint:
+          type: boolean
+        glare_sensitivity:
+          type: integer
+          maximum: 100
+          minimum: 0
+        combine_frames:
+          type: boolean
+        suggest_guesses:
+          type: boolean
     PatchedWantSettings:
       type: object
       properties:
@@ -5214,6 +5224,16 @@ components:
           items:
             type: string
             maxLength: 10
+        glare_hint:
+          type: boolean
+        glare_sensitivity:
+          type: integer
+          maximum: 100
+          minimum: 0
+        combine_frames:
+          type: boolean
+        suggest_guesses:
+          type: boolean
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions

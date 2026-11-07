@@ -1985,6 +1985,10 @@ export interface components {
             ding_high?: number;
             show_total?: boolean;
             locked_sets?: string[];
+            glare_hint?: boolean;
+            glare_sensitivity?: number;
+            combine_frames?: boolean;
+            suggest_guesses?: boolean;
         };
         PatchedWantSettings: {
             is_public?: boolean;
@@ -2270,6 +2274,10 @@ export interface components {
             ding_high?: number;
             show_total?: boolean;
             locked_sets?: string[];
+            glare_hint?: boolean;
+            glare_sensitivity?: number;
+            combine_frames?: boolean;
+            suggest_guesses?: boolean;
         };
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {

@@ -27,7 +27,7 @@ async function countTones(page: Page) {
 test('AC-1, AC-3, AC-5, AC-7, AC-10, AC-14, AC-17: opens from the toolbar and logs a held card into the cart', async ({ page, request }) => {
   const { api } = await signUpAndLogIn(page, request)
   await openScanner(page)
-  await expect(page).toHaveURL(/\/scan$/)
+  await expect(page).toHaveURL(/\/scan\/fast$/) // Fast scanning is on for new accounts (spec 019, AC-11)
   await expect(page.getByTestId('result-bar')).toBeVisible({ timeout: LOG_TIMEOUT })
   await expect(page.getByTestId('scan-status')).toHaveText('Added Sol Ring')
   await expect(page.getByTestId('result-name')).toHaveText('Sol Ring')

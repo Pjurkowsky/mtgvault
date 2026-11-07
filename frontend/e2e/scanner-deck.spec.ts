@@ -11,7 +11,7 @@ async function scanFromDeck(page: Page, deckId: number, choice?: string) {
   const dialog = page.getByTestId('scan-target')
   if (choice) await dialog.getByRole('radio', { name: choice }).click()
   await dialog.getByRole('button', { name: 'Scan' }).click()
-  await expect(page).toHaveURL(new RegExp(`/scan\\?deck=${deckId}$`))
+  await expect(page).toHaveURL(new RegExp(`/scan/fast\\?deck=${deckId}$`))
   await expect(page.getByTestId('scanner')).toBeVisible()
 }
 

@@ -33,14 +33,14 @@ test('AC-12, AC-15: scanner settings sheet saves to the account', async ({ page,
   await expect(page.getByTestId('scanner-settings').getByRole('switch', { name: 'Sounds' })).not.toBeChecked()
 })
 
-test('AC-16: Fast scanning is an account setting on the Settings page', async ({ page, request }) => {
+test('AC-16; spec 019 AC-11: Fast scanning is an account setting, on for new accounts', async ({ page, request }) => {
   const { api } = await signUpAndLogIn(page, request)
   await page.goto('/settings')
   const toggle = page.getByRole('switch', { name: 'Fast scanning' })
-  await expect(toggle).not.toBeChecked()
+  await expect(toggle).toBeChecked()
   await toggle.click()
-  await expect(page.getByText('Fast scanning on.')).toBeVisible()
-  expect((await api.get('/api/scanner/settings/')).fast).toBe(true)
+  await expect(page.getByText('Fast scanning off.')).toBeVisible()
+  expect((await api.get('/api/scanner/settings/')).fast).toBe(false)
   await page.reload()
-  await expect(page.getByRole('switch', { name: 'Fast scanning' })).toBeChecked()
+  await expect(page.getByRole('switch', { name: 'Fast scanning' })).not.toBeChecked()
 })

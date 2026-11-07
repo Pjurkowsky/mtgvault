@@ -23,7 +23,7 @@ test('AC-20 to AC-22: the Scan button logs into the binder in order; Undo frees 
   const binder = await binderWithBolt(api)
   await page.goto(`/locations/${binder}`)
   await page.getByRole('button', { name: 'Scan cards' }).click()
-  await expect(page).toHaveURL(new RegExp(`/scan\\?location=${binder}$`))
+  await expect(page).toHaveURL(new RegExp(`/scan/fast\\?location=${binder}$`))
   await expect(page.getByTestId('scan-destination')).toHaveText('Scanned binder')
   await expect(page.getByTestId('binder-cursor')).toHaveText('Page 1 · slot 2 →') // the first empty slot
 
@@ -58,7 +58,7 @@ test('AC-21, AC-23: Scan from here starts at that slot; a full binder warns and 
   await page.goto(`/locations/${binder}`)
   await slot(page, 1, 4, 2).getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Scan from here' }).click()
-  await expect(page).toHaveURL(new RegExp(`/scan\\?location=${binder}&page=1&row=2&col=2$`))
+  await expect(page).toHaveURL(new RegExp(`/scan/fast\\?location=${binder}&page=1&row=2&col=2$`))
   await expect(page.getByTestId('binder-cursor')).toHaveText('Page 1 · slot 4 →')
   await expect(page.getByTestId('result-slot')).toHaveText('Page 1 · slot 4', { timeout: LOG_TIMEOUT })
 

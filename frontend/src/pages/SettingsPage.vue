@@ -23,12 +23,12 @@ const auth = useAuthStore()
 const fastScanning = ref<boolean | null>(null)
 onMounted(async () => {
   const { data } = await api.GET('/api/scanner/settings/')
-  fastScanning.value = data?.fast ?? false
+  fastScanning.value = data?.fast ?? true
 })
 async function setFastScanning(value: boolean) {
   const { data } = await api.PATCH('/api/scanner/settings/', { body: { fast: value } })
   if (!data) return toast.error('Could not save.')
-  fastScanning.value = data.fast ?? false
+  fastScanning.value = data.fast ?? true
   toast.success(value ? 'Fast scanning on.' : 'Fast scanning off.')
 }
 
