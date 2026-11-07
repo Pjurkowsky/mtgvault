@@ -26,3 +26,24 @@ Status: Grilling (2026-11-07). Written into spec.md when done.
   (`sm:max-w-3xl`) sizes to its content, so it grows and shrinks.
 - `PrintingPicker` (Add card, deck Add, Edit, want list) lists every printing
   newest first, with no filter; printings carry prices per finish.
+
+## Round 1
+
+- List view: a sticky card image left of the list on wide screens. It shows the
+  hovered or keyboard-focused card, else the first. No hover popups in List.
+  Phones: no side image.
+- Arrow keys: List's side image follows focus; Text view pops the large
+  preview next to the focused row; Images view adds nothing.
+- Swaps: mirrored rows: [card out: name, price, image] [Swap and differences]
+  [card in: image, name, price] [trash icon, tooltip Remove].
+- Printing picker: a finish filter (All, Non-foil, Foil, Etched), sort
+  (Newest, Oldest, Cheapest, Priciest), each printing's price under it;
+  remembered.
+
+## Round 2
+
+- Add dialog: always full width with a fixed-height, scrolling results area;
+  old results stay dimmed while loading; "No cards found" in the same space.
+- Picking Foil or Etched in the filter sets the Finish field too; prices and
+  Cheapest use that finish ("All" prices non-foil, or the only finish).
+- The swap trash icon asks for confirmation, then a green toast.
