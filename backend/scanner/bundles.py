@@ -5,8 +5,14 @@ A bundle is a GitHub release in cfbender/manavault tagged `scanner-bundle-*`
 need, check every SHA-256 against the manifest, and switch `current` only when
 everything matches. `printings.json` (~125 MB) is skipped: our catalog resolves
 matches through `Printing.illustration_id`.
+
+Spec 020: staff pick the source (`ScannerSource`): another repository's releases,
+or a folder on the server holding bundles from Oracle (`<folder>/<version>/`),
+of which the newest by its manifest's `created` wins. `sync()` installs from the
+saved source and records the result.
 """
 
+import fcntl
 import hashlib
 import json
 import logging
@@ -21,7 +27,9 @@ from django.conf import settings
 
 log = logging.getLogger(__name__)
 
-RELEASES_URL = 'https://api.github.com/repos/cfbender/manavault/releases?per_page=30'
+RELEASES_URL = 'https://api.github.com/repos/{repo}/releases?per_page=30'
+DEFAULT_REPO = 'cfbender/manavault'
+REPO_RE = re.compile(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
 TAG_PREFIX = 'scanner-bundle-'
 BROWSER_FILES = ['arts.json', 'detector.onnx', 'embed.onnx', 'search.onnx']
 HEADERS = {'User-Agent': 'MTGVault/0.1', 'Accept': 'application/vnd.github+json'}
@@ -63,9 +71,11 @@ def _get(url: str, accept: str | None = None):
     return urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=300)
 
 
-def newest_release() -> dict | None:
+def newest_release(repo: str = DEFAULT_REPO) -> dict | None:
     """The newest published (not draft) scanner bundle release, or None."""
-    with _get(RELEASES_URL) as response:
+    if not REPO_RE.match(repo):
+        raise BundleError(f'Bad repository {repo!r}; expected owner/name')
+    with _get(RELEASES_URL.format(repo=repo)) as response:
         releases = json.load(response)
     bundles = [r for r in releases if r['tag_name'].startswith(TAG_PREFIX) and not r['draft']]
     bundles.sort(key=lambda r: r.get('published_at') or '', reverse=True)
@@ -123,9 +133,9 @@ def _prune(keep: set):
             shutil.rmtree(child, ignore_errors=True)
 
 
-def install_latest() -> str | None:
+def install_latest(repo: str = DEFAULT_REPO) -> str | None:
     """Install the newest published release. Returns its version, or None if there is none."""
-    release = newest_release()
+    release = newest_release(repo)
     if release is None:
         return None
     version = release['tag_name'][len(TAG_PREFIX):]
@@ -145,3 +155,64 @@ def install_from_dir(source: str) -> str:
     source_path = Path(source)
     version = json.loads((source_path / 'manifest.json').read_text())['version']
     return _install(version, lambda name, target: shutil.copyfile(source_path / name, target))
+
+
+def newest_in(folder: str) -> Path:
+    """The newest bundle in a folder of bundles: real subfolders with a manifest, by `created`."""
+    root = Path(folder)
+    if not root.is_absolute():
+        raise BundleError(f'{folder} is not an absolute path')
+    if not root.is_dir():
+        raise BundleError(f'{folder} is not a folder on the server')
+    found = []
+    for child in root.iterdir():
+        if child.is_symlink() or not child.is_dir() or not (child / 'manifest.json').is_file():
+            continue
+        try:
+            created = json.loads((child / 'manifest.json').read_text()).get('created', '')
+        except (OSError, ValueError):
+            continue
+        found.append((created, child.name, child))
+    if not found:
+        raise BundleError(f'{folder} holds no bundle (a subfolder with manifest.json)')
+    return max(found)[2]
+
+
+def install_newest_in(folder: str) -> str:
+    return install_from_dir(str(newest_in(folder)))
+
+
+def sync() -> str | None:
+    """Install the newest bundle from the saved source and record the result (spec 020).
+
+    One install at a time: a second call while one runs returns None and changes nothing."""
+    from django.utils import timezone
+
+    from .models import ScannerSource
+
+    bundle_root().mkdir(parents=True, exist_ok=True)
+    with (bundle_root() / '.sync.lock').open('w') as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return None
+        source = ScannerSource.get()
+        ScannerSource.objects.filter(pk=source.pk).update(syncing=True)
+        version, error = None, ''
+        try:
+            if source.kind == ScannerSource.FOLDER:
+                version = install_newest_in(source.path)
+            else:
+                version = install_latest(source.repo or DEFAULT_REPO)
+                if version is None:
+                    error = f'{source.repo or DEFAULT_REPO} has no scanner-bundle release'
+        except BundleError as exc:
+            log.warning('Scanner bundle sync failed: %s', exc)
+            error = str(exc)
+        except Exception as exc:
+            log.exception('Scanner bundle sync failed')
+            error = str(exc) or type(exc).__name__
+        ScannerSource.objects.filter(pk=source.pk).update(syncing=False, last_sync_at=timezone.now(), last_error=error)
+        if error:
+            raise BundleError(error)
+        return version
