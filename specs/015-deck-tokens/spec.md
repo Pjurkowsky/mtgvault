@@ -1,6 +1,6 @@
 # Spec 015: Deck tokens
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 006-deck-views, 014-export-options
 
 ## Goal

@@ -30,29 +30,29 @@ test.describe('Selection and bulk actions', () => {
     await expect(page.getByTestId('card-tile')).toHaveCount(60)
 
     await selectAll(page)
-    await expect(selected(page)).toHaveText('92 selected')
+    await expect(selected(page)).toHaveText('98 selected')
 
     // AC-40: changing search keeps the selection; deselecting one counts down
     await page.getByLabel('Search cards').fill('bolt')
     await expect(page.getByTestId('browser-summary')).toContainText('16 cards')
-    await expect(selected(page)).toHaveText('92 selected')
+    await expect(selected(page)).toHaveText('98 selected')
     await page.getByTestId('card-tile').first().click()
-    await expect(selected(page)).toHaveText('91 selected')
+    await expect(selected(page)).toHaveText('97 selected')
     await page.getByTestId('card-tile').first().click()
     await page.getByLabel('Search cards').fill('')
 
     // AC-41: confirm step with counts
     await bar(page).getByRole('button', { name: 'Move' }).click()
-    await expect(page.getByTestId('bulk-counts')).toHaveText('92 rows, 92 cards.')
+    await expect(page.getByTestId('bulk-counts')).toHaveText('98 rows, 98 cards.')
     await choose(page, 'Move to', 'Archive')
     await page.getByTestId('bulk-dialog').getByRole('button', { name: 'Move' }).click()
-    await expect(page.getByText('Moved 92 cards.')).toBeVisible()
+    await expect(page.getByText('Moved 98 cards.')).toBeVisible()
     await page.goto('/')
-    await expect(locationTile(page, 'Archive').getByTestId('location-count')).toHaveText('92 cards')
+    await expect(locationTile(page, 'Archive').getByTestId('location-count')).toHaveText('98 cards')
 
     await page.goto('/cards')
     await selectAll(page)
-    await expect(selected(page)).toHaveText('92 selected')
+    await expect(selected(page)).toHaveText('98 selected')
     await bar(page).getByTestId('select-all').click() // all selected: clears
     await expect(bar(page)).toHaveCount(0)
   })

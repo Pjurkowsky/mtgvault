@@ -61,11 +61,12 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/<id>/cards/<cid>/apply-swap/` | bearer | Apply a candidate: it takes the old card's zone and quantity; the old card becomes its candidate |
 | `POST /api/decks/<id>/box/` | bearer | Create the deck box and move free copies into it |
 | `POST /api/decks/add-from-collection/` | bearer | One copy of each selected card into a deck |
-| `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings` and `categories` |
+| `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings`, `categories` and `tokens` |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text; export takes `printings` and `other_decks` |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
 | `GET/PATCH /api/wants/settings/` | bearer | The want list's Public switch |
+| `GET /api/catalog/printings/<id>/tokens/` | public | Tokens, emblems and markers a printing makes, one per kind (spec 015) |
 | `GET`/`POST /api/decks/<id>/optimize/` | bearer | Cheapest printings for the cards the deck lacks (Missing, In other decks); POST `cards` switches those deck cards (spec 013) |
 | `POST /api/decks/<id>/want-missing/` | bearer | A deck's missing cards (or `card`) onto the want list for the deck, up to the missing count |
 | `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
@@ -163,6 +164,9 @@ that land in a deck box join its decklist's Mainboard when the list has fewer
 copies (`decks.services.fill_from_box`, called from `save_item` and
 `edit_item`); taking cards out never changes the list.
 
+- `cards/tokens.py`: tokens a printing or a deck makes. The sync keeps tokens,
+  emblems and markers in `Token` (never searchable) and each printing's
+  `token_ids` from Scryfall's `all_parts` (spec 015).
 - `decks/optimize.py`: per lacking counted card, its cheapest priced printing
   (priced like To buy) when cheaper than the current one (spec 013).
 - `decks/ownership.py`: per deck card, copies in this box, free copies
