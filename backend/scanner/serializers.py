@@ -4,7 +4,8 @@ from cards.models import Set
 from cards.serializers import PrintingSerializer
 from collection.serializers import BinderCursorSerializer, BinderPlaceSerializer, ItemSerializer, TotalsSerializer
 
-from .models import ScannerSettings
+from .bundles import REPO_RE
+from .models import ScannerSettings, ScannerSource
 
 
 class ScannerSettingsSerializer(serializers.ModelSerializer):
@@ -25,6 +26,36 @@ class ScannerSettingsSerializer(serializers.ModelSerializer):
         high = attrs.get('ding_high', getattr(self.instance, 'ding_high', None))
         if low is not None and high is not None and high < low:
             raise serializers.ValidationError({'ding_high': ['Must be at least the low threshold.']})
+        return attrs
+
+
+class InstalledBundleSerializer(serializers.Serializer):
+    version = serializers.CharField()
+    created = serializers.CharField(help_text='When the bundle was exported (manifest)')
+
+
+class ScannerSourceSerializer(serializers.ModelSerializer):
+    """Where the recognition model comes from (spec 020). Staff only."""
+
+    installed = InstalledBundleSerializer(read_only=True, allow_null=True, source='installed_bundle')
+
+    class Meta:
+        model = ScannerSource
+        fields = ['kind', 'repo', 'path', 'installed', 'syncing', 'last_sync_at', 'last_error']
+        read_only_fields = ['installed', 'syncing', 'last_sync_at', 'last_error']
+
+    def validate(self, attrs):
+        kind = attrs.get('kind', getattr(self.instance, 'kind', ScannerSource.GITHUB))
+        if kind == ScannerSource.GITHUB:
+            repo = (attrs.get('repo') or '').strip() or ScannerSource.DEFAULT_REPO
+            if not REPO_RE.match(repo):
+                raise serializers.ValidationError({'repo': 'Use owner/name, for example cfbender/manavault.'})
+            attrs['repo'] = repo
+        else:
+            path = (attrs.get('path') or '').strip()
+            if not path.startswith('/'):
+                raise serializers.ValidationError({'path': 'Enter an absolute path on the server, for example /srv/mtgvault-bundles.'})
+            attrs['path'] = path
         return attrs
 
 

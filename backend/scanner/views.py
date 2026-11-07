@@ -1,9 +1,11 @@
-from django.db import transaction
+import threading
+
+from django.db import close_old_connections, transaction
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,12 +19,13 @@ from collection.services import Copies, save_item
 from collection.views import location_totals, own_location, with_unit_price
 
 from . import bundles
-from .models import ScannerSettings
+from .models import ScannerSettings, ScannerSource
 from .resolve import default_finish, matched_printing, rank_printings
 from .serializers import (
     BundleInfoSerializer,
     LockedIllustrationsSerializer,
     ScannerSettingsSerializer,
+    ScannerSourceSerializer,
     ScanRequestSerializer,
     ScanResultSerializer,
     UndoRequestSerializer,
@@ -104,6 +107,50 @@ class ScannerSettingsView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+def start_sync():
+    """Install from the saved source in the background, so the request returns at once (spec 020, AC-3)."""
+    def run():
+        try:
+            bundles.sync()
+        except Exception:  # recorded on ScannerSource by sync()
+            pass
+        finally:
+            close_old_connections()
+
+    # Shown as installing before the thread takes the lock, so the page starts polling.
+    ScannerSource.objects.filter(pk=1).update(syncing=True)
+    threading.Thread(target=run, daemon=True, name='scanner-sync').start()
+
+
+class ScannerSourceView(APIView):
+    """Staff: where the recognition model comes from (spec 020, AC-1 to AC-3)."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(responses=ScannerSourceSerializer)
+    def get(self, request):
+        return Response(ScannerSourceSerializer(ScannerSource.get()).data)
+
+    @extend_schema(request=ScannerSourceSerializer, responses=ScannerSourceSerializer)
+    def put(self, request):
+        serializer = ScannerSourceSerializer(ScannerSource.get(), data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        start_sync()
+        return Response(ScannerSourceSerializer(ScannerSource.get()).data)
+
+
+class ScannerSourceSyncView(APIView):
+    """Staff: install the newest model from the saved source again (spec 020, AC-4)."""
+
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(request=None, responses={202: ScannerSourceSerializer})
+    def post(self, request):
+        start_sync()
+        return Response(ScannerSourceSerializer(ScannerSource.get()).data, status=status.HTTP_202_ACCEPTED)
 
 
 class LockedIllustrationsView(APIView):

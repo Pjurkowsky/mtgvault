@@ -830,6 +830,41 @@ export interface paths {
         patch: operations["scanner_settings_partial_update"];
         trace?: never;
     };
+    "/api/scanner/source/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Staff: where the recognition model comes from (spec 020, AC-1 to AC-3). */
+        get: operations["scanner_source_retrieve"];
+        /** @description Staff: where the recognition model comes from (spec 020, AC-1 to AC-3). */
+        put: operations["scanner_source_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/scanner/source/sync/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff: install the newest model from the saved source again (spec 020, AC-4). */
+        post: operations["scanner_source_sync_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/": {
         parameters: {
             query?: never;
@@ -1566,6 +1601,11 @@ export interface components {
             finish: string;
             printing: components["schemas"]["PrintingBrief"];
         };
+        InstalledBundle: {
+            version: string;
+            /** @description When the bundle was exported (manifest) */
+            created: string;
+        };
         Issue: {
             code: string;
             message: string;
@@ -2279,6 +2319,25 @@ export interface components {
             combine_frames?: boolean;
             suggest_guesses?: boolean;
         };
+        /** @description Where the recognition model comes from (spec 020). Staff only. */
+        ScannerSource: {
+            kind?: components["schemas"]["ScannerSourceKindEnum"];
+            /** @description owner/name, for GitHub releases */
+            repo?: string;
+            /** @description Absolute folder of bundles on the server */
+            path?: string;
+            readonly installed: components["schemas"]["InstalledBundle"] | null;
+            readonly syncing: boolean;
+            /** Format: date-time */
+            readonly last_sync_at: string | null;
+            readonly last_error: string;
+        };
+        /**
+         * @description * `github` - GitHub releases
+         *     * `folder` - Server folder
+         * @enum {string}
+         */
+        ScannerSourceKindEnum: "github" | "folder";
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {
             ids?: number[];
@@ -3996,6 +4055,69 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScannerSettings"];
+                };
+            };
+        };
+    };
+    scanner_source_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerSource"];
+                };
+            };
+        };
+    };
+    scanner_source_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ScannerSource"];
+                "application/x-www-form-urlencoded": components["schemas"]["ScannerSource"];
+                "multipart/form-data": components["schemas"]["ScannerSource"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerSource"];
+                };
+            };
+        };
+    };
+    scanner_source_sync_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScannerSource"];
                 };
             };
         };

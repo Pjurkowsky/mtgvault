@@ -1689,6 +1689,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScannerSettings'
           description: ''
+  /api/scanner/source/:
+    get:
+      operationId: scanner_source_retrieve
+      description: 'Staff: where the recognition model comes from (spec 020, AC-1
+        to AC-3).'
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerSource'
+          description: ''
+    put:
+      operationId: scanner_source_update
+      description: 'Staff: where the recognition model comes from (spec 020, AC-1
+        to AC-3).'
+      tags:
+      - scanner
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScannerSource'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScannerSource'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScannerSource'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerSource'
+          description: ''
+  /api/scanner/source/sync/:
+    post:
+      operationId: scanner_source_sync_create
+      description: 'Staff: install the newest model from the saved source again (spec
+        020, AC-4).'
+      tags:
+      - scanner
+      security:
+      - jwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScannerSource'
+          description: ''
   /api/users/:
     get:
       operationId: users_list
@@ -3546,6 +3604,17 @@ components:
       - line
       - printing
       - quantity
+    InstalledBundle:
+      type: object
+      properties:
+        version:
+          type: string
+        created:
+          type: string
+          description: When the bundle was exported (manifest)
+      required:
+      - created
+      - version
     Issue:
       type: object
       properties:
@@ -5234,6 +5303,49 @@ components:
           type: boolean
         suggest_guesses:
           type: boolean
+    ScannerSource:
+      type: object
+      description: Where the recognition model comes from (spec 020). Staff only.
+      properties:
+        kind:
+          $ref: '#/components/schemas/ScannerSourceKindEnum'
+        repo:
+          type: string
+          description: owner/name, for GitHub releases
+          maxLength: 200
+        path:
+          type: string
+          description: Absolute folder of bundles on the server
+          maxLength: 500
+        installed:
+          allOf:
+          - $ref: '#/components/schemas/InstalledBundle'
+          readOnly: true
+          nullable: true
+        syncing:
+          type: boolean
+          readOnly: true
+        last_sync_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_error:
+          type: string
+          readOnly: true
+      required:
+      - installed
+      - last_error
+      - last_sync_at
+      - syncing
+    ScannerSourceKindEnum:
+      enum:
+      - github
+      - folder
+      type: string
+      description: |-
+        * `github` - GitHub releases
+        * `folder` - Server folder
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions
