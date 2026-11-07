@@ -14,7 +14,9 @@ Tick a task only when its done check passes.
 - [x] **T3 Card search keeps its size** (AC-5)
 - [x] **T4 Printing picker: finish filter, sort, prices, finish follows** (AC-6 to AC-9)
 
+- [x] **T7 EDHREC card menu with Propose swap** (AC-10)
+
 ## Phase 3: Tests and wrap up
 
-- [ ] **T5 e2e: deck and add polish; update older tests**
+- [x] **T5 e2e: deck and add polish; update older tests**
 - [ ] **T6 Full suite (2 workers), READMEs, spec status**

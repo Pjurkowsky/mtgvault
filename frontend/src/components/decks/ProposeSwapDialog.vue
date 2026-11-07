@@ -34,7 +34,7 @@ async function choose(result: Schemas['CardSearchResult']) {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl" data-testid="swap-dialog">
+    <DialogContent class="max-h-[90vh] w-full overflow-y-auto sm:max-w-3xl" data-testid="swap-dialog">
       <DialogHeader>
         <DialogTitle>Swap for {{ card?.printing.name }}</DialogTitle>
         <DialogDescription class="sr-only">Pick a card to propose</DialogDescription>

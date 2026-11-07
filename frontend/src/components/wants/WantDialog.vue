@@ -95,7 +95,7 @@ async function save() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl" data-testid="want-dialog">
+    <DialogContent class="max-h-[90vh] w-full overflow-y-auto sm:max-w-3xl" data-testid="want-dialog">
       <DialogHeader>
         <DialogTitle>{{ editing ? `Edit ${entry?.printing.name}` : 'Add to want list' }}</DialogTitle>
       </DialogHeader>

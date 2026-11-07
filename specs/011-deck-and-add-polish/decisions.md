@@ -47,3 +47,8 @@ Status: Written into spec.md (2026-11-07).
 - Picking Foil or Etched in the filter sets the Finish field too; prices and
   Cheapest use that finish ("All" prices non-foil, or the only finish).
 - The swap trash icon asks for confirmation, then a green toast.
+
+## Added during the build
+
+- Right-click on EDHREC cards (Commanders, Played with, Similar) opens a menu;
+  it offers Propose swap for the card the dialog is previewing.

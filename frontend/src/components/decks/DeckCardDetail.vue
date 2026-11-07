@@ -75,6 +75,19 @@ async function move(copy: Schemas['FreeCopy'], quantity: number) {
   done(data, error, 'Moved into the deck box.')
 }
 
+/** An EDHREC card as a swap candidate for this deck card, newest printing (spec 011, AC-10). */
+async function proposeSwap(oracleId: string) {
+  const card = props.card
+  if (!card) return
+  const { data: printings } = await api.GET('/api/catalog/cards/{oracle_id}/printings/', { params: { path: { oracle_id: oracleId } } })
+  const printing = printings?.[0]
+  if (!printing) return toast.error('Could not propose the swap.')
+  const { data, error } = await api.POST('/api/decks/{id}/cards/{card_id}/swaps/', { ...path(), body: { printing: printing.id } })
+  if (!data) return toast.error(Object.values(fieldErrors(error as unknown)).join(' ') || 'Could not propose the swap.')
+  toast.success(`${printing.name} could replace ${card.printing.name}.`)
+  emit('changed', data)
+}
+
 // Add from a card opened from an EDHREC tab: into this deck (spec 010, AC-2).
 const deckAddOpen = ref(false)
 const deckAddCard = ref<{ oracle_id: string; name: string } | null>(null)
@@ -114,7 +127,8 @@ async function deleteCopy(itemId: number) {
   <CardDetailDialog
     v-model:open="open" :row="null" :oracle-id="card?.printing.oracle_id" :printing-id="card?.printing.id"
     :currency="deck.currency" :readonly="readonly" :want-deck="deck.id" choose-printing @choose-printing="choosePrinting"
-    @add="addToDeck" @changed="refresh"
+    :swappable="!readonly && !!card && card.zone !== 'maybe'"
+    @add="addToDeck" @changed="refresh" @propose-swap="proposeSwap"
   >
     <template v-if="card" #deck>
       <DeckSection

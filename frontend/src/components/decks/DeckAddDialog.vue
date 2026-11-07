@@ -132,7 +132,7 @@ async function add() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+    <DialogContent class="max-h-[90vh] w-full overflow-y-auto sm:max-w-3xl">
       <DialogHeader><DialogTitle>{{ fixed && card ? `Add ${card.name} to ${deck.name}` : `Add to ${deck.name}` }}</DialogTitle></DialogHeader>
       <CardSearch v-if="!fixed" ref="search" v-model:query="query" :picked="!!card" @choose="choose" />
 

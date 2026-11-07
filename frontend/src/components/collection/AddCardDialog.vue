@@ -119,7 +119,7 @@ async function add() {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+    <DialogContent class="max-h-[90vh] w-full overflow-y-auto sm:max-w-3xl">
       <DialogHeader>
         <DialogTitle>{{ fixed ? `Add ${card?.name ?? ''}` : pocket ? `Add card to page ${pocket.page}, row ${pocket.row}, column ${pocket.col}` : 'Add card' }}</DialogTitle>
       </DialogHeader>

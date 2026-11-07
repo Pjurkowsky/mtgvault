@@ -34,6 +34,14 @@ searching, and printings can be narrowed by finish and sorted by price.
 - **AC-4** The trash icon asks for confirmation, then removes the proposal
   with a green toast.
 
+### EDHREC cards
+
+- **AC-10** Right-clicking (long-pressing) a card in the card dialog's EDHREC
+  tabs (Commanders, Played with, Similar) opens a menu with Open. When the
+  dialog was opened from a deck card outside the Maybeboard, the menu also has
+  Propose swap: the EDHREC card becomes a swap candidate for that deck card
+  (spec 005, AC-9), with a green toast.
+
 ### Add dialog
 
 - **AC-5** While searching, the Add dialog keeps its width. Results sit in a
@@ -62,5 +70,9 @@ searching, and printings can be narrowed by finish and sorted by price.
 - A printing filtered out of view stays selected if it was picked; the picker
   then selects the first one shown (AC-6).
 - The side image is 13rem wide, as before spec 006 (AC-1).
+- Propose swap from EDHREC uses the card's newest printing, as a swap candidate
+  from search does before you change it (AC-10).
+- The swap is for the deck card the dialog opened on, also while it shows a
+  card stacked from a tab (AC-10).
 - The want list dialog's finish filter sets the entry's finish; Any stays
   possible with All (AC-8).

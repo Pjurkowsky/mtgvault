@@ -33,12 +33,15 @@ const props = defineProps<{
   choosePrinting?: boolean
   /** Add to want list links this deck (spec 010, AC-4). */
   wantDeck?: number | null
+  /** EDHREC cards offer Propose swap for this deck card (spec 011, AC-10). */
+  swappable?: boolean
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{
   changed: []; edit: [row: BrowserRow]; delete: [row: BrowserRow]; 'choose-printing': [printing: Schemas['Printing']]
   /** Add copies of a card you don't own (spec 010, AC-2, AC-3): the page opens its Add dialog. */
   add: [card: { oracle_id: string; name: string }, printingId: string | null]
+  'propose-swap': [oracleId: string]
 }>()
 defineSlots<{ deck?: () => unknown; want?: () => unknown }>()
 const confirm = useConfirm()
@@ -236,14 +239,14 @@ const tabs = computed(() => [
               <Skeleton v-for="n in 10" :key="n" class="aspect-[488/680] w-full" />
             </div>
             <div v-else class="mt-4">
-              <EdhrecCardGrid v-if="shownTab === 'commanders'" :cards="edhrec.commanders" testid="edhrec-commanders" @open="push" />
+              <EdhrecCardGrid v-if="shownTab === 'commanders'" :cards="edhrec.commanders" testid="edhrec-commanders" @open="push" :swappable="swappable" @swap="(o) => emit('propose-swap', o)" />
               <div v-else-if="shownTab === 'played_with'" class="grid gap-5" data-testid="edhrec-played-with">
                 <section v-for="g in edhrec.played_with" :key="g.group" class="grid gap-2">
                   <h3 class="text-sm font-medium">{{ g.group }}</h3>
-                  <EdhrecCardGrid :cards="g.cards" :limit="10" @open="push" />
+                  <EdhrecCardGrid :cards="g.cards" :limit="10" @open="push" :swappable="swappable" @swap="(o) => emit('propose-swap', o)" />
                 </section>
               </div>
-              <EdhrecCardGrid v-else :cards="edhrec.similar" testid="edhrec-similar" @open="push" />
+              <EdhrecCardGrid v-else :cards="edhrec.similar" testid="edhrec-similar" @open="push" :swappable="swappable" @swap="(o) => emit('propose-swap', o)" />
             </div>
           </Tabs>
         </div>
