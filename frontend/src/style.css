@@ -138,6 +138,10 @@
     overflow-y: auto;
     scrollbar-gutter: stable;
   }
+  /* The full-screen scanner needs no scrollbar room (spec 017, AC-3). */
+  html:has([data-testid='scanner']) {
+    scrollbar-gutter: auto;
+  }
   body {
     @apply bg-background text-foreground;
     padding-right: 0 !important;

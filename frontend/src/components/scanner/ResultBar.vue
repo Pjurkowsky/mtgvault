@@ -4,6 +4,7 @@ import { PlusIcon, RefreshCwIcon, Undo2Icon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { FINISHES } from '@/lib/cards'
 
@@ -20,7 +21,8 @@ const finishes = () => (props.item ? FINISHES.filter((f) => props.item!.printing
 
 <template>
   <div class="flex items-center gap-3 rounded-xl bg-background/95 p-3 shadow-xl backdrop-blur" data-testid="result-bar">
-    <img :src="printing.image_small" :alt="printing.name" class="h-24 w-[4.3rem] shrink-0 rounded-[4.75%/3.5%] bg-muted" />
+    <!-- Compact below 400px: smaller image, icon buttons (spec 017, AC-2). -->
+    <img :src="printing.image_small" :alt="printing.name" class="h-24 w-[4.3rem] shrink-0 rounded-[4.75%/3.5%] bg-muted max-[399px]:h-16 max-[399px]:w-[2.9rem]" />
     <div class="grid min-w-0 flex-1 gap-1.5">
       <div class="flex items-baseline gap-2">
         <span class="truncate font-medium" data-testid="result-name">{{ printing.name }}</span>
@@ -40,8 +42,18 @@ const finishes = () => (props.item ? FINISHES.filter((f) => props.item!.printing
           <ToggleGroupItem v-for="f in finishes()" :key="f.value" :value="f.value" class="px-2 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{{ f.label }}</ToggleGroupItem>
         </ToggleGroup>
         <Button size="sm" variant="outline" @click="emit('plus')"><PlusIcon /> 1</Button>
-        <Button v-if="item" size="sm" variant="outline" @click="emit('printing')"><RefreshCwIcon /> Change printing</Button>
-        <Button size="sm" variant="ghost" @click="emit('undo')"><Undo2Icon /> Undo</Button>
+        <Tooltip v-if="item">
+          <TooltipTrigger as-child>
+            <Button size="sm" variant="outline" @click="emit('printing')"><RefreshCwIcon /><span class="max-[399px]:sr-only">Change printing</span></Button>
+          </TooltipTrigger>
+          <TooltipContent class="min-[400px]:hidden">Change printing</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button size="sm" variant="ghost" @click="emit('undo')"><Undo2Icon /><span class="max-[399px]:sr-only">Undo</span></Button>
+          </TooltipTrigger>
+          <TooltipContent class="min-[400px]:hidden">Undo</TooltipContent>
+        </Tooltip>
       </div>
     </div>
   </div>

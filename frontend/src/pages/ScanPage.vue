@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { CameraOffIcon, LayersIcon, PackageIcon, SettingsIcon, ShoppingCartIcon, XIcon } from '@lucide/vue'
+import { ArrowLeftRightIcon, CameraOffIcon, LayersIcon, PackageIcon, SettingsIcon, ShoppingCartIcon, XIcon } from '@lucide/vue'
 import { api } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
@@ -11,7 +11,7 @@ import ResultBar from '@/components/scanner/ResultBar.vue'
 import ScannerSettingsSheet from '@/components/scanner/ScannerSettingsSheet.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import BinderScanDialog, { type BinderScan } from '@/components/binder/BinderScanDialog.vue'
-import { nextPlace, placeKey, placeLabel, type Place } from '@/lib/binder'
+import { nextPlace, placeKey, placeLabel, slotNumber, type Place } from '@/lib/binder'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { loadScanTarget, saveScanTarget, type ScanTarget } from '@/lib/scanTarget'
@@ -128,6 +128,14 @@ const binderLabel = computed(() => {
   if (!b.inOrder) return 'Unplaced'
   return `${grid ? placeLabel(b.cursor, grid.cols) : `Page ${b.cursor.page}`} ${b.direction === 'rows' ? '→' : '↓'}`
 })
+// "P1·5 →" on narrow phones (spec 017, AC-1).
+const binderShort = computed(() => {
+  const b = binderScan.value
+  const grid = binderGrid.value
+  if (!b.inOrder) return 'Unplaced'
+  const slot = grid ? `·${slotNumber(b.cursor, grid.cols)}` : ''
+  return `P${b.cursor.page}${slot} ${b.direction === 'rows' ? '→' : '↓'}`
+})
 
 function changeTarget(next: ScanTarget) {
   target.value = next
@@ -169,24 +177,28 @@ function onEdited(item: BrowserRow) {
     <!-- Top controls -->
     <!-- z-10: close, cart and settings stay usable over the loading and error screens. -->
     <div class="absolute inset-x-0 top-0 z-10 flex items-center gap-2 p-3" style="padding-top: calc(0.75rem + env(safe-area-inset-top, 0px))">
-      <IconButton label="Close scanner" variant="secondary" @click="close"><XIcon /></IconButton>
+      <!-- One row at any width: labels truncate, Change is an icon (spec 017, AC-1). -->
+      <IconButton label="Close scanner" variant="secondary" class="shrink-0" @click="close"><XIcon /></IconButton>
       <RouterLink
         :to="destination.to"
-        class="flex items-center gap-2 rounded-md bg-background/90 px-3 py-2 text-sm text-foreground shadow"
+        class="flex min-w-0 items-center gap-2 rounded-md bg-background/90 px-3 py-2 text-sm whitespace-nowrap text-foreground shadow"
         data-testid="cart-link"
       >
-        <component :is="destination.icon" class="size-4" />
-        <span data-testid="scan-destination">{{ destination.label }}</span>
-        <span v-if="settings?.show_total && cart" data-testid="running-total" class="text-muted-foreground">
-          {{ cards(cart.card_count) }} · <Price :value="cart.value" :values="cart.values" :currency="currency" />
+        <component :is="destination.icon" class="size-4 shrink-0" />
+        <span class="min-w-0 truncate" data-testid="scan-destination">{{ destination.label }}</span>
+        <span v-if="settings?.show_total && cart" data-testid="running-total" class="shrink-0 text-muted-foreground">
+          <span class="max-[399px]:hidden">{{ cards(cart.card_count) }} · </span><Price :value="cart.value" :values="cart.values" :currency="currency" />
         </span>
       </RouterLink>
-      <Button v-if="deck" variant="secondary" size="sm" @click="targetOpen = true">Change</Button>
+      <IconButton v-if="deck" label="Change" variant="secondary" class="shrink-0" @click="targetOpen = true"><ArrowLeftRightIcon /></IconButton>
       <template v-if="binderId">
-        <span class="rounded-md bg-background/90 px-3 py-2 text-sm text-foreground shadow" data-testid="binder-cursor">{{ binderLabel }}</span>
-        <Button variant="secondary" size="sm" :disabled="!binderGrid" @click="binderOpen = true">Change</Button>
+        <span class="shrink-0 rounded-md bg-background/90 px-3 py-2 text-sm whitespace-nowrap text-foreground shadow">
+          <span class="max-[399px]:hidden" data-testid="binder-cursor">{{ binderLabel }}</span>
+          <span class="min-[400px]:hidden" aria-hidden="true">{{ binderShort }}</span>
+        </span>
+        <IconButton label="Change" variant="secondary" class="shrink-0" :disabled="!binderGrid" @click="binderOpen = true"><ArrowLeftRightIcon /></IconButton>
       </template>
-      <div class="ml-auto">
+      <div class="ml-auto shrink-0">
         <IconButton label="Scanner settings" variant="secondary" :disabled="!settings" @click="settingsOpen = true"><SettingsIcon /></IconButton>
       </div>
     </div>
@@ -197,7 +209,7 @@ function onEdited(item: BrowserRow) {
     </p>
 
     <!-- Status -->
-    <p v-if="statusText" class="absolute top-20 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-4 py-1.5 text-sm whitespace-nowrap" data-testid="scan-status">
+    <p v-if="statusText" class="absolute top-20 left-1/2 max-w-[calc(100%-1.5rem)] -translate-x-1/2 truncate rounded-full bg-black/70 px-4 py-1.5 text-sm whitespace-nowrap" data-testid="scan-status">
       {{ statusText }}
     </p>
 

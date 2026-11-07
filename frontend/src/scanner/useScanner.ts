@@ -159,7 +159,7 @@ export function useScanner(target: () => ScanTarget | null = () => null, hooks: 
     cart.value = data.totals
     hooks.logged?.(data)
     status.value = { kind: 'logged', name: (data.item ?? data.deck_card)?.printing.name ?? candidate.name }
-    if (settings.value?.sounds) playSound(data.sound)
+    if (settings.value?.sounds) void playSound(data.sound)
   }
 
   /** Result bar actions (AC-11). */
