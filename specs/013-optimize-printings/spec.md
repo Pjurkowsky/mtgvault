@@ -1,6 +1,6 @@
 # Spec 013: Optimize printings
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 006-deck-views, 012-ownership-labels
 
 ## Goal
