@@ -7,7 +7,7 @@ import {
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, type Schemas } from '@/api/client'
-import ExportDialog from '@/components/browser/ExportDialog.vue'
+import ExportDialog, { type ExportOptions } from '@/components/browser/ExportDialog.vue'
 import CategoryDialog from '@/components/decks/CategoryDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
@@ -160,13 +160,13 @@ async function scan(target: ScanTarget) {
   else router.push(scannerUrl(id, false))
 }
 
-async function loadExport() {
-  return (await api.GET('/api/decks/{id}/export/', { params: { path: { id: id.value } } })).data
+async function loadExport(options: ExportOptions) {
+  return (await api.GET('/api/decks/{id}/export/', { params: { path: { id: id.value }, query: options } })).data
 }
 // Missing cards as a list, as the Missing tab did (spec 004 AC-17, spec 006 AC-8).
 const missingOpen = ref(false)
-async function loadMissing() {
-  return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value } }, body: {} })).data
+async function loadMissing(options: ExportOptions) {
+  return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value } }, body: options })).data
 }
 
 /** Missing cards onto the want list for this deck: one card, or all of them (spec 010, AC-15, AC-16). */
@@ -307,9 +307,9 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       />
       <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :card="swapCard" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />
-      <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" />
+      <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" :options="['printings', 'categories']" />
       <OptimizeDialog v-model:open="optimizeOpen" :deck="deck" :changes="optimizeChanges" @changed="changed" />
-      <ExportDialog v-model:open="missingOpen" :load="loadMissing" :filename="`${deck.name} missing`" />
+      <ExportDialog v-model:open="missingOpen" :load="loadMissing" :filename="`${deck.name} missing`" :options="['printings', 'other_decks']" />
       <EditDeckDialog v-model:open="editOpen" :deck="deck" @changed="changed" />
       <CreateBoxDialog v-model:open="boxOpen" :deck="deck" @changed="changed" />
       <DeleteDeckDialog v-model:open="deleteOpen" :deck="deck" @deleted="router.push({ name: 'decks' })" />

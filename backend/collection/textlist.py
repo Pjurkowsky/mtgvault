@@ -101,6 +101,18 @@ def format_row(quantity: int, printing: Printing, finish: str) -> str:
     return f'{quantity} {printing.name} ({printing.set_id.upper()}) {printing.collector_number}{MARKER_FOR[finish]}'
 
 
-def format_rows(items) -> str:
-    """Collection rows -> text, one line per row."""
-    return '\n'.join(format_row(i.quantity, i.printing, i.finish) for i in items) + '\n'
+def format_lines(entries, printings: bool = True) -> list[str]:
+    """(quantity, printing, finish) -> lines. Without printings only quantity and name
+    remain, and lines naming the same card merge (spec 014, AC-3)."""
+    if printings:
+        return [format_row(q, p, f) for q, p, f in entries]
+    merged: dict[str, int] = {}
+    for q, p, _ in entries:
+        merged[p.name] = merged.get(p.name, 0) + q
+    return [f'{q} {name}' for name, q in merged.items()]
+
+
+def format_rows(items, printings: bool = True) -> tuple[str, int]:
+    """Collection rows -> (text, line count), one line per row."""
+    lines = format_lines(((i.quantity, i.printing, i.finish) for i in items), printings)
+    return '\n'.join(lines) + '\n', len(lines)

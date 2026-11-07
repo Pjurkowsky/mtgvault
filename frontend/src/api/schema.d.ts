@@ -1455,6 +1455,11 @@ export interface components {
         };
         ExportRequest: {
             selection: components["schemas"]["Selection"];
+            /**
+             * @description Write set, number and finish; off gives quantity and name only (spec 014)
+             * @default true
+             */
+            printings?: boolean;
         };
         ExportResult: {
             text: string;
@@ -1732,6 +1737,16 @@ export interface components {
         };
         MissingExport: {
             filter?: components["schemas"]["ItemFilter"];
+            /**
+             * @description Write set and number; off gives quantity and name only
+             * @default true
+             */
+            printings?: boolean;
+            /**
+             * @description Also copies this deck lacks that are only in other decks' boxes
+             * @default false
+             */
+            other_decks?: boolean;
         };
         /**
          * @description * `swap` - swap
@@ -2047,6 +2062,11 @@ export interface components {
         };
         PublicExportRequest: {
             filter?: components["schemas"]["ItemFilter"];
+            /**
+             * @description Write set, number and finish; off gives quantity and name only (spec 014)
+             * @default true
+             */
+            printings?: boolean;
         };
         /** @description What visitors see. Never add purchase or added-price fields here (AC-57). */
         PublicItem: {
@@ -2927,7 +2947,12 @@ export interface operations {
     };
     decks_export_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Write categories as #tags (spec 014, AC-4) */
+                categories?: boolean;
+                /** @description Write set and number (spec 014, AC-3) */
+                printings?: boolean;
+            };
             header?: never;
             path: {
                 id: number;

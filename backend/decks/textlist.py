@@ -51,15 +51,18 @@ def parse(text: str):
     return rows_out, errors_out
 
 
-def format_deck(cards) -> str:
-    """Text with zone headings, one line per card: `1 Sol Ring (C21) 263 #Ramp`."""
+def format_deck(cards, printings: bool = True, categories: bool = True) -> str:
+    """Text with zone headings, one line per card: `1 Sol Ring (C21) 263 #Ramp`.
+    Without printings: `1 Sol Ring`; without categories: no #tags (spec 014, AC-3, AC-4)."""
     blocks = []
     for zone in ('commander', 'main', 'side', 'maybe'):
-        lines = [
-            f'{c.quantity} {c.printing.name} ({c.printing.set_id.upper()}) {c.printing.collector_number}'
-            + ''.join(f' #{name.replace(" ", "_")}' for name in c.categories)
-            for c in sorted((c for c in cards if c.zone == zone), key=lambda c: c.printing.name)
-        ]
+        lines = []
+        for c in sorted((c for c in cards if c.zone == zone), key=lambda c: c.printing.name):
+            line = (f'{c.quantity} {c.printing.name} ({c.printing.set_id.upper()}) {c.printing.collector_number}'
+                    if printings else f'{c.quantity} {c.printing.name}')
+            if categories:
+                line += ''.join(f' #{name.replace(" ", "_")}' for name in c.categories)
+            lines.append(line)
         if lines:
             blocks.append(LABELS[zone] + '\n' + '\n'.join(lines))
     return '\n\n'.join(blocks) + '\n'

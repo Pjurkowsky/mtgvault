@@ -33,6 +33,7 @@ from .serializers import (
     DeckCardWriteSerializer,
     DeckDeleteSerializer,
     DeckDetailSerializer,
+    DeckExportParamsSerializer,
     DeckImportPreviewSerializer,
     DeckListSerializer,
     DeckTextSerializer,
@@ -329,14 +330,18 @@ class DeckImportView(APIView):
 
 
 class DeckExportView(APIView):
-    @extend_schema(responses=ExportResultSerializer)
+    @extend_schema(parameters=[DeckExportParamsSerializer], responses=ExportResultSerializer)
     def get(self, request, pk):
         cards = deck_cards(own_deck(request, pk))
-        return Response({'text': textlist.format_deck(cards), 'rows': len(cards)})
+        params = DeckExportParamsSerializer(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        text = textlist.format_deck(cards, **params.validated_data)
+        return Response({'text': text, 'rows': len(cards)})
 
 
-def missing_rows(deck, params, ctx):
-    """Missing copies of counted cards, filtered and sorted like the card browser (AC-17)."""
+def missing_rows(deck, params, ctx, other_decks=False):
+    """Missing copies of counted cards, filtered and sorted like the card browser (AC-17).
+    With `other_decks`, also the copies found only in other decks' boxes (spec 014, AC-5)."""
     all_cards = deck_cards(deck)
     own = deck_ownership(deck, all_cards)
     cards = DeckCard.objects.filter(deck=deck, zone__in=COUNTED).annotate(
@@ -349,7 +354,8 @@ def missing_rows(deck, params, ctx):
     ).select_related('printing__set')
     rows, seen = [], set()
     for card in apply_filters(cards, params, ctx['currency'], ctx['rates']):
-        missing = own[card.id]['missing']
+        o = own[card.id]
+        missing = max(0, o['needed'] - o['in_box'] - o['free']) if other_decks else o['missing']
         if missing <= 0 or card.oracle_id in seen:
             continue
         seen.add(card.oracle_id)
@@ -386,9 +392,11 @@ class MissingExportView(APIView):
         deck = own_deck(request, pk)
         data = MissingExportSerializer(data=request.data)
         data.is_valid(raise_exception=True)
-        rows = missing_rows(deck, data.validated_data.get('filter') or {}, price_context(request))
-        text = ''.join(f'{r.quantity} {r.printing.name} ({r.printing.set_id.upper()}) {r.printing.collector_number}\n' for r in rows)
-        return Response({'text': text, 'rows': len(rows)})
+        d = data.validated_data
+        rows = missing_rows(deck, d.get('filter') or {}, price_context(request), other_decks=d['other_decks'])
+        lines = [f'{r.quantity} {r.printing.name} ({r.printing.set_id.upper()}) {r.printing.collector_number}' if d['printings']
+                 else f'{r.quantity} {r.printing.name}' for r in rows]
+        return Response({'text': ''.join(f'{line}\n' for line in lines), 'rows': len(lines)})
 
 
 class PublicDeckListView(APIView):

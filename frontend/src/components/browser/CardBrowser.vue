@@ -51,7 +51,7 @@ import type { Money } from '@/lib/money'
 import BulkDialog, { type BulkAction } from './BulkDialog.vue'
 import CardGrid from './CardGrid.vue'
 import CardTable from './CardTable.vue'
-import ExportDialog from './ExportDialog.vue'
+import ExportDialog, { type ExportOptions } from './ExportDialog.vue'
 import FilterPopover from './FilterPopover.vue'
 import WantDialog from '@/components/wants/WantDialog.vue'
 import WantSection from '@/components/wants/WantSection.vue'
@@ -367,17 +367,17 @@ function openExport(onlySelection: boolean) {
   exportOpen.value = true
 }
 
-async function loadExport() {
+async function loadExport({ printings }: ExportOptions) {
   if (props.source.kind === 'public') {
     const { username, locationId } = props.source
     const { data } = await api.POST('/api/users/{username}/locations/{id}/export/', {
       params: { path: { username, id: locationId } },
-      body: { filter: query.value as never },
+      body: { filter: query.value as never, printings },
     })
     return data
   }
   const selected = exportSelection.value ? selection.toSelection() : { filter: query.value, exclude_ids: [] }
-  const { data } = await api.POST('/api/items/export/', { body: { selection: selected as never } })
+  const { data } = await api.POST('/api/items/export/', { body: { selection: selected as never, printings } })
   return data
 }
 

@@ -557,11 +557,23 @@ paths:
     get:
       operationId: decks_export_retrieve
       parameters:
+      - in: query
+        name: categories
+        schema:
+          type: boolean
+          default: true
+        description: 'Write categories as #tags (spec 014, AC-4)'
       - in: path
         name: id
         schema:
           type: integer
         required: true
+      - in: query
+        name: printings
+        schema:
+          type: boolean
+          default: true
+        description: Write set and number (spec 014, AC-3)
       tags:
       - decks
       security:
@@ -3274,6 +3286,11 @@ components:
       properties:
         selection:
           $ref: '#/components/schemas/Selection'
+        printings:
+          type: boolean
+          default: true
+          description: Write set, number and finish; off gives quantity and name only
+            (spec 014)
       required:
       - selection
     ExportResult:
@@ -3938,6 +3955,14 @@ components:
       properties:
         filter:
           $ref: '#/components/schemas/ItemFilter'
+        printings:
+          type: boolean
+          default: true
+          description: Write set and number; off gives quantity and name only
+        other_decks:
+          type: boolean
+          default: false
+          description: Also copies this deck lacks that are only in other decks' boxes
     ModeEnum:
       enum:
       - swap
@@ -4666,6 +4691,11 @@ components:
       properties:
         filter:
           $ref: '#/components/schemas/ItemFilter'
+        printings:
+          type: boolean
+          default: true
+          description: Write set, number and finish; off gives quantity and name only
+            (spec 014)
     PublicItem:
       type: object
       description: What visitors see. Never add purchase or added-price fields here

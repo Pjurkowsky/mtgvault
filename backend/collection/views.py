@@ -322,7 +322,8 @@ class ExportView(APIView):
         data.is_valid(raise_exception=True)
         rows = selected_items(request.user, data.validated_data['selection'], price_context(request)) \
             .select_related('printing')
-        return Response({'text': textlist.format_rows(rows), 'rows': len(rows)})
+        text, count = textlist.format_rows(rows, data.validated_data['printings'])
+        return Response({'text': text, 'rows': count})
 
 
 # ---------- import ----------
@@ -439,4 +440,5 @@ class PublicExportView(APIView):
         ctx = price_context(request)
         rows = apply_filters(location.items.all(), data.validated_data.get('filter') or {}, ctx['currency'],
                              ctx['rates']).select_related('printing')
-        return Response({'text': textlist.format_rows(rows), 'rows': len(rows)})
+        text, count = textlist.format_rows(rows, data.validated_data['printings'])
+        return Response({'text': text, 'rows': count})

@@ -243,12 +243,17 @@ class BulkResultSerializer(serializers.Serializer):
     skipped = serializers.IntegerField(help_text='Rows left unchanged (e.g. finish not available)')
 
 
+PRINTINGS_HELP = 'Write set, number and finish; off gives quantity and name only (spec 014)'
+
+
 class ExportRequestSerializer(serializers.Serializer):
     selection = SelectionSerializer()
+    printings = serializers.BooleanField(default=True, help_text=PRINTINGS_HELP)
 
 
 class PublicExportRequestSerializer(serializers.Serializer):
     filter = ItemFilterSerializer(required=False)
+    printings = serializers.BooleanField(default=True, help_text=PRINTINGS_HELP)
 
 
 class ExportResultSerializer(serializers.Serializer):

@@ -225,6 +225,13 @@ class DeckImportPreviewSerializer(serializers.Serializer):
 
 class MissingExportSerializer(serializers.Serializer):
     filter = ItemFilterSerializer(required=False)
+    printings = serializers.BooleanField(default=True, help_text='Write set and number; off gives quantity and name only')
+    other_decks = serializers.BooleanField(default=False, help_text="Also copies this deck lacks that are only in other decks' boxes")
+
+
+class DeckExportParamsSerializer(serializers.Serializer):
+    printings = serializers.BooleanField(default=True, help_text='Write set and number (spec 014, AC-3)')
+    categories = serializers.BooleanField(default=True, help_text='Write categories as #tags (spec 014, AC-4)')
 
 
 class OptimizeChangeSerializer(serializers.Serializer):
