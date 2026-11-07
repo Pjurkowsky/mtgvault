@@ -39,6 +39,16 @@ class ParseError:
     reason: str
 
 
+# `Fire / Ice` as some sites export it; Scryfall writes `Fire // Ice` (spec 016).
+# Only a slash with spaces: joke names like `Who/What/When/Where/Why` keep theirs.
+SINGLE_SLASH = re.compile(r'\s+/\s+')
+
+
+def lookup_name(name: str) -> str:
+    name = name.strip()
+    return name if '//' in name else SINGLE_SLASH.sub(' // ', name)
+
+
 def _is_comment(text: str) -> bool:
     return not text or text.startswith('#') or text.startswith('//')
 
@@ -64,7 +74,7 @@ def parse(text: str) -> tuple[list[ParsedRow], list[ParseError]]:
         entries.append((number, raw, quantity, match))
 
     # One query for every name in the list instead of one per line.
-    names = {m['name'].strip().lower() for _, _, _, m in entries}
+    names = {lookup_name(m['name']).lower() for _, _, _, m in entries}
     candidates: dict[str, list[Printing]] = {}
     found = Printing.objects.annotate(lname=Lower('name'), lfront=Lower('front_name')).filter(
         Q(lname__in=names) | Q(lfront__in=names)
@@ -77,7 +87,7 @@ def parse(text: str) -> tuple[list[ParsedRow], list[ParseError]]:
     for number, raw, quantity, match in entries:
         name = match['name'].strip()
         finish = FINISH_MARKERS.get((match['finish'] or '').upper(), 'nonfoil')
-        options = candidates.get(name.lower(), [])
+        options = candidates.get(lookup_name(name).lower(), [])
         if not options:
             errors.append(ParseError(number, raw, f'No card named "{name}".'))
             continue
