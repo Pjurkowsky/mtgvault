@@ -225,3 +225,28 @@ class DeckImportPreviewSerializer(serializers.Serializer):
 
 class MissingExportSerializer(serializers.Serializer):
     filter = ItemFilterSerializer(required=False)
+
+
+class OptimizeChangeSerializer(serializers.Serializer):
+    """A deck card that a cheaper printing would replace (spec 013, AC-2)."""
+
+    card = serializers.IntegerField(help_text='Deck card id')
+    name = serializers.CharField()
+    zone = serializers.ChoiceField(DeckCard.Zone.choices)
+    state = serializers.ChoiceField(['missing', 'other_decks'])
+    copies = serializers.IntegerField(help_text='Copies To buy counts for this card')
+    printing = DeckPrintingSerializer(help_text='Current printing')
+    price = serializers.DecimalField(**MONEY)
+    prices = MoneySerializer(allow_null=True)
+    cheapest = DeckPrintingSerializer()
+    cheapest_price = serializers.DecimalField(**MONEY)
+    cheapest_prices = MoneySerializer()
+    saving = serializers.DecimalField(**MONEY, help_text='Per copy; null when the current printing has no price')
+
+
+class OptimizePreviewSerializer(serializers.Serializer):
+    changes = OptimizeChangeSerializer(many=True)
+
+
+class OptimizeApplySerializer(serializers.Serializer):
+    cards = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, help_text='Deck card ids to switch')

@@ -17,6 +17,7 @@ urlpatterns = [
     path('decks/<int:pk>/box/', views.CreateBoxView.as_view(), name='deck-box'),
     path('decks/<int:pk>/import/', views.DeckImportView.as_view(), name='deck-import'),
     path('decks/<int:pk>/export/', views.DeckExportView.as_view(), name='deck-export'),
+    path('decks/<int:pk>/optimize/', views.OptimizeView.as_view(), name='deck-optimize'),
     path('decks/<int:pk>/missing/', views.MissingView.as_view(), name='deck-missing'),
     path('decks/<int:pk>/missing/export/', views.MissingExportView.as_view(), name='deck-missing-export'),
     path('users/<str:username>/decks/', views.PublicDeckListView.as_view(), name='public-decks'),

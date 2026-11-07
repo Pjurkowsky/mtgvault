@@ -379,6 +379,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/optimize/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Cheapest printings for the cards this deck lacks (spec 013). */
+        get: operations["decks_optimize_retrieve"];
+        put?: never;
+        /** @description Cheapest printings for the cards this deck lacks (spec 013). */
+        post: operations["decks_optimize_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/want-missing/": {
         parameters: {
             query?: never;
@@ -1744,12 +1762,49 @@ export interface components {
         };
         /** @enum {unknown} */
         NullEnum: null;
+        OptimizeApply: {
+            /** @description Deck card ids to switch */
+            cards: number[];
+        };
+        /** @description A deck card that a cheaper printing would replace (spec 013, AC-2). */
+        OptimizeChange: {
+            /** @description Deck card id */
+            card: number;
+            name: string;
+            zone: components["schemas"]["ZoneEnum"];
+            state: components["schemas"]["OptimizeChangeStateEnum"];
+            /** @description Copies To buy counts for this card */
+            copies: number;
+            /** @description Current printing */
+            printing: components["schemas"]["DeckPrinting"];
+            /** Format: double */
+            price: number | null;
+            prices: components["schemas"]["Money"] | null;
+            cheapest: components["schemas"]["DeckPrinting"];
+            /** Format: double */
+            cheapest_price: number | null;
+            cheapest_prices: components["schemas"]["Money"];
+            /**
+             * Format: double
+             * @description Per copy; null when the current printing has no price
+             */
+            saving: number | null;
+        };
+        /**
+         * @description * `missing` - missing
+         *     * `other_decks` - other_decks
+         * @enum {string}
+         */
+        OptimizeChangeStateEnum: "missing" | "other_decks";
+        OptimizePreview: {
+            changes: components["schemas"]["OptimizeChange"][];
+        };
         OtherDeck: {
             deck: string;
             quantity: number;
         };
         Ownership: {
-            state: components["schemas"]["StateEnum"];
+            state: components["schemas"]["OwnershipStateEnum"];
             needed: number;
             in_box: number;
             free: number;
@@ -1764,6 +1819,14 @@ export interface components {
             /** @description Empty for visitors */
             other_decks: components["schemas"]["OtherDeck"][];
         };
+        /**
+         * @description * `in_box` - in_box
+         *     * `owned` - owned
+         *     * `other_decks` - other_decks
+         *     * `missing` - missing
+         * @enum {string}
+         */
+        OwnershipStateEnum: "in_box" | "owned" | "other_decks" | "missing";
         PasswordChange: {
             current_password: string;
             new_password: string;
@@ -2177,14 +2240,6 @@ export interface components {
          * @enum {string}
          */
         SoundEnum: "click" | "ding" | "big_ding";
-        /**
-         * @description * `in_box` - in_box
-         *     * `owned` - owned
-         *     * `other_decks` - other_decks
-         *     * `missing` - missing
-         * @enum {string}
-         */
-        StateEnum: "in_box" | "owned" | "other_decks" | "missing";
         Stats: {
             curve: {
                 [key: string]: number;
@@ -2978,6 +3033,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportResult"];
+                };
+            };
+        };
+    };
+    decks_optimize_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptimizePreview"];
+                };
+            };
+        };
+    };
+    decks_optimize_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptimizeApply"];
+                "application/x-www-form-urlencoded": components["schemas"]["OptimizeApply"];
+                "multipart/form-data": components["schemas"]["OptimizeApply"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
                 };
             };
         };

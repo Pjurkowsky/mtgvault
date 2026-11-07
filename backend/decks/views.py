@@ -22,6 +22,7 @@ from collection.views import browse_params, selected_items
 from . import services, stats, textlist
 from .legality import COUNTED, FORMATS, issues
 from .models import Deck, DeckCard
+from .optimize import cheapest_changes
 from .ownership import deck_ownership
 from .serializers import (
     AddFromCollectionSerializer,
@@ -38,6 +39,8 @@ from .serializers import (
     DeckWriteSerializer,
     MarkOwnedSerializer,
     MissingExportSerializer,
+    OptimizeApplySerializer,
+    OptimizePreviewSerializer,
     SwapProposalSerializer,
 )
 
@@ -412,3 +415,29 @@ class PublicDeckDetailView(APIView):
         if deck is None:
             raise Http404('Not found.')
         return Response(DeckDetailSerializer(build(deck, price_context(request), public=True)).data)
+
+
+class OptimizeView(APIView):
+    """Cheapest printings for the cards this deck lacks (spec 013)."""
+
+    @extend_schema(responses=OptimizePreviewSerializer)
+    def get(self, request, pk):
+        deck = own_deck(request, pk)
+        ctx = price_context(request)
+        changes = cheapest_changes(deck, deck_cards(deck), ctx['currency'], ctx['rates'])
+        return Response(OptimizePreviewSerializer({'changes': changes}).data)
+
+    @extend_schema(request=OptimizeApplySerializer, responses=DeckDetailSerializer)
+    def post(self, request, pk):
+        deck = own_deck(request, pk)
+        data = OptimizeApplySerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        ctx = price_context(request)
+        wanted = set(data.validated_data['cards'])
+        with transaction.atomic():
+            Deck.objects.select_for_update().get(pk=deck.pk)
+            # Recomputed, so only cards that are still lacking and still cheaper change (AC-4, AC-6).
+            for change in cheapest_changes(deck, deck_cards(deck), ctx['currency'], ctx['rates']):
+                if change['card'] in wanted:
+                    DeckCard.objects.filter(pk=change['card']).update(printing=change['cheapest'])
+        return detail_response(request, deck)

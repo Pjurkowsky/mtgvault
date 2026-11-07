@@ -2,11 +2,11 @@
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeftIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon, HeartIcon,
+  ArrowLeftIcon, BadgePercentIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon, HeartIcon,
   PackagePlusIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
-import { api } from '@/api/client'
+import { api, type Schemas } from '@/api/client'
 import ExportDialog from '@/components/browser/ExportDialog.vue'
 import CategoryDialog from '@/components/decks/CategoryDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
@@ -17,6 +17,7 @@ import DeckList from '@/components/decks/DeckList.vue'
 import DeckSwaps from '@/components/decks/DeckSwaps.vue'
 import DeckText from '@/components/decks/DeckText.vue'
 import DeckToolbar, { type DeckOption, type Layout } from '@/components/decks/DeckToolbar.vue'
+import OptimizeDialog from '@/components/decks/OptimizeDialog.vue'
 import ProposeSwapDialog from '@/components/decks/ProposeSwapDialog.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import DeckStats from '@/components/decks/DeckStats.vue'
@@ -178,6 +179,17 @@ async function wantMissing(card?: DeckCard) {
 }
 provide(WANT_MISSING, (card) => void wantMissing(card))
 
+// Cheapest printings for the cards the deck lacks (spec 013).
+const optimizeOpen = ref(false)
+const optimizeChanges = ref<Schemas['OptimizeChange'][]>([])
+async function optimize() {
+  const { data } = await api.GET('/api/decks/{id}/optimize/', { params: { path: { id: id.value } } })
+  if (!data) return toast.error('Could not look up printings.')
+  if (!data.changes.length) return toast.success('Missing cards already use their cheapest printings.')
+  optimizeChanges.value = data.changes
+  optimizeOpen.value = true
+}
+
 const counts = computed(() => deck.value?.counts)
 const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== counts.value.target)
 </script>
@@ -210,6 +222,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               <DropdownMenuItem @select="exportOpen = true"><DownloadIcon /> Export</DropdownMenuItem>
               <DropdownMenuItem @select="missingOpen = true"><DownloadIcon /> Export missing</DropdownMenuItem>
               <DropdownMenuItem @select="wantMissing()"><HeartIcon /> Add missing to want list</DropdownMenuItem>
+              <DropdownMenuItem @select="optimize()"><BadgePercentIcon /> Optimize printings</DropdownMenuItem>
               <DropdownMenuItem @select="editOpen = true"><PencilIcon /> Edit</DropdownMenuItem>
               <DropdownMenuItem v-if="!deck.location" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -295,6 +308,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :card="swapCard" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />
       <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" />
+      <OptimizeDialog v-model:open="optimizeOpen" :deck="deck" :changes="optimizeChanges" @changed="changed" />
       <ExportDialog v-model:open="missingOpen" :load="loadMissing" :filename="`${deck.name} missing`" />
       <EditDeckDialog v-model:open="editOpen" :deck="deck" @changed="changed" />
       <CreateBoxDialog v-model:open="boxOpen" :deck="deck" @changed="changed" />

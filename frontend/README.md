@@ -33,7 +33,7 @@ src/
   components/browser/filters/      filter menu pieces, shared by the collection and deck filters
   components/decks/       deck views (text, list with a sticky side image, images) with
                           card menus, toolbar (search, filters, group, sort, size),
-                          mirrored swap rows,
+                          mirrored swap rows, OptimizeDialog (cheapest printings),
                           categories (CategoryInput, CategoryDialog), add (built on
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats

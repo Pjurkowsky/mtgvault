@@ -66,6 +66,7 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
 | `GET/PATCH /api/wants/settings/` | bearer | The want list's Public switch |
+| `GET`/`POST /api/decks/<id>/optimize/` | bearer | Cheapest printings for the cards the deck lacks (Missing, In other decks); POST `cards` switches those deck cards (spec 013) |
 | `POST /api/decks/<id>/want-missing/` | bearer | A deck's missing cards (or `card`) onto the want list for the deck, up to the missing count |
 | `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
@@ -162,6 +163,8 @@ that land in a deck box join its decklist's Mainboard when the list has fewer
 copies (`decks.services.fill_from_box`, called from `save_item` and
 `edit_item`); taking cards out never changes the list.
 
+- `decks/optimize.py`: per lacking counted card, its cheapest priced printing
+  (priced like To buy) when cheaper than the current one (spec 013).
 - `decks/ownership.py`: per deck card, copies in this box, free copies
   (outside every deck box, not in the cart), copies in other decks' boxes,
   and the state (`in_box`, `owned`, `other_decks`, `missing`; the app shows

@@ -728,6 +728,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExportResult'
           description: ''
+  /api/decks/{id}/optimize/:
+    get:
+      operationId: decks_optimize_retrieve
+      description: Cheapest printings for the cards this deck lacks (spec 013).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OptimizePreview'
+          description: ''
+    post:
+      operationId: decks_optimize_create
+      description: Cheapest printings for the cards this deck lacks (spec 013).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizeApply'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OptimizeApply'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OptimizeApply'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
   /api/decks/{id}/want-missing/:
     post:
       operationId: decks_want_missing_create
@@ -3945,6 +3998,99 @@ components:
     NullEnum:
       enum:
       - null
+    OptimizeApply:
+      type: object
+      properties:
+        cards:
+          type: array
+          items:
+            type: integer
+          description: Deck card ids to switch
+      required:
+      - cards
+    OptimizeChange:
+      type: object
+      description: A deck card that a cheaper printing would replace (spec 013, AC-2).
+      properties:
+        card:
+          type: integer
+          description: Deck card id
+        name:
+          type: string
+        zone:
+          $ref: '#/components/schemas/ZoneEnum'
+        state:
+          $ref: '#/components/schemas/OptimizeChangeStateEnum'
+        copies:
+          type: integer
+          description: Copies To buy counts for this card
+        printing:
+          allOf:
+          - $ref: '#/components/schemas/DeckPrinting'
+          description: Current printing
+        price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          nullable: true
+        cheapest:
+          $ref: '#/components/schemas/DeckPrinting'
+        cheapest_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        cheapest_prices:
+          $ref: '#/components/schemas/Money'
+        saving:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Per copy; null when the current printing has no price
+      required:
+      - card
+      - cheapest
+      - cheapest_price
+      - cheapest_prices
+      - copies
+      - name
+      - price
+      - prices
+      - printing
+      - saving
+      - state
+      - zone
+    OptimizeChangeStateEnum:
+      enum:
+      - missing
+      - other_decks
+      type: string
+      description: |-
+        * `missing` - missing
+        * `other_decks` - other_decks
+    OptimizePreview:
+      type: object
+      properties:
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OptimizeChange'
+      required:
+      - changes
     OtherDeck:
       type: object
       properties:
@@ -3959,7 +4105,7 @@ components:
       type: object
       properties:
         state:
-          $ref: '#/components/schemas/StateEnum'
+          $ref: '#/components/schemas/OwnershipStateEnum'
         needed:
           type: integer
         in_box:
@@ -4000,6 +4146,18 @@ components:
       - other_decks
       - state
       - wanted
+    OwnershipStateEnum:
+      enum:
+      - in_box
+      - owned
+      - other_decks
+      - missing
+      type: string
+      description: |-
+        * `in_box` - in_box
+        * `owned` - owned
+        * `other_decks` - other_decks
+        * `missing` - missing
     PasswordChange:
       type: object
       properties:
@@ -4989,18 +5147,6 @@ components:
         * `click` - click
         * `ding` - ding
         * `big_ding` - big_ding
-    StateEnum:
-      enum:
-      - in_box
-      - owned
-      - other_decks
-      - missing
-      type: string
-      description: |-
-        * `in_box` - in_box
-        * `owned` - owned
-        * `other_decks` - other_decks
-        * `missing` - missing
     Stats:
       type: object
       properties:
