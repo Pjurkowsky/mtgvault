@@ -1,6 +1,6 @@
 # Spec 011: Deck and add polish
 
-Status: Draft
+Status: Done
 Depends on: 002-collection-polish, 005-deck-improvements, 006-deck-views
 
 ## Goal

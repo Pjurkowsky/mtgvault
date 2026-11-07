@@ -19,4 +19,4 @@ Tick a task only when its done check passes.
 ## Phase 3: Tests and wrap up
 
 - [x] **T5 e2e: deck and add polish; update older tests**
-- [ ] **T6 Full suite (2 workers), READMEs, spec status**
+- [x] **T6 Full suite (2 workers), READMEs, spec status**

@@ -22,14 +22,18 @@ src/
   layouts/    AppLayout (top bar) and AuthLayout (centered card)
   pages/      one component per route
   components/browser/     the shared card browser (spec 001, principle P-2)
-  components/collection/  locations, add card, edit, card detail with EDHREC tabs, import
+  components/collection/  locations, add card, edit, card detail with EDHREC tabs (right-click
+                          menu with Propose swap), import, PrintingPicker (finish filter,
+                          sort and prices, remembered per browser)
   components/             shared: Price (tooltip with other currencies), ConfirmDialog
-                          (useConfirm), IconButton (tooltip), CardPreview (hover),
+                          (useConfirm), IconButton (tooltip), CardPreview (hover, and
+                          arrow keys via useCardNavigation),
                           ExpandButton + FullscreenCard, ManaSymbol
   components/browser/CardTile.vue  the grid tile, shared by the collection and the deck Images view
   components/browser/filters/      filter menu pieces, shared by the collection and deck filters
-  components/decks/       deck views (text, list, images) with card menus, toolbar
-                          (search, filters, group, sort, size), swaps table,
+  components/decks/       deck views (text, list with a sticky side image, images) with
+                          card menus, toolbar (search, filters, group, sort, size),
+                          mirrored swap rows,
                           categories (CategoryInput, CategoryDialog), add (built on
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats
