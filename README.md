@@ -8,6 +8,8 @@
 - `backend/` — Django 6.1 + DRF + PostgreSQL ([details](backend/README.md))
 - `specs/` — feature specs. Each has `spec.md` (what), `plan.md` (how) and
   `tasks.md` (steps). Code follows the spec; change the spec first.
+- `AGENTS.md` — how an AI agent works here: research, grill, spec, plan, tasks,
+  build ([the full workflow](.claude/skills/spec-workflow/SKILL.md)).
 
 ## Self-hosting
 
