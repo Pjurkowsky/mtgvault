@@ -23,6 +23,32 @@ def should_skip(card: dict) -> bool:
     return type_line.startswith('Token')
 
 
+def is_token_part(card: dict) -> bool:
+    """A skipped card that decks show as a token part: tokens, emblems, markers (spec 015, AC-1)."""
+    return should_skip(card) and not card.get('digital', False) and card.get('layout') != 'art_series'
+
+
+def token_ids(card: dict) -> list[str]:
+    """Scryfall ids of the tokens, emblems and markers this card makes."""
+    return [p['id'] for p in card.get('all_parts') or [] if p.get('component') == 'token' and p.get('id') != card['id']]
+
+
+def token_fields(card: dict) -> dict:
+    front = (card.get('card_faces') or [{}])[0]
+    images = card.get('image_uris') or front.get('image_uris') or {}
+    return {
+        'id': card['id'],
+        'oracle_id': card.get('oracle_id') or front.get('oracle_id'),
+        'name': card['name'],
+        'type_line': card.get('type_line') or front.get('type_line', ''),
+        'set_code': card['set'],
+        'collector_number': card['collector_number'],
+        'image_small': images.get('small', ''),
+        'image_normal': images.get('normal', ''),
+        'image_large': images.get('large', ''),
+    }
+
+
 def card_types(type_line: str) -> list[str]:
     """'Legendary Creature — Elf Druid' -> ['Creature']."""
     before_dash = type_line.split('—')[0]
@@ -78,5 +104,6 @@ def printing_fields(card: dict) -> dict:
         'image_small': images.get('small', ''),
         'image_normal': images.get('normal', ''),
         'image_large': images.get('large', ''),
+        'token_ids': token_ids(card),
         **{field: _decimal(prices.get(field)) for field in PRICE_FIELDS},
     }

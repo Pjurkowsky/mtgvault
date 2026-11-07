@@ -14,8 +14,8 @@ from pathlib import Path
 from django.db import transaction
 from django.utils import timezone
 
-from .models import ExchangeRate, Printing, Set, SyncRun
-from .scryfall import PRICE_FIELDS, printing_fields, set_fields, should_skip
+from .models import ExchangeRate, Printing, Set, SyncRun, Token
+from .scryfall import PRICE_FIELDS, is_token_part, printing_fields, set_fields, should_skip, token_fields
 
 log = logging.getLogger(__name__)
 
@@ -28,8 +28,9 @@ BATCH_SIZE = 2000
 PRINTING_UPDATE_FIELDS = [
     'oracle_id', 'name', 'front_name', 'set', 'collector_number', 'lang', 'released_at',
     'rarity', 'colors', 'types', 'type_line', 'mana_cost', 'cmc', 'finishes', 'illustration_id', 'promo', 'legalities', 'color_identity', 'keywords', 'produced_mana', 'oracle_text',
-    'image_small', 'image_normal', 'image_large', *PRICE_FIELDS,
+    'image_small', 'image_normal', 'image_large', 'token_ids', *PRICE_FIELDS,
 ]
+TOKEN_UPDATE_FIELDS = ['oracle_id', 'name', 'type_line', 'set_code', 'collector_number', 'image_small', 'image_normal', 'image_large']
 
 
 def _get_json(url: str) -> dict:
@@ -56,7 +57,7 @@ def _card_lines(file: str | None):
             yield handle
 
 
-def _flush(sets: dict, printings: list[dict]) -> None:
+def _flush(sets: dict, printings: list[dict], tokens: list[dict] = ()) -> None:
     Set.objects.bulk_create(
         [Set(**fields) for fields in sets.values()],
         update_conflicts=True, unique_fields=['code'], update_fields=['name', 'set_type'],
@@ -64,6 +65,10 @@ def _flush(sets: dict, printings: list[dict]) -> None:
     Printing.objects.bulk_create(
         [Printing(**fields) for fields in printings],
         update_conflicts=True, unique_fields=['id'], update_fields=PRINTING_UPDATE_FIELDS,
+    )
+    Token.objects.bulk_create(
+        [Token(**fields) for fields in tokens],
+        update_conflicts=True, unique_fields=['id'], update_fields=TOKEN_UPDATE_FIELDS,
     )
 
 
@@ -73,24 +78,26 @@ def sync_cards(file: str | None = None) -> SyncRun:
     count = 0
     try:
         with _card_lines(file) as lines, transaction.atomic():
-            sets, batch = {}, []
+            sets, batch, tokens = {}, [], []
             for line_number, line in enumerate(lines, start=1):
                 if not line.strip():
                     continue
                 try:
                     card = json.loads(line)
                     if should_skip(card):
+                        if is_token_part(card):
+                            tokens.append(token_fields(card))
                         continue
                     sets.setdefault(card['set'], set_fields(card))
                     batch.append(printing_fields(card))
                 except (ValueError, KeyError, TypeError) as exc:
                     raise ValueError(f'line {line_number}: {exc!r}') from exc
-                if len(batch) >= BATCH_SIZE:
-                    _flush(sets, batch)
+                if len(batch) + len(tokens) >= BATCH_SIZE:
+                    _flush(sets, batch, tokens)
                     count += len(batch)
-                    sets, batch = {}, []
-            if batch:
-                _flush(sets, batch)
+                    sets, batch, tokens = {}, [], []
+            if batch or tokens:
+                _flush(sets, batch, tokens)
                 count += len(batch)
     except Exception as exc:
         log.exception('Card sync failed')

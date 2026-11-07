@@ -1,6 +1,6 @@
 # Card fixture
 
-`scryfall-sample.jsonl` holds 49 real Scryfall card objects (one per line),
+`scryfall-sample.jsonl` holds 55 real Scryfall card objects (one per line),
 saved on 2026-11-01 from Scryfall's search API. The end-to-end tests load it
 with `manage.py sync_cards --file` and fixed exchange rates, so expected
 prices are exact and tests need no network.
@@ -22,3 +22,4 @@ What the cards cover:
 | Every card type except Battle | Creature, Instant, Sorcery, Enchantment, Artifact, Planeswalker, Land |
 | Rarities | common, uncommon, rare, mythic, special |
 | Must be skipped by the sync | a token (Giant) and two digital-only cards |
+| Token makers and their tokens (spec 015) | Dockside Extortionist and Smothering Tithe (Treasure, two printings of one kind), Krenko, Mob Boss (Goblin); added 2026-11-07 |

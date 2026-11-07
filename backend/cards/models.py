@@ -66,6 +66,8 @@ class Printing(models.Model):
     eur = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     eur_foil = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     eur_etched = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    # Tokens, emblems and markers it makes, by Scryfall id: Token rows, or Printings (spec 015).
+    token_ids = ArrayField(models.UUIDField(), default=list, blank=True)
 
     class Meta:
         indexes = [
@@ -77,6 +79,24 @@ class Printing(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.set_id.upper()}) {self.collector_number}'
+
+
+class Token(models.Model):
+    """A token, emblem or marker (The Monarch, a dungeon) that cards make (spec 015).
+    Kept apart from Printing so it never shows in search, the collection or the scanner."""
+
+    id = models.UUIDField(primary_key=True, help_text='Scryfall id')
+    oracle_id = models.UUIDField(null=True, db_index=True, help_text='Same for every token of a kind')
+    name = models.CharField(max_length=300)
+    type_line = models.CharField(max_length=300, blank=True)
+    set_code = models.CharField(max_length=10)
+    collector_number = models.CharField(max_length=20)
+    image_small = models.URLField(max_length=500, blank=True)
+    image_normal = models.URLField(max_length=500, blank=True)
+    image_large = models.URLField(max_length=500, blank=True)
+
+    def __str__(self):
+        return f'{self.name} ({self.set_code.upper()}) {self.collector_number}'
 
 
 class ExchangeRate(models.Model):
