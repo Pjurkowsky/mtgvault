@@ -35,4 +35,5 @@ Status: Written into spec.md (2026-11-07).
   after; Apply, then a green toast.
 - Q5: promos allowed.
 - Q6: want list entries keep their printing.
-- Q7: rows show their ownership badge (recommended; settled with Q2).
+- Q7 (asked again in detail): rows are grouped by state, Missing first, then
+  In other decks, each under its own heading; no badge on the rows.

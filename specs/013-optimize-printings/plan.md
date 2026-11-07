@@ -8,7 +8,7 @@ Spec: [spec.md](spec.md)
 |---|---|
 | Backend | `decks/optimize.py`: `cheapest_changes(deck, currency, rates)` returns, per counted card in state `missing` or `other_decks`, the cheapest priced printing of its `oracle_id` (same price rule as `decks/stats.py`), when cheaper than the current one. |
 | Endpoints | `GET /api/decks/{id}/optimize/` returns `{changes: [{card, printing (current), cheapest, price, cheapest_price, saving}], to_buy}`. `POST /api/decks/{id}/optimize/` with `{cards: [ids]}` recomputes and applies those cards' changes in one transaction; returns DeckDetail. Owner only. |
-| Dialog | `components/decks/OptimizeDialog.vue`: rows with Checkbox, CardPreview images, OwnershipBadge, Price; To buy now and after (now minus the ticked savings × missing copies); Apply. |
+| Dialog | `components/decks/OptimizeDialog.vue`: rows grouped by `ownership.state` (Missing, then In other decks) under headings, each with Checkbox, CardPreview images, Price; To buy now and after (now minus the ticked savings × missing copies); Apply. |
 | Menu | `DeckPage` ⋯: Optimize printings, fetches GET first; no changes → toast (AC-5). |
 
 ## Files

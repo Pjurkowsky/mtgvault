@@ -14,9 +14,10 @@ cards you still need to their cheapest printings.
   only.
 - **AC-2** It opens a dialog listing every card marked Missing or In other
   decks in the Commander, Mainboard or Sideboard whose cheapest printing is
-  cheaper than its current one. Each row shows:
+  cheaper than its current one, grouped under two headings: Missing first,
+  then In other decks (a heading shows only when it has rows). Each row shows:
   - a checkbox, ticked
-  - the card name and its ownership badge
+  - the card name
   - the current printing and the cheapest one (set and number, with images on
     hover)
   - the price of each, and the saving per copy
