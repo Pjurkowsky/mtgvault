@@ -233,6 +233,7 @@ SPECTACULAR_SETTINGS = {
         'LocationKindEnum': 'collection.models.Location.Kind',
         'FormatEnum': 'decks.models.Deck.Format',
         'WantFinishEnum': 'wants.models.FINISH_CHOICES',
+        'ScannerSourceKindEnum': 'scanner.models.ScannerSource.KINDS',
     },
 }
 

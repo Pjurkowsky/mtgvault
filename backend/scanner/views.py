@@ -25,6 +25,7 @@ from .serializers import (
     BundleInfoSerializer,
     LockedIllustrationsSerializer,
     ScannerSettingsSerializer,
+    ScannerSourceRequestSerializer,
     ScannerSourceSerializer,
     ScanRequestSerializer,
     ScanResultSerializer,
@@ -133,7 +134,7 @@ class ScannerSourceView(APIView):
     def get(self, request):
         return Response(ScannerSourceSerializer(ScannerSource.get()).data)
 
-    @extend_schema(request=ScannerSourceSerializer, responses=ScannerSourceSerializer)
+    @extend_schema(request=ScannerSourceRequestSerializer, responses=ScannerSourceSerializer)
     def put(self, request):
         serializer = ScannerSourceSerializer(ScannerSource.get(), data=request.data)
         serializer.is_valid(raise_exception=True)

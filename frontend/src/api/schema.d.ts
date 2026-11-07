@@ -2338,6 +2338,14 @@ export interface components {
          * @enum {string}
          */
         ScannerSourceKindEnum: "github" | "folder";
+        /** @description What staff send when saving the source (schema only; validated by ScannerSourceSerializer). */
+        ScannerSourceRequest: {
+            kind: components["schemas"]["ScannerSourceKindEnum"];
+            /** @description owner/name, for GitHub releases */
+            repo?: string;
+            /** @description Absolute folder of bundles on the server */
+            path?: string;
+        };
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {
             ids?: number[];
@@ -4085,11 +4093,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["ScannerSource"];
-                "application/x-www-form-urlencoded": components["schemas"]["ScannerSource"];
-                "multipart/form-data": components["schemas"]["ScannerSource"];
+                "application/json": components["schemas"]["ScannerSourceRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ScannerSourceRequest"];
+                "multipart/form-data": components["schemas"]["ScannerSourceRequest"];
             };
         };
         responses: {

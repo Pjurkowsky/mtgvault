@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { z } from 'zod'
 import { fieldErrors } from '@/api/client'
 import InfoTip from '@/components/InfoTip.vue'
+import ScannerSourceCard from '@/components/settings/ScannerSourceCard.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -107,6 +108,8 @@ const changePassword = handleSubmit(async (body) => {
         <Label for="fast-scanning" class="font-normal">Fast scanning</Label>
       </CardContent>
     </Card>
+
+    <ScannerSourceCard v-if="auth.user.is_staff" />
 
     <Card>
       <CardHeader>

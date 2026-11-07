@@ -1715,13 +1715,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ScannerSource'
+              $ref: '#/components/schemas/ScannerSourceRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ScannerSource'
+              $ref: '#/components/schemas/ScannerSourceRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ScannerSource'
+              $ref: '#/components/schemas/ScannerSourceRequest'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -5346,6 +5347,21 @@ components:
       description: |-
         * `github` - GitHub releases
         * `folder` - Server folder
+    ScannerSourceRequest:
+      type: object
+      description: What staff send when saving the source (schema only; validated
+        by ScannerSourceSerializer).
+      properties:
+        kind:
+          $ref: '#/components/schemas/ScannerSourceKindEnum'
+        repo:
+          type: string
+          description: owner/name, for GitHub releases
+        path:
+          type: string
+          description: Absolute folder of bundles on the server
+      required:
+      - kind
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions

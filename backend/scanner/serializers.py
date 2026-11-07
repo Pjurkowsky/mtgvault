@@ -59,6 +59,14 @@ class ScannerSourceSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ScannerSourceRequestSerializer(serializers.Serializer):
+    """What staff send when saving the source (schema only; validated by ScannerSourceSerializer)."""
+
+    kind = serializers.ChoiceField(ScannerSource.KINDS)
+    repo = serializers.CharField(required=False, allow_blank=True, help_text='owner/name, for GitHub releases')
+    path = serializers.CharField(required=False, allow_blank=True, help_text='Absolute folder of bundles on the server')
+
+
 class BundleInfoSerializer(serializers.Serializer):
     version = serializers.CharField()
     created = serializers.CharField()
