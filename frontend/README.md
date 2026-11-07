@@ -54,7 +54,7 @@ src/
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
   assets/mana/            Scryfall mana symbols
-  scanner/                camera, frame loop, sounds; recognition/ is ported from
+  scanner/                camera, frame loop, sounds (unlocked on the first tap anywhere); recognition/ is ported from
                           manavault (MPL-2.0, see the root README)
   components/scanner/     result bar, scanner settings sheet
   components/wants/       want list (spec 010): add and edit dialog, the entry in the card dialog;

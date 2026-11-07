@@ -1,6 +1,6 @@
 # Spec 017: Scanner on small phones, reliable sound
 
-Status: Draft
+Status: Done
 Depends on: 003-scanner, 005-deck-improvements, 007-binder-view
 
 ## Goal

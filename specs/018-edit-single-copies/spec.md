@@ -1,6 +1,6 @@
 # Spec 018: Edit single copies
 
-Status: Draft
+Status: Done
 Depends on: 001-collection, 007-binder-view
 
 ## Goal

@@ -47,7 +47,7 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/locations/<id>/binder/move/`, `.../order/` | bearer | Move a placed card or an unplaced copy (`swap` or `share`), or unplace it / order a shared pocket |
 | `GET /api/users/<username>/locations/<id>/binder/` | public | A public binder's layout, read-only |
 | `GET/POST /api/items/` | bearer | Filtered, paged rows / add (merges identical rows) |
-| `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row |
+| `GET/PATCH/DELETE /api/items/<id>/` | bearer | One row; PATCH `copies` (and a pocket's `slot_id`) changes only some copies, DELETE `?slot=` removes one pocket's copy (spec 018) |
 | `POST /api/items/bulk/` | bearer | Move, edit or delete; `dry_run` returns counts |
 | `POST /api/items/export/`, `/api/imports/preview/`, `/api/imports/commit/` | bearer | Text lists; export takes `printings` (off: quantity and name only, merged) |
 | `GET /api/users/` | public | Directory of users with public locations or decks |
