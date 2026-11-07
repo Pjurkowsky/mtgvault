@@ -30,6 +30,15 @@ function suppress() {
   clicked.value = true
   open.value = false
 }
+// Arrow keys moved here (spec 011, AC-2): show it at once, until focus leaves.
+function navigated() {
+  if (dragging()) return
+  clicked.value = false
+  open.value = true
+}
+function blurred() {
+  if (!hovering.value) open.value = false
+}
 function release() {
   hovering.value = false
   clicked.value = false
@@ -39,7 +48,7 @@ function release() {
 
 <template>
   <HoverCard v-if="image && !disabled" :open="open && !clicked" :open-delay="800" :close-delay="0" @update:open="want">
-    <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerdown="press" @pointerenter="hovering = true" @pointerleave="release"><slot /></HoverCardTrigger>
+    <HoverCardTrigger as-child v-bind="$attrs" @click="suppress" @contextmenu="suppress" @pointerdown="press" @pointerenter="hovering = true" @pointerleave="release" @cardnav="navigated" @blur="blurred"><slot /></HoverCardTrigger>
     <HoverCardContent side="right" class="w-auto border-none bg-transparent p-0 shadow-none">
       <div v-if="stack?.length" class="flex gap-2" data-testid="stack-preview">
         <img v-for="(c, i) in stack" :key="i" :src="c.image" :alt="c.name" class="w-48 rounded-[4.75%/3.5%] shadow-xl" data-testid="card-preview" />

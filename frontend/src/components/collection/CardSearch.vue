@@ -35,7 +35,11 @@ let timer: ReturnType<typeof setTimeout>
 let searchId = 0
 watch(query, (q) => {
   clearTimeout(timer)
-  if (q.trim().length < 2) return (results.value = [])
+  if (q.trim().length < 2) {
+    searchId++ // a slower earlier search must not fill the area
+    searching.value = false
+    return (results.value = [])
+  }
   timer = setTimeout(async () => {
     const mine = ++searchId
     searching.value = true
@@ -67,8 +71,12 @@ defineExpose({ focus: () => (input.value?.$el as HTMLInputElement | undefined)?.
     </template>
   </div>
 
-  <template v-if="!picked && results.length">
-    <ul v-if="view === 'grid'" :class="cn('grid gap-3', COLUMNS[size])" data-testid="card-results" :data-size="size">
+  <!-- A fixed-height area, so the dialog never jumps while results load or change (spec 011, AC-5) -->
+  <div
+    v-if="!picked" :class="cn('-m-1 h-[26rem] overflow-y-auto p-1 transition-opacity', searching && 'opacity-50')"
+    data-testid="card-results-area" :aria-busy="searching"
+  >
+    <ul v-if="results.length && view === 'grid'" :class="cn('grid gap-3', COLUMNS[size])" data-testid="card-results" :data-size="size">
       <li v-for="r in results" :key="r.oracle_id" class="group relative">
         <ExpandButton :image="r.image_normal" :name="r.name" />
         <CardPreview :image="r.image_normal" :name="r.name">
@@ -78,7 +86,7 @@ defineExpose({ focus: () => (input.value?.$el as HTMLInputElement | undefined)?.
         </CardPreview>
       </li>
     </ul>
-    <ul v-else class="grid max-h-96 gap-1 overflow-y-auto" data-testid="card-results">
+    <ul v-else-if="results.length" class="grid gap-1" data-testid="card-results">
       <li v-for="r in results" :key="r.oracle_id" class="group relative">
         <ExpandButton :image="r.image_normal" :name="r.name" />
         <CardPreview :image="r.image_normal" :name="r.name">
@@ -89,6 +97,6 @@ defineExpose({ focus: () => (input.value?.$el as HTMLInputElement | undefined)?.
         </CardPreview>
       </li>
     </ul>
-  </template>
-  <p v-else-if="!picked && query.trim().length >= 2 && !searching" class="text-sm text-muted-foreground">No cards found.</p>
+    <p v-else-if="query.trim().length >= 2 && !searching" class="text-sm text-muted-foreground">No cards found.</p>
+  </div>
 </template>

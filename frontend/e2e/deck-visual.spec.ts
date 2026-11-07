@@ -39,7 +39,7 @@ test.describe('Deck visual', () => {
     await expect(cardDialog(page)).toContainText('Shivan Dragon')
   })
 
-  test('AC-2: hovering shows the large image in List rows, Swaps and the collection table', async ({ page, request }) => {
+  test('AC-2: hovering shows the large image in Swaps and the collection table; List rows use the side image', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const deck = await api.deck('Hover', 'casual', { text: LIST })
     const cards = (await api.get(`/api/decks/${deck.id}/`)).cards as { id: number; printing: { id: string; name: string } }[]
@@ -48,9 +48,10 @@ test.describe('Deck visual', () => {
     await api.post(`/api/decks/${deck.id}/cards/${bolt.id}/swaps/`, { printing: shivan.printing.id })
 
     await page.goto(`/decks/${deck.id}?layout=list`)
-    await expect(page.getByTestId('deck-preview')).toHaveCount(0) // no side image
+    // The List view's side image is back instead of popups (spec 011, AC-1; deck-add-polish.spec.ts).
     await deckRow(page, 'Shivan Dragon').first().hover() // also a Maybeboard candidate
-    await expect(preview(page)).toHaveAttribute('alt', 'Shivan Dragon')
+    await expect(page.getByTestId('deck-preview')).toHaveAttribute('alt', 'Shivan Dragon')
+    await expect(preview(page)).toHaveCount(0)
 
     await page.getByRole('tab', { name: 'Swaps' }).click()
     await page.getByTestId('swap-in').getByRole('button', { name: 'Shivan Dragon' }).hover()

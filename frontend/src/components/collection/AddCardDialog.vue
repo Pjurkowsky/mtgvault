@@ -131,7 +131,7 @@ async function add() {
           <IconButton label="Back to results" variant="ghost" class="size-7" @click="card = null"><ArrowLeftIcon /></IconButton>
           <span class="font-medium">{{ card.name }}</span>
         </div>
-        <PrintingPicker v-model="printingId" :printings="printings" />
+        <PrintingPicker v-model="printingId" :printings="printings" sync-finish @finish="(f) => (form.finish = f)" />
         <p v-if="printing" class="text-sm text-muted-foreground" data-testid="printing-summary">
           {{ printing.set_name }} #{{ printing.collector_number }} ·
           <Price :value="printing.prices[form.finish]" :values="printing.prices_all[form.finish]" :currency="currency" />

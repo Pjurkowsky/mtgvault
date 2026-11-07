@@ -110,7 +110,7 @@ async function save() {
         <label class="flex items-center gap-2 text-sm">
           <Checkbox v-model="anyPrinting" aria-label="Any printing" /> Any printing
         </label>
-        <PrintingPicker v-model="printingId" :printings="printings" />
+        <PrintingPicker v-model="printingId" :printings="printings" :sync-finish="!editing" @finish="(f) => (finish = f)" />
         <div class="grid gap-4 sm:grid-cols-3">
           <div class="grid gap-2">
             <Label for="want-quantity">Quantity</Label>

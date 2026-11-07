@@ -16,7 +16,7 @@ export function useCardNavigation(container: Ref<HTMLElement | null>) {
     if (!cards.length) return
     event.preventDefault()
     const current = target.closest<HTMLElement>('[data-deck-card]')
-    if (!current) return cards[0]!.focus()
+    if (!current) return arrive(cards[0]!)
     const from = current.getBoundingClientRect()
     const ahead = cards.filter((card) => card !== current && along(from, card.getBoundingClientRect(), dir) > 1)
     // Stay in the same column (up/down) or row (left/right) when there is a card there.
@@ -29,10 +29,16 @@ export function useCardNavigation(container: Ref<HTMLElement | null>) {
       const score = along(from, to, dir) + across(from, to, dir) * 3
       if (score < bestScore) [best, bestScore] = [card, score]
     }
-    best?.focus()
-    best?.scrollIntoView({ block: 'nearest' })
+    if (best) arrive(best)
   }
   return { onKeydown }
+}
+
+/** Focus a card and tell it the keyboard brought it there, so it can preview itself (spec 011, AC-1, AC-2). */
+function arrive(card: HTMLElement) {
+  card.focus()
+  card.scrollIntoView({ block: 'nearest' })
+  card.dispatchEvent(new CustomEvent('cardnav'))
 }
 
 const mid = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height / 2 })

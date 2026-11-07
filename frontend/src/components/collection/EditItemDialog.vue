@@ -84,7 +84,7 @@ async function save() {
         <DialogTitle>Edit {{ row.printing.name }}</DialogTitle>
         <DialogDescription>{{ row.printing.set_name }} #{{ row.printing.collector_number }}</DialogDescription>
       </DialogHeader>
-      <PrintingPicker v-if="printings.length > 1" v-model="printingId" :printings="printings" />
+      <PrintingPicker v-if="printings.length > 1" v-model="printingId" :printings="printings" @finish="(f) => form && (form.finish = f)" />
       <ItemFields v-model="form" :finishes="finishes" :errors="errors" :hide-location="!!row.in_cart" />
       <p v-if="errors.printing" class="text-sm text-destructive">{{ errors.printing }}</p>
       <DialogFooter>
