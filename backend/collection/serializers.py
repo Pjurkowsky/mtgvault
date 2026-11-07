@@ -203,6 +203,14 @@ class ItemWriteSerializer(serializers.Serializer):
         return attrs
 
 
+class ItemEditSerializer(ItemWriteSerializer):
+    """Edit a row, or only some of its copies (spec 018)."""
+
+    copies = serializers.IntegerField(min_value=1, max_value=999, required=False,
+                                      help_text='Change only this many copies; they split off as their own row')
+    slot_id = serializers.IntegerField(required=False, help_text="Binder pocket of the copy being changed (with copies=1)")
+
+
 class ItemSaveResultSerializer(serializers.Serializer):
     item = ItemSerializer()
     merged = serializers.BooleanField(help_text='True when the row merged into an existing one')

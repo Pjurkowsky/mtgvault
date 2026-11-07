@@ -29,6 +29,7 @@ from .serializers import (
     ItemPageSerializer,
     ItemSaveResultSerializer,
     ItemSerializer,
+    ItemEditSerializer,
     ItemWriteSerializer,
     LocationDeleteSerializer,
     LocationListSerializer,
@@ -39,7 +40,7 @@ from .serializers import (
     PublicLocationListSerializer,
     PublicLocationSerializer,
 )
-from .services import Copies, edit_item, save_item
+from .services import Copies, delete_pocket_copy, edit_copies, edit_item, save_item
 
 
 def want_totals(user, ctx):
@@ -261,19 +262,31 @@ class ItemDetailView(APIView):
     def get(self, request, pk):
         return Response(ItemListView._serialize(self.get_row(request, pk), price_context(request)))
 
-    @extend_schema(request=ItemWriteSerializer(partial=True), responses=ItemSaveResultSerializer)
+    @extend_schema(request=ItemEditSerializer(partial=True), responses=ItemSaveResultSerializer)
     def patch(self, request, pk):
         row = self.get_row(request, pk)
-        data = ItemWriteSerializer(data=request.data, partial=True, context={'request': request})
+        data = ItemEditSerializer(data=request.data, partial=True, context={'request': request})
         data.is_valid(raise_exception=True)
         changes = dict(data.validated_data)
+        copies, slot_id = changes.pop('copies', None), changes.pop('slot_id', None)
         ctx = price_context(request)
-        result, merged = edit_item(row, rates=ctx['rates'], **changes)
+        with transaction.atomic():
+            if copies is not None:
+                result, merged = edit_copies(row, copies, slot_id, rates=ctx['rates'], **changes)
+            else:
+                result, merged = edit_item(row, rates=ctx['rates'], **changes)
         return Response({'item': ItemListView._serialize(result, ctx), 'merged': merged})
 
-    @extend_schema(responses={204: None})
+    @extend_schema(parameters=[OpenApiParameter('slot', int, description='Binder pocket: delete only its copy (spec 018, AC-3)')],
+                   responses={204: None})
     def delete(self, request, pk):
-        self.get_row(request, pk).delete()
+        row = self.get_row(request, pk)
+        slot = request.query_params.get('slot')
+        if slot:
+            with transaction.atomic():
+                delete_pocket_copy(row, int(slot))
+        else:
+            row.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

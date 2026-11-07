@@ -4,6 +4,8 @@ import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Condition, Finish, Language } from '@/lib/cards'
 import type { Currency } from '@/lib/currency'
@@ -30,12 +32,18 @@ watch(printing, (p) => {
 })
 const errors = ref<Record<string, string>>({})
 const busy = ref(false)
+// Some copies only (spec 018): one from a binder pocket, or "Change N of M" in the collection.
+const copies = ref(1)
+const fromPocket = computed(() => !!props.row?.pocket && props.row.quantity > 1)
+const askCopies = computed(() => !fromPocket.value && (props.row?.quantity ?? 1) > 1)
+const partial = computed(() => fromPocket.value || (askCopies.value && copies.value < props.row!.quantity))
 
 watch(open, async (isOpen) => {
   const row = props.row
   if (!isOpen || !row) return
   printingId.value = row.printing.id
   printings.value = []
+  copies.value = row.quantity
   if (!locations.loaded) locations.load()
   errors.value = {}
   form.value = {
@@ -59,7 +67,8 @@ async function save() {
     params: { path: { id: props.row.id } },
     body: {
       printing: printingId.value ?? undefined,
-      quantity: f.quantity,
+      ...(fromPocket.value ? { copies: 1, slot_id: props.row.pocket }
+        : partial.value ? { copies: copies.value } : { quantity: f.quantity }),
       finish: f.finish,
       condition: f.condition,
       language: f.language,
@@ -84,8 +93,14 @@ async function save() {
         <DialogTitle>Edit {{ row.printing.name }}</DialogTitle>
         <DialogDescription>{{ row.printing.set_name }} #{{ row.printing.collector_number }}</DialogDescription>
       </DialogHeader>
+      <div v-if="askCopies" class="flex items-center gap-2 text-sm" data-testid="edit-copies">
+        <Label for="edit-copies">Change</Label>
+        <Input id="edit-copies" v-model.number="copies" type="number" min="1" :max="row.quantity" class="w-20" />
+        <span>of {{ row.quantity }} copies</span>
+      </div>
+      <p v-if="errors.copies" class="text-sm text-destructive">{{ errors.copies }}</p>
       <PrintingPicker v-if="printings.length > 1" v-model="printingId" :printings="printings" @finish="(f) => form && (form.finish = f)" />
-      <ItemFields v-model="form" :finishes="finishes" :errors="errors" :hide-location="!!row.in_cart" />
+      <ItemFields v-model="form" :finishes="finishes" :errors="errors" :hide-location="!!row.in_cart" :hide-quantity="partial" />
       <p v-if="errors.printing" class="text-sm text-destructive">{{ errors.printing }}</p>
       <DialogFooter>
         <Button :disabled="busy" @click="save">Save</Button>

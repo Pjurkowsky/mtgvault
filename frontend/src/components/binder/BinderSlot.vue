@@ -38,7 +38,9 @@ const emit = defineEmits<{
 }>()
 
 const top = computed(() => props.stack[0] ?? null)
-const row = computed(() => (top.value ? props.items.get(top.value.item) ?? null : null))
+const item = computed(() => (top.value ? props.items.get(top.value.item) ?? null : null))
+// The pocket's own copy: edit and delete leave its twins alone (spec 018, AC-1, AC-3).
+const row = computed<BrowserRow | null>(() => (item.value && top.value ? { ...item.value, pocket: top.value.id } : null))
 const number = computed(() => slotNumber(props.place, props.cols))
 const label = computed(() => `Page ${props.place.page}, slot ${number.value}${row.value ? `: ${row.value.printing.name}` : ''}`)
 const preview = computed(() =>

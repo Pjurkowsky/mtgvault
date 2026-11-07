@@ -325,10 +325,13 @@ function openEdit(row: BrowserRow) {
 }
 
 async function deleteRow(row: BrowserRow) {
-  const cards = `${row.quantity} ${row.quantity === 1 ? 'card' : 'cards'}`
+  // From a binder pocket only that copy goes (spec 018, AC-3).
+  const one = !!row.pocket && row.quantity > 1
+  const count = one ? 1 : row.quantity
+  const cards = `${count} ${count === 1 ? 'card' : 'cards'}`
   const ok = await confirm({ title: `Delete ${row.printing.name}?`, description: `This removes ${cards} from your collection.` })
   if (!ok) return
-  const { error } = await api.DELETE('/api/items/{id}/', { params: { path: { id: row.id } } })
+  const { error } = await api.DELETE('/api/items/{id}/', { params: { path: { id: row.id }, query: one ? { slot: row.pocket } : {} } })
   if (error) return toast.error('Could not delete.')
   toast.success(`Deleted ${row.printing.name}.`)
   selection.set(row.id, false)

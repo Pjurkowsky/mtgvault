@@ -9,6 +9,8 @@ export type WantRow = Schemas['Want']
  */
 export type BrowserRow = Schemas['PublicItem'] & Partial<Omit<Schemas['Item'], keyof Schemas['PublicItem']>> & {
   want?: WantRow | Schemas['PublicWant']
+  /** Opened from this binder pocket: edit and delete touch only its copy (spec 018). */
+  pocket?: number
 }
 
 export type BrowserSource =

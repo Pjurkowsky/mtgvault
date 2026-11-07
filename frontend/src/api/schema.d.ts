@@ -1908,7 +1908,8 @@ export interface components {
             /** @description Decklist to import */
             text?: string;
         };
-        PatchedItemWrite: {
+        /** @description Edit a row, or only some of its copies (spec 018). */
+        PatchedItemEdit: {
             /**
              * Format: uuid
              * @description Scryfall id
@@ -1928,6 +1929,10 @@ export interface components {
             location?: number | null;
             /** @description Binder only: put one new copy in this pocket (spec 007, AC-14) */
             slot?: components["schemas"]["BinderPlace"];
+            /** @description Change only this many copies; they split off as their own row */
+            copies?: number;
+            /** @description Binder pocket of the copy being changed (with copies=1) */
+            slot_id?: number;
         };
         /** @description Owner view of a location. Totals come from the view (context['totals']). */
         PatchedLocation: {
@@ -3438,7 +3443,10 @@ export interface operations {
     };
     items_destroy: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Binder pocket: delete only its copy (spec 018, AC-3) */
+                slot?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3467,9 +3475,9 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedItemWrite"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedItemWrite"];
-                "multipart/form-data": components["schemas"]["PatchedItemWrite"];
+                "application/json": components["schemas"]["PatchedItemEdit"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedItemEdit"];
+                "multipart/form-data": components["schemas"]["PatchedItemEdit"];
             };
         };
         responses: {

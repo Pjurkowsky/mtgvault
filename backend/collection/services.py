@@ -171,5 +171,77 @@ def edit_item(row: CollectionItem, rates=None, **changes):
     return merged_row, True
 
 
+def edit_copies(row: CollectionItem, copies: int, slot_id: int | None = None, rates=None, **changes):
+    """Change only `copies` of a row's copies (spec 018). They split off as their own row
+    with the changes (or merge into a matching row); the rest keep theirs. A binder pocket
+    (`slot_id`) goes with them; otherwise pockets the remaining copies don't need do.
+    Returns (resulting row, merged)."""
+    rates = rates or latest_rates()
+    row = CollectionItem.objects.select_for_update().get(pk=row.pk)
+    if copies >= row.quantity:
+        return edit_item(row, rates=rates, **changes)
+    changes.pop('quantity', None)
+
+    from .models import BinderSlot
+    if slot_id is not None:
+        slots = list(BinderSlot.objects.filter(item_id=row.pk, pk=slot_id))
+        if not slots:
+            raise ValidationError({'slot_id': ['That pocket holds another card.']})
+    else:
+        placed = list(BinderSlot.objects.filter(item_id=row.pk).order_by('-created_at', '-id'))
+        slots = placed[:max(0, len(placed) - (row.quantity - copies))]
+
+    part = CollectionItem(**{f.attname: getattr(row, f.attname) for f in CollectionItem._meta.concrete_fields if f.attname != 'id'})
+    part.quantity = copies
+    if 'location' in changes:
+        changes['in_cart'] = False
+    if 'printing' in changes and changes['printing'].oracle_id != row.printing.oracle_id:
+        raise ValidationError({'printing': ['Pick a printing of the same card.']})
+    for field, value in changes.items():
+        setattr(part, field, value)
+    check_finish(part.printing, part.finish)
+    if part.purchase_price is None:
+        part.purchase_currency = None
+    key = {field: getattr(part, field) for field in ROW_KEY}
+    if key == {field: getattr(row, field) for field in ROW_KEY}:
+        raise ValidationError({'copies': ['Identical copies share one row: change the finish, condition, '
+                                          'language, printing or location of some, or edit all of them.']})
+
+    if row.in_cart and not part.in_cart:
+        from wants.services import fulfil  # spec 010, AC-13
+        fulfil(row.user, part.printing, part.finish, copies, part.location)
+    other = _find_row(row.user, key)
+    if other is None:
+        part.save()
+        target, merged = part, False
+    else:
+        target = _merge_into(other, Copies(copies, part.purchase_price, part.purchase_currency, part.added_at,
+                                           {f: getattr(part, f) for f in ('added_usd', 'added_eur', 'added_pln')}), rates)
+        merged = True
+    # Pockets move before the row shrinks: saving it trims the slots it can no longer fill.
+    BinderSlot.objects.filter(pk__in=[s.pk for s in slots]).update(item_id=target.pk)
+    row.quantity -= copies
+    row.save()
+    from .binder import sync_slots
+    sync_slots(target)  # pockets in a place the copies left go (spec 007)
+    _fill_deck(target)
+    return target, merged
+
+
+def delete_pocket_copy(row: CollectionItem, slot_id: int):
+    """Delete from a binder pocket: only that copy goes (spec 018, AC-3)."""
+    from .models import BinderSlot
+    row = CollectionItem.objects.select_for_update().get(pk=row.pk)
+    slot = BinderSlot.objects.filter(item_id=row.pk, pk=slot_id).first()
+    if slot is None:
+        raise ValidationError({'slot': ['That pocket holds another card.']})
+    if row.quantity <= 1:
+        row.delete()
+        return
+    slot.delete()
+    row.quantity -= 1
+    row.save()
+
+
 def move_item(row: CollectionItem, location, rates=None):
     return edit_item(row, rates=rates, location=location)

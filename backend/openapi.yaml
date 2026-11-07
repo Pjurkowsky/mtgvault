@@ -1148,13 +1148,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedItemWrite'
+              $ref: '#/components/schemas/PatchedItemEdit'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedItemWrite'
+              $ref: '#/components/schemas/PatchedItemEdit'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedItemWrite'
+              $ref: '#/components/schemas/PatchedItemEdit'
       security:
       - jwtAuth: []
       responses:
@@ -1172,6 +1172,11 @@ paths:
         schema:
           type: integer
         required: true
+      - in: query
+        name: slot
+        schema:
+          type: integer
+        description: 'Binder pocket: delete only its copy (spec 018, AC-3)'
       tags:
       - items
       security:
@@ -4332,8 +4337,9 @@ components:
           type: string
           writeOnly: true
           description: Decklist to import
-    PatchedItemWrite:
+    PatchedItemEdit:
       type: object
+      description: Edit a row, or only some of its copies (spec 018).
       properties:
         printing:
           type: string
@@ -4374,6 +4380,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/BinderPlace'
           description: 'Binder only: put one new copy in this pocket (spec 007, AC-14)'
+        copies:
+          type: integer
+          maximum: 999
+          minimum: 1
+          description: Change only this many copies; they split off as their own row
+        slot_id:
+          type: integer
+          description: Binder pocket of the copy being changed (with copies=1)
     PatchedLocation:
       type: object
       description: Owner view of a location. Totals come from the view (context['totals']).

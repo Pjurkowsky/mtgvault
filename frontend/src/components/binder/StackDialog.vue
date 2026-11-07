@@ -28,7 +28,7 @@ function shift(index: number, by: -1 | 1) {
       </DialogHeader>
       <ol class="grid gap-2">
         <li v-for="({ slot, row }, i) in rows" :key="slot.id" class="flex items-center gap-3" data-testid="stack-card">
-          <button type="button" class="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 text-left hover:bg-muted" :aria-label="row!.printing.name" @click="emit('open', row!)">
+          <button type="button" class="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 text-left hover:bg-muted" :aria-label="row!.printing.name" @click="emit('open', { ...row!, pocket: slot.id })">
             <img :src="row!.printing.image_small" :alt="row!.printing.name" class="w-12 rounded-[4.75%/3.5%]" />
             <span class="truncate text-sm">{{ row!.printing.name }}</span>
           </button>
