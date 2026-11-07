@@ -128,11 +128,18 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* Room for the scrollbar always, so a taller page doesn't narrow the content. */
+  /*
+   * Room for the scrollbar always, so a taller page doesn't narrow the content.
+   * Selects, menus and dialogs lock scrolling by hiding the body's overflow and
+   * padding it by the scrollbar's width. With the page scrolling on <html>
+   * instead, that lock leaves the scrollbar and the layout alone.
+   */
   html {
+    overflow-y: auto;
     scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground;
+    padding-right: 0 !important;
   }
 }
