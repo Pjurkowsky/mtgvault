@@ -1,6 +1,7 @@
 # Spec 011: Deck and add polish
 
 Status: Done
+Followed by: 021-deck-and-layout-polish
 Depends on: 002-collection-polish, 005-deck-improvements, 006-deck-views
 
 ## Goal

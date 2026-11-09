@@ -1,6 +1,7 @@
 # Spec 012: Ownership labels
 
 Status: Done
+Followed by: 021-deck-and-layout-polish
 Depends on: 004-decks, 006-deck-views
 
 ## Goal

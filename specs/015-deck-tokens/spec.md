@@ -1,6 +1,7 @@
 # Spec 015: Deck tokens
 
 Status: Done
+Followed by: 021-deck-and-layout-polish
 Depends on: 004-decks, 006-deck-views, 014-export-options
 
 ## Goal

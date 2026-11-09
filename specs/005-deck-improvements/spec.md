@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 002-collection-polish, 003-scanner, 004-decks
-Followed by: 006-deck-views
+Followed by: 006-deck-views, 021-deck-and-layout-polish
 
 ## Goal
 

@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 002-collection-polish, 004-decks, 005-deck-improvements
-Followed by: 007-binder-view
+Followed by: 007-binder-view, 021-deck-and-layout-polish
 
 ## Goal
 

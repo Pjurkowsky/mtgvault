@@ -1,6 +1,7 @@
 # Spec 009: Binder polish
 
 Status: Draft
+Followed by: 021-deck-and-layout-polish
 Depends on: 001-collection, 002-collection-polish, 007-binder-view
 
 ## Goal
