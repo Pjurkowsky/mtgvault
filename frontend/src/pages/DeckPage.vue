@@ -328,7 +328,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
             />
             <p v-else-if="deck.cards.length > commanders.length || !commanders.length" class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
-            <DeckTokens :tokens="deck.tokens" :cards="shown" />
+            <DeckTokens :deck="deck" :cards="shown" :layout="layout" :editable="isOwner" @changed="changed" />
           </div>
         </div>
       </TabsContent>

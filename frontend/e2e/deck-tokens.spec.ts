@@ -26,17 +26,16 @@ test.describe('Deck tokens', () => {
       await expect(group(page).getByTestId('token')).toHaveCount(1)
     }
 
+    // Spec 021, AC-9: the makers moved from the hover into the Token dialog.
     const treasure = group(page).getByRole('button', { name: 'Treasure' })
-    await treasure.hover()
-    await expect(page.getByTestId('preview-caption')).toHaveText('Made by Dockside Extortionist, Smothering Tithe')
     await treasure.click()
-    await expect(page.getByTestId('fullscreen')).toHaveAttribute('aria-label', 'Treasure')
+    await expect(page.getByTestId('token-makers')).toContainText('Dockside Extortionist')
+    await expect(page.getByTestId('token-makers')).toContainText('Smothering Tithe')
     await page.keyboard.press('Escape')
 
     // AC-4: tokens of the cards shown.
     await page.goto(`/decks/${deck.id}?q=Tithe`)
-    await page.getByTestId('deck-tokens').getByRole('button', { name: 'Treasure' }).hover()
-    await expect(page.getByTestId('preview-caption')).toHaveText('Made by Smothering Tithe')
+    await expect(page.getByTestId('deck-tokens').getByRole('button', { name: 'Treasure' })).toBeVisible()
     await page.goto(`/decks/${deck.id}?q=Bolt`)
     await expect(deckRow(page, 'Lightning Bolt')).toBeVisible()
     await expect(group(page)).toHaveCount(0)

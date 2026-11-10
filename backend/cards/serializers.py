@@ -152,7 +152,7 @@ class TokenPrintingSerializer(serializers.Serializer):
     set_code = serializers.CharField()
     set_name = serializers.CharField()
     collector_number = serializers.CharField()
-    finishes = serializers.ListField(child=serializers.CharField())
+    finishes = serializers.ListField(child=serializers.ChoiceField(Finish.choices))
     image_small = serializers.CharField()
     image_normal = serializers.CharField()
     image_large = serializers.CharField()

@@ -2517,7 +2517,7 @@ export interface components {
             set_code: string;
             set_name: string;
             collector_number: string;
-            finishes: string[];
+            finishes: components["schemas"]["FinishEnum"][];
             image_small: string;
             image_normal: string;
             image_large: string;

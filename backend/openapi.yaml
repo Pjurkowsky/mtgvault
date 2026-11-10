@@ -5695,7 +5695,7 @@ components:
         finishes:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/FinishEnum'
         image_small:
           type: string
         image_normal:

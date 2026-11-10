@@ -11,7 +11,8 @@ import type { Finish } from '@/lib/cards'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
 
-type Printing = Schemas['Printing']
+// Card printings, or a token's (spec 021, AC-10): only the fields shown here.
+type Printing = Pick<Schemas['Printing'], 'id' | 'name' | 'set_code' | 'set_name' | 'collector_number' | 'finishes' | 'image_small' | 'image_normal' | 'image_large' | 'prices' | 'prices_all'>
 type FinishFilter = 'all' | Finish
 
 const props = defineProps<{
