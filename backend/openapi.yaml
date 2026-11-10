@@ -242,6 +242,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/CatalogStatus'
           description: ''
+  /api/catalog/tokens/{token_id}/printings/:
+    get:
+      operationId: catalog_tokens_printings_list
+      description: Every printing of a token's kind, newest first, with prices (spec
+        021, AC-10).
+      parameters:
+      - in: path
+        name: token_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - catalog
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TokenPrinting'
+          description: ''
   /api/decks/:
     get:
       operationId: decks_list
@@ -893,6 +919,39 @@ paths:
       - jwtAuth: []
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/token-printing/:
+    post:
+      operationId: decks_token_printing_create
+      description: 'Spec 021, AC-10: the printing a deck shows for a kind of token.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenPrintingChoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenPrintingChoice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenPrintingChoice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
@@ -3346,16 +3405,41 @@ components:
           items:
             type: integer
           description: Deck cards that make it, by name
+        kind:
+          type: string
+          description: 'Oracle id, else name: one entry per kind (spec 021, AC-10)'
+        chosen:
+          type: boolean
+          description: The deck's owner picked this printing
+        set_name:
+          type: string
+        price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Non-foil, else its only finish; counts toward nothing (spec
+            021, AC-11)
+        prices:
+          $ref: '#/components/schemas/Money'
       required:
+      - chosen
       - collector_number
       - id
       - image_large
       - image_normal
       - image_small
+      - kind
       - makers
       - name
       - oracle_id
+      - price
+      - prices
       - set_code
+      - set_name
       - type_line
     DeckWrite:
       type: object
@@ -5591,6 +5675,66 @@ components:
       - oracle_id
       - set_code
       - type_line
+    TokenPrinting:
+      type: object
+      description: |-
+        A printing of a token, with the fields the printing picker reads (spec 021, AC-10).
+        Needs `currency` and `rates` in the context.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        set_code:
+          type: string
+        set_name:
+          type: string
+        collector_number:
+          type: string
+        finishes:
+          type: array
+          items:
+            type: string
+        image_small:
+          type: string
+        image_normal:
+          type: string
+        image_large:
+          type: string
+        prices:
+          allOf:
+          - $ref: '#/components/schemas/Prices'
+          readOnly: true
+        prices_all:
+          allOf:
+          - $ref: '#/components/schemas/PricesAll'
+          readOnly: true
+      required:
+      - collector_number
+      - finishes
+      - id
+      - image_large
+      - image_normal
+      - image_small
+      - name
+      - prices
+      - prices_all
+      - set_code
+      - set_name
+    TokenPrintingChoice:
+      type: object
+      properties:
+        kind:
+          type: string
+        token:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null goes back to the first maker's art
+      required:
+      - kind
+      - token
     Totals:
       type: object
       properties:

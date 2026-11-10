@@ -14,6 +14,7 @@ urlpatterns = [
     path('decks/<int:pk>/cards/<int:card_id>/own/', views.MarkOwnedView.as_view(), name='deck-card-own'),
     path('decks/<int:pk>/cards/<int:card_id>/swaps/', views.ProposeSwapView.as_view(), name='deck-card-swaps'),
     path('decks/<int:pk>/cards/<int:card_id>/swaps/<int:out_id>/', views.UnpairView.as_view(), name='deck-card-unpair'),
+    path('decks/<int:pk>/token-printing/', views.TokenPrintingView.as_view(), name='deck-token-printing'),
     path('decks/<int:pk>/swaps/', views.PairsView.as_view(), name='deck-swaps'),
     path('decks/<int:pk>/cards/<int:card_id>/apply-swap/', views.ApplySwapView.as_view(), name='deck-card-apply-swap'),
     path('decks/<int:pk>/box/', views.CreateBoxView.as_view(), name='deck-box'),

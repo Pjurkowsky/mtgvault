@@ -120,6 +120,16 @@ class DeckSummarySerializer(serializers.Serializer):
 
 class DeckTokenSerializer(TokenSerializer):
     makers = serializers.ListField(child=serializers.IntegerField(), help_text='Deck cards that make it, by name')
+    kind = serializers.CharField(help_text='Oracle id, else name: one entry per kind (spec 021, AC-10)')
+    chosen = serializers.BooleanField(help_text="The deck's owner picked this printing")
+    set_name = serializers.CharField()
+    price = serializers.DecimalField(**MONEY, help_text='Non-foil, else its only finish; counts toward nothing (spec 021, AC-11)')
+    prices = MoneySerializer()
+
+
+class TokenPrintingChoiceSerializer(serializers.Serializer):
+    kind = serializers.CharField()
+    token = serializers.UUIDField(allow_null=True, help_text='Null goes back to the first maker\'s art')
 
 
 class DeckDetailSerializer(DeckSummarySerializer):

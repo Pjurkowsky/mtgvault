@@ -25,6 +25,8 @@ class Deck(models.Model):
     is_public = models.BooleanField(default=False)
     # The deck's box (spec 004, AC-4): every Deck box location is one deck's box.
     location = models.OneToOneField(Location, on_delete=models.SET_NULL, null=True, blank=True, related_name='deck')
+    # Token kind (oracle id, else name) -> the token printing shown for it (spec 021, AC-10).
+    token_printings = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

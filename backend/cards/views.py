@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from .models import Printing, Set
 from .pricing import latest_rates, prices_updated_at
 from .edhrec import edhrec_for
-from .tokens import tokens_for
+from .tokens import printings_of, tokens_for
 from .serializers import (
     TokenSerializer,
     CardDetailSerializer,
@@ -18,6 +18,7 @@ from .serializers import (
     CatalogStatusSerializer,
     PrintingSerializer,
     SetSerializer,
+    TokenPrintingSerializer,
 )
 
 SEARCH_LIMIT = 20
@@ -145,3 +146,13 @@ class PrintingTokensView(APIView):
         except Printing.DoesNotExist:
             raise Http404 from None
         return Response(TokenSerializer(tokens_for(printing), many=True).data)
+
+
+class TokenPrintingsView(APIView):
+    """Every printing of a token's kind, newest first, with prices (spec 021, AC-10)."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=TokenPrintingSerializer(many=True))
+    def get(self, request, token_id):
+        return Response(TokenPrintingSerializer(printings_of(token_id), many=True, context=price_context(request)).data)

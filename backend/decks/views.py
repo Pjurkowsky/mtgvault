@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cards.pricing import CURRENCIES, price, prices_in_all, prices_updated_at
-from cards.tokens import deck_tokens
+from cards.tokens import deck_tokens, kind, tokens_by_id
 from cards.views import price_context
 from collection.filters import ItemFilterSerializer, apply_filters
 from collection.serializers import ExportResultSerializer, PublicItemPageSerializer, PublicItemSerializer
@@ -44,6 +44,7 @@ from .serializers import (
     OptimizeApplySerializer,
     OptimizePreviewSerializer,
     SwapProposalSerializer,
+    TokenPrintingChoiceSerializer,
     ApplySwapSerializer,
     PairSerializer,
 )
@@ -102,7 +103,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
-            'tokens': deck_tokens([c for c in cards if c.zone in COUNTED])}
+            'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx)}
 
 
 def own_deck(request, pk) -> Deck:
@@ -304,6 +305,26 @@ class PairsView(APIView):
             if not services.add_pair(out, candidate):
                 raise ValidationError({'detail': 'Already proposed.'})
         return detail_response(request, deck, status.HTTP_201_CREATED)
+
+
+class TokenPrintingView(APIView):
+    """Spec 021, AC-10: the printing a deck shows for a kind of token."""
+
+    @extend_schema(request=TokenPrintingChoiceSerializer, responses=DeckDetailSerializer)
+    def post(self, request, pk):
+        deck = own_deck(request, pk)
+        data = TokenPrintingChoiceSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        if d['token'] is None:
+            deck.token_printings.pop(d['kind'], None)
+        else:
+            token = tokens_by_id([d['token']]).get(d['token'])
+            if token is None or kind(token) != d['kind']:
+                raise ValidationError({'token': ['Pick a printing of this token.']})
+            deck.token_printings[d['kind']] = str(d['token'])
+        deck.save(update_fields=['token_printings'])
+        return detail_response(request, deck)
 
 
 class UnpairView(APIView):

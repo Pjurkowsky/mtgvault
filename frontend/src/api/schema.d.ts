@@ -185,6 +185,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/tokens/{token_id}/printings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every printing of a token's kind, newest first, with prices (spec 021, AC-10). */
+        get: operations["catalog_tokens_printings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/": {
         parameters: {
             query?: never;
@@ -442,6 +459,23 @@ export interface paths {
         put?: never;
         /** @description Spec 021, AC-14: propose a swap between a deck card and a Maybeboard or new card. */
         post: operations["decks_swaps_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/token-printing/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Spec 021, AC-10: the printing a deck shows for a kind of token. */
+        post: operations["decks_token_printing_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1487,6 +1521,17 @@ export interface components {
             image_large: string;
             /** @description Deck cards that make it, by name */
             makers: number[];
+            /** @description Oracle id, else name: one entry per kind (spec 021, AC-10) */
+            kind: string;
+            /** @description The deck's owner picked this printing */
+            chosen: boolean;
+            set_name: string;
+            /**
+             * Format: double
+             * @description Non-foil, else its only finish; counts toward nothing (spec 021, AC-11)
+             */
+            price: number | null;
+            prices: components["schemas"]["Money"];
         };
         DeckWrite: {
             name: string;
@@ -2461,6 +2506,32 @@ export interface components {
             image_normal: string;
             image_large: string;
         };
+        /**
+         * @description A printing of a token, with the fields the printing picker reads (spec 021, AC-10).
+         *     Needs `currency` and `rates` in the context.
+         */
+        TokenPrinting: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            set_code: string;
+            set_name: string;
+            collector_number: string;
+            finishes: string[];
+            image_small: string;
+            image_normal: string;
+            image_large: string;
+            readonly prices: components["schemas"]["Prices"];
+            readonly prices_all: components["schemas"]["PricesAll"];
+        };
+        TokenPrintingChoice: {
+            kind: string;
+            /**
+             * Format: uuid
+             * @description Null goes back to the first maker's art
+             */
+            token: string | null;
+        };
         Totals: {
             card_count: number;
             /** Format: double */
@@ -2842,6 +2913,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogStatus"];
+                };
+            };
+        };
+    };
+    catalog_tokens_printings_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenPrinting"][];
                 };
             };
         };
@@ -3358,6 +3450,33 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_token_printing_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenPrintingChoice"];
+                "application/x-www-form-urlencoded": components["schemas"]["TokenPrintingChoice"];
+                "multipart/form-data": components["schemas"]["TokenPrintingChoice"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

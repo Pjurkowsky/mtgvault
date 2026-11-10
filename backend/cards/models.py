@@ -94,6 +94,16 @@ class Token(models.Model):
     image_small = models.URLField(max_length=500, blank=True)
     image_normal = models.URLField(max_length=500, blank=True)
     image_large = models.URLField(max_length=500, blank=True)
+    # For the deck's token printing picker and prices (spec 021, AC-10, AC-11).
+    set_name = models.CharField(max_length=200, blank=True)
+    released_at = models.DateField(null=True, blank=True)
+    finishes = ArrayField(models.CharField(max_length=10), default=list, blank=True)
+    usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    usd_foil = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    usd_etched = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    eur = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    eur_foil = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    eur_etched = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f'{self.name} ({self.set_code.upper()}) {self.collector_number}'

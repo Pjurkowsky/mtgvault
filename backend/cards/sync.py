@@ -30,7 +30,10 @@ PRINTING_UPDATE_FIELDS = [
     'rarity', 'colors', 'types', 'type_line', 'mana_cost', 'cmc', 'finishes', 'illustration_id', 'promo', 'legalities', 'color_identity', 'keywords', 'produced_mana', 'oracle_text',
     'image_small', 'image_normal', 'image_large', 'token_ids', *PRICE_FIELDS,
 ]
-TOKEN_UPDATE_FIELDS = ['oracle_id', 'name', 'type_line', 'set_code', 'collector_number', 'image_small', 'image_normal', 'image_large']
+TOKEN_UPDATE_FIELDS = [
+    'oracle_id', 'name', 'type_line', 'set_code', 'collector_number', 'image_small', 'image_normal', 'image_large',
+    'set_name', 'released_at', 'finishes', *PRICE_FIELDS,
+]
 
 
 def _get_json(url: str) -> dict:

@@ -36,7 +36,12 @@ def token_ids(card: dict) -> list[str]:
 def token_fields(card: dict) -> dict:
     front = (card.get('card_faces') or [{}])[0]
     images = card.get('image_uris') or front.get('image_uris') or {}
+    prices = card.get('prices') or {}
     return {
+        'set_name': card.get('set_name', ''),
+        'released_at': card.get('released_at') or None,
+        'finishes': card.get('finishes') or [],
+        **{field: _decimal(prices.get(field)) for field in PRICE_FIELDS},
         'id': card['id'],
         'oracle_id': card.get('oracle_id') or front.get('oracle_id'),
         'name': card['name'],

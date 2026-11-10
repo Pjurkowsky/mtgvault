@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from rest_framework import serializers
 
 from .models import Finish, Printing, Set
@@ -139,3 +141,28 @@ class TokenSerializer(serializers.Serializer):
     image_small = serializers.CharField()
     image_normal = serializers.CharField()
     image_large = serializers.CharField()
+
+
+class TokenPrintingSerializer(serializers.Serializer):
+    """A printing of a token, with the fields the printing picker reads (spec 021, AC-10).
+    Needs `currency` and `rates` in the context."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    set_code = serializers.CharField()
+    set_name = serializers.CharField()
+    collector_number = serializers.CharField()
+    finishes = serializers.ListField(child=serializers.CharField())
+    image_small = serializers.CharField()
+    image_normal = serializers.CharField()
+    image_large = serializers.CharField()
+    prices = serializers.SerializerMethodField()
+    prices_all = serializers.SerializerMethodField()
+
+    def get_prices(self, token) -> PricesSerializer:
+        ns = SimpleNamespace(**token)
+        return {f: price(ns, f, self.context['currency'], self.context['rates']) if f in token['finishes'] else None for f in Finish.values}
+
+    def get_prices_all(self, token) -> PricesAllSerializer:
+        ns, empty = SimpleNamespace(**token), dict.fromkeys(CURRENCIES)
+        return {f: prices_in_all(ns, f, self.context['rates']) if f in token['finishes'] else empty for f in Finish.values}
