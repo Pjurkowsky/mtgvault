@@ -11,6 +11,7 @@ import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useConfirm } from '@/composables/useConfirm'
@@ -36,6 +37,8 @@ const props = defineProps<{
   wantDeck?: number | null
   /** EDHREC cards offer Propose swap for this deck card (spec 011, AC-10). */
   swappable?: boolean
+  /** The price a deck counts for `printingId` (spec 021, AC-20). */
+  price?: { value: number | null; values: Schemas['Money'] } | null
 }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{
@@ -71,6 +74,16 @@ const shown = computed(() => {
   const printings = card.value?.printings ?? []
   const wanted = row.value?.printing.id ?? (atRoot.value ? props.printingId : null)
   return printings.find((p) => p.id === wanted) ?? printings[0] ?? null
+})
+
+// The price under the image (spec 021, AC-20): a copy's finish, the deck's price, else non-foil or the only finish.
+const priceLine = computed(() => {
+  const p = shown.value
+  if (!p) return null
+  if (row.value && row.value.printing.id === p.id) return { value: row.value.unit_price, values: row.value.unit_prices }
+  if (atRoot.value && props.price && p.id === props.printingId) return props.price
+  const finish = p.finishes.includes('nonfoil') ? 'nonfoil' : (p.finishes[0] ?? 'nonfoil')
+  return { value: p.prices[finish], values: p.prices_all[finish] }
 })
 
 // Tokens the shown printing makes (spec 015, AC-7).
@@ -184,6 +197,10 @@ const tabs = computed(() => [
             <img :src="shown.image_large || shown.image_normal" :alt="shown.name" class="w-full rounded-[4.75%/3.5%] bg-muted" data-testid="detail-image" />
           </button>
           <Skeleton v-else class="aspect-[488/680] w-full" />
+          <p v-if="priceLine" class="text-sm" data-testid="detail-image-price">
+            <Price :value="priceLine.value" :values="priceLine.values" :currency="currency" />
+          </p>
+          <Separator v-if="card" />
           <div v-if="card" class="flex gap-2 overflow-x-auto pb-2" role="radiogroup" aria-label="Reprints" data-testid="reprints">
             <div v-for="p in card.printings" :key="p.id" class="group relative shrink-0">
             <ExpandButton :image="p.image_large || p.image_normal" :name="`${p.name} (${p.set_name})`" />
@@ -199,8 +216,9 @@ const tabs = computed(() => [
             </component>
             </div>
           </div>
+          <Separator v-if="tokens.length" />
           <section v-if="tokens.length" class="grid gap-2" data-testid="card-tokens">
-            <h3 class="text-sm font-medium">Tokens</h3>
+            <h3 class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Tokens</h3>
             <TokenTiles :tokens="tokens" size="sm" />
           </section>
         </div>
@@ -239,6 +257,7 @@ const tabs = computed(() => [
             </template>
           </section>
 
+          <Separator />
           <!-- EDHREC tabs (AC-28 to AC-36) -->
           <Tabs v-model="tab">
             <TabsList>

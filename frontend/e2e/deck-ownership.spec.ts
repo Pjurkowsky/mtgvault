@@ -28,7 +28,9 @@ test.describe('Deck ownership', () => {
     await closeCardDialog(page)
     await deckRow(page, 'Forest').click()
     await expect(dialog.getByTestId('deck-card-ownership')).toContainText('1 in Unfiled')
-    await expect(dialog.getByTestId('deck-card-ownership')).toContainText('3 missing')
+    // Spec 021, AC-22: said once, in the label.
+    await expect(dialog.getByTestId('ownership-label')).toHaveText(/3 missing|Missing 3 of 4/)
+    await expect(dialog.getByTestId('deck-card-ownership').getByText(/missing/i)).toHaveCount(1)
     await closeCardDialog(page)
 
     // 2 Bolt + 1 Counterspell + 1 Forest owned; 1 Sol Ring + 3 Forest missing. Brainstorm doesn't count.

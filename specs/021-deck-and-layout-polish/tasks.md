@@ -17,7 +17,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Card dialog
 
-- [ ] **T8 Price under the image, separators, ownership once; card-dialog-polish.spec.ts** (AC-20 to AC-22)
+- [x] **T8 Price under the image, separators, ownership once; card-dialog-polish.spec.ts** (AC-20 to AC-22)
 
 ## Finish
 

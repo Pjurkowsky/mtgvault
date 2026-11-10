@@ -43,7 +43,7 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
 <template>
   <section class="grid gap-4" data-testid="deck-section">
     <div class="grid gap-2" data-testid="deck-card-ownership">
-      <OwnershipBadge :card="card" show-label />
+      <OwnershipBadge :card="card" show-label counts />
       <ul class="grid gap-1 text-sm">
         <li v-if="own.in_box && !own.box_copies.length">{{ own.in_box }} in the deck box</li>
         <li v-for="c in [...own.box_copies, ...own.free_copies]" :key="c.item_id" class="flex items-center gap-2" data-testid="deck-copy">
@@ -58,7 +58,6 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
           </template>
         </li>
         <li v-for="d in own.other_decks" :key="d.deck">{{ d.quantity }} in deck {{ d.deck }}</li>
-        <li v-if="own.missing" class="text-destructive">{{ own.missing }} missing</li>
       </ul>
       <Button v-if="!readonly" size="sm" variant="outline" class="justify-self-start" :disabled="busy" @click="emit('add-copy')">
         Add a new copy{{ deck.location ? ' to the deck box' : '' }}
@@ -80,6 +79,7 @@ const dirty = computed(() => quantity.value !== props.card.quantity || zone.valu
         <Label class="self-start pt-1.5">Categories</Label>
         <CategoryInput :model-value="card.categories" :disabled="busy" @update:model-value="(v) => emit('categories', v)" />
       </div>
+      <Separator />
       <div class="flex justify-between gap-2">
         <DestructiveButton :disabled="busy" @click="emit('remove')">Remove from deck</DestructiveButton>
         <Button :disabled="busy || !dirty" @click="emit('save', { quantity, zone })">Save</Button>

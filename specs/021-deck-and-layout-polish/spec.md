@@ -146,4 +146,5 @@ useful.
   already a proposal of In (the reverse pair) is allowed.
 - AC-20: a card from an EDHREC tab shows the price of the printing shown.
 - AC-22: other states keep their label alone ("Owned", "Free in collection",
-  "In other decks").
+  "In other decks"); with some copies still missing they add it once
+  ("Free in collection · 3 missing").

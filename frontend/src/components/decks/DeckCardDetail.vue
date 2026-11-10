@@ -128,6 +128,7 @@ async function deleteCopy(itemId: number) {
     v-model:open="open" :row="null" :oracle-id="card?.printing.oracle_id" :printing-id="card?.printing.id"
     :currency="deck.currency" :readonly="readonly" :want-deck="deck.id" choose-printing @choose-printing="choosePrinting"
     :swappable="!readonly && !!card && card.zone !== 'maybe'"
+    :price="card ? { value: card.price, values: card.prices } : null"
     @add="addToDeck" @changed="refresh" @propose-swap="proposeSwap"
   >
     <template v-if="card" #deck>
