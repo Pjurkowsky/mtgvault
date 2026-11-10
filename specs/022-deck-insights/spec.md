@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 002-collection-polish, 004-decks, 006-deck-views, 012-ownership-labels, 021-deck-and-layout-polish
-Followed by: 023-ui-polish; 024 (pod simulation, not written yet)
+Followed by: 023-ui-polish, 024 (pod simulation, not written yet)
 
 ## Goal
 
