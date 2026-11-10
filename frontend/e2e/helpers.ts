@@ -69,7 +69,7 @@ export async function apiAs(request: APIRequestContext, user: TestUser) {
   const login = await request.post('/api/auth/login/', { data: { login: user.username, password: user.password } })
   expect(login.status()).toBe(200)
   const headers = { Authorization: `Bearer ${(await login.json()).access}` }
-  const call = async (method: 'get' | 'post' | 'patch' | 'delete', path: string, data?: unknown) => {
+  const call = async (method: 'get' | 'post' | 'put' | 'patch' | 'delete', path: string, data?: unknown) => {
     const response = await request[method](path, { headers, data })
     expect(response.ok(), `${method.toUpperCase()} ${path} -> ${response.status()} ${await response.text()}`).toBe(true)
     return response.status() === 204 ? null : response.json()
@@ -77,6 +77,7 @@ export async function apiAs(request: APIRequestContext, user: TestUser) {
   return {
     get: (path: string) => call('get', path),
     post: (path: string, data?: unknown) => call('post', path, data),
+    put: (path: string, data: unknown) => call('put', path, data),
     patch: (path: string, data: unknown) => call('patch', path, data),
     delete: (path: string) => call('delete', path),
     /** Create a location; returns its id. */

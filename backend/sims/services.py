@@ -217,12 +217,14 @@ def unique_labels(labels: list[str]) -> list[str]:
     return out
 
 
-def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, seat_mode: str) -> SimRun:
+def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None) -> SimRun:
     """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15)."""
     if not 2 <= len(seats) <= MAX_SEATS:
         raise ValidationError({'seats': 'A pod has 2 to 6 decks.'})
     if seats[0].get('deck') != deck.id:
         raise ValidationError({'seats': 'Seat 1 is this deck.'})
+    if order and sorted(order) != list(range(len(seats))):
+        raise ValidationError({'order': 'The order must name every seat once.'})
     supported = forge.supported_names()
     built = []
     for spec in seats:
@@ -236,7 +238,7 @@ def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, sea
         if seat['profile'] not in PROFILES:
             raise ValidationError({'profile': f"Unknown AI profile {seat['profile']}."})
     with transaction.atomic():
-        run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode)
+        run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [])
         labels = unique_labels([s['label'] for s in built])
         SimSeat.objects.bulk_create(
             SimSeat(run=run, index=i, label=labels[i], source=s['source'], source_id=s['source_id'],

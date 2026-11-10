@@ -6314,6 +6314,10 @@ components:
           type: integer
         seat_mode:
           $ref: '#/components/schemas/SeatModeEnum'
+        fixed_order:
+          type: array
+          items:
+            type: integer
         played:
           type: integer
         error:
@@ -6346,6 +6350,7 @@ components:
       - deck_name
       - error
       - finished_at
+      - fixed_order
       - games
       - id
       - mine
@@ -6852,6 +6857,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/SeatModeEnum'
           default: rotate
+        order:
+          type: array
+          items:
+            type: integer
+            minimum: 0
       required:
       - seats
     Stats:

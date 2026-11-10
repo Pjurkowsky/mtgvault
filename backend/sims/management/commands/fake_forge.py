@@ -15,6 +15,8 @@ FIXTURES = Path(__file__).resolve().parents[2] / 'fixtures' / 'forge'
 GAMES: dict[str, dict] = {}
 LOCK = threading.Lock()
 GAME_SECONDS = 1.0
+# A deck named "Hangs" plays this long, so a run can be seen playing and cancelled.
+HANG_SECONDS = 8.0
 
 
 def load(name):
@@ -98,8 +100,7 @@ class Handler(BaseHTTPRequestHandler):
                 game = GAMES.get(self.path.removeprefix('/games/'))
             if game is None:
                 return self.send(404, {'error': 'No such game.'})
-            # A deck named "Hangs" never finishes, so cancelling can be tested.
-            if game['hangs'] or time.monotonic() < game['ready']:
+            if time.monotonic() < game['ready']:
                 return self.send(200, {'status': 'playing'})
             return self.send(200, {'status': 'done', **game['outcome']})
         self.send(404, {'error': 'Not found.'})
@@ -111,8 +112,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(400, {'error': 'At least two decks are needed.'})
         game_id = uuid.uuid4().hex
         with LOCK:
-            GAMES[game_id] = {'ready': time.monotonic() + GAME_SECONDS, 'outcome': outcome(decks),
-                              'hangs': any('Hangs' in deck_name(d['dck']) for d in decks), 'body': body}
+            hangs = any('Hangs' in deck_name(d['dck']) for d in decks)
+            GAMES[game_id] = {'ready': time.monotonic() + (HANG_SECONDS if hangs else GAME_SECONDS), 'outcome': outcome(decks)}
         self.send(201, {'id': game_id})
 
     def do_DELETE(self):

@@ -53,6 +53,8 @@ class SimRun(models.Model):
     games = models.PositiveIntegerField()
     minutes = models.PositiveIntegerField()
     seat_mode = models.CharField(max_length=6, choices=SeatMode.choices, default=SeatMode.ROTATE)
+    # Fixed mode: seat indexes in turn order, as arranged in the form (AC-6).
+    fixed_order = ArrayField(models.PositiveSmallIntegerField(), default=list, blank=True)
     cancel_requested = models.BooleanField(default=False)
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

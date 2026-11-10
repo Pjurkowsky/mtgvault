@@ -39,6 +39,8 @@ class StartRunSerializer(PodSerializer):
     games = serializers.IntegerField(min_value=1, default=10)
     minutes = serializers.IntegerField(min_value=1, default=5)
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices, default=SimRun.SeatMode.ROTATE)
+    # Fixed mode: seat indexes in turn order; seat 0 is always this deck.
+    order = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
 
 
 class UnsupportedCardSerializer(serializers.Serializer):
@@ -157,6 +159,7 @@ class RunSerializer(serializers.Serializer):
     games = serializers.IntegerField()
     minutes = serializers.IntegerField()
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices)
+    fixed_order = serializers.ListField(child=serializers.IntegerField())
     played = serializers.IntegerField()
     error = serializers.CharField()
     created_at = serializers.DateTimeField()
@@ -277,7 +280,7 @@ def run_data(run: SimRun, user) -> dict:
         'id': run.id, 'deck': run.deck_id, 'deck_name': run.deck.name, 'user': run.user.username,
         'mine': user.is_authenticated and run.user_id == user.id, 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING,
-        'games': run.games, 'minutes': run.minutes, 'seat_mode': run.seat_mode, 'played': len(games), 'error': run.error,
+        'games': run.games, 'minutes': run.minutes, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
         'created_at': run.created_at, 'started_at': run.started_at, 'finished_at': run.finished_at,
         'seats': [{'index': s.index, 'label': s.label, 'owner': s.owner, 'source': s.source, 'source_id': s.source_id,
                    'profile': s.profile, 'commanders': commanders(s.cards),

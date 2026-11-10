@@ -1,8 +1,13 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Separate ports and database so e2e runs never touch your dev data.
-const API_PORT = 8100
-const WEB_PORT = 5180
+// Separate ports and database so e2e runs never touch your dev data. Override them (and
+// E2E_DATABASE_URL, E2E_REDIS_URL) to run a second checkout's tests at the same time.
+const API_PORT = Number(process.env.E2E_API_PORT ?? 8100)
+const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 5180)
+// Spec 024: a fake Forge service answering from recorded games, and the worker that plays runs.
+const FORGE_PORT = Number(process.env.E2E_FORGE_PORT ?? 8190)
+const SIMS_PORT = Number(process.env.E2E_SIMS_PORT ?? 8191)
+const REDIS_URL = process.env.E2E_REDIS_URL ?? 'redis://localhost:6379/1'
 export const RATES = { EUR: 4.4, USD: 4.0 }
 /** Fake camera for the scanner tests: Sol Ring on a table (built by e2e/camera.setup.ts). */
 export const CAMERA_FEED = new URL('./e2e/.cache/camera.mjpeg', import.meta.url).pathname
@@ -75,12 +80,31 @@ export default defineConfig({
         DEBUG: 'True',
         AUTH_COOKIE_SECURE: 'False',
         // Own Redis database, and EDHREC from a file, so tests never touch dev data or the network.
-        REDIS_URL: 'redis://localhost:6379/1',
+        REDIS_URL,
         EDHREC_FIXTURE_DIR: 'cards/fixtures/edhrec',
         SCANNER_DIR: 'var/scanner-e2e',
+        FORGE_URL: `http://127.0.0.1:${FORGE_PORT}`,
       },
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
+    },
+    {
+      command: `uv run manage.py fake_forge --port ${FORGE_PORT}`,
+      cwd: '../backend',
+      url: `http://127.0.0.1:${FORGE_PORT}/health`,
+      env: { DATABASE_URL },
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      // After the API server: it waits for migrations.
+      command: `uv run manage.py run_sims --health-port ${SIMS_PORT}`,
+      cwd: '../backend',
+      url: `http://127.0.0.1:${SIMS_PORT}/`,
+      env: {
+        DATABASE_URL, REDIS_URL, FORGE_URL: `http://127.0.0.1:${FORGE_PORT}`,
+        SIMS_POLL_SECONDS: '0.3', SIMS_IDLE_SECONDS: '0.3',
+      },
+      reuseExistingServer: !process.env.CI,
     },
     {
       command: `pnpm exec vite --port ${WEB_PORT} --strictPort`,

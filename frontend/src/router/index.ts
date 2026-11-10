@@ -26,6 +26,7 @@ export const router = createRouter({
     { path: '/cards', name: 'cards', component: () => import('@/pages/CollectionPage.vue'), meta: { requiresAuth: true } },
     { path: '/decks', name: 'decks', component: () => import('@/pages/DecksPage.vue'), meta: { requiresAuth: true } },
     { path: '/decks/:id(\\d+)', name: 'deck', component: () => import('@/pages/DeckPage.vue'), meta: { requiresAuth: true } },
+    { path: '/decks/:id(\\d+)/simulations/:run(\\d+)/games/:number(\\d+)', name: 'sim-game', component: () => import('@/pages/SimGamePage.vue'), meta: { requiresAuth: true } },
     { path: '/wants', name: 'wants', component: () => import('@/pages/WantsPage.vue'), meta: { requiresAuth: true } },
     { path: '/locations/:id', name: 'location', component: () => import('@/pages/LocationPage.vue'), meta: { requiresAuth: true } },
     // /scan/fast is served cross-origin isolated for multi-threaded recognition (spec 003, AC-16).
@@ -35,6 +36,7 @@ export const router = createRouter({
     { path: '/u/:username/locations/:id', name: 'public-location', component: () => import('@/pages/PublicLocationPage.vue') },
     { path: '/u/:username/wants', name: 'public-wants', component: () => import('@/pages/WantsPage.vue') },
     { path: '/u/:username/decks/:id(\\d+)', name: 'public-deck', component: () => import('@/pages/DeckPage.vue') },
+    { path: '/u/:username/decks/:id(\\d+)/simulations/:run(\\d+)/games/:number(\\d+)', name: 'public-sim-game', component: () => import('@/pages/SimGamePage.vue') },
     { path: '/settings', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { requiresAuth: true } },
     { path: '/u/:username', name: 'profile', component: () => import('@/pages/ProfilePage.vue') },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/NotFoundPage.vue') },

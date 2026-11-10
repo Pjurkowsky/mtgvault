@@ -13,6 +13,8 @@ import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
 import DeckCardDetail from '@/components/decks/DeckCardDetail.vue'
 import DeckCombos from '@/components/decks/DeckCombos.vue'
+import DeckSimulate from '@/components/sims/DeckSimulate.vue'
+import { useForge } from '@/lib/sims'
 import DeckCommander from '@/components/decks/DeckCommander.vue'
 import DeckImportDialog from '@/components/decks/DeckImportDialog.vue'
 import DeckList from '@/components/decks/DeckList.vue'
@@ -85,7 +87,7 @@ watch(deck, loadInsights)
 
 // The tab lives in the URL. View, grouping and sort are remembered in the browser for
 // all decks; options in the URL win (spec 005, AC-8).
-type Tab = 'deck' | 'swaps' | 'combos' | 'stats'
+type Tab = 'deck' | 'swaps' | 'combos' | 'stats' | 'simulate'
 const LAYOUTS = ['text', 'list', 'visual'] as const
 const GROUPS = ['type', 'mana_value', 'color', 'category'] as const
 const ORDERS = ['name', 'mana_value', 'price'] as const
@@ -95,7 +97,10 @@ const savedLayout = usePreference<Layout>('deck.layout', 'text', LAYOUTS)
 const savedGroup = usePreference<GroupBy>('deck.group', 'type', GROUPS)
 const savedOrder = usePreference<SortBy>('deck.order', 'name', ORDERS)
 const size = usePreference<CardSize>('deck.size', 'md', CARD_SIZES)
-const tab = computed<Tab>(() => pick(one(route.query.tab), ['swaps', 'combos', 'stats'] as const) ?? 'deck')
+// Simulate: Commander decks, when the server has Forge (spec 024, AC-1).
+const forge = useForge()
+const canSimulate = computed(() => !!forge.value && deck.value?.format === 'commander')
+const tab = computed<Tab>(() => pick(one(route.query.tab), canSimulate.value ? ['swaps', 'combos', 'stats', 'simulate'] as const : ['swaps', 'combos', 'stats'] as const) ?? 'deck')
 const layout = computed<Layout>(() => pick(one(route.query.layout), LAYOUTS) ?? savedLayout.value)
 const groupBy = computed<GroupBy>(() => pick(one(route.query.group), GROUPS) ?? savedGroup.value)
 const sortBy = computed<SortBy>(() => pick(one(route.query.order), ORDERS) ?? savedOrder.value)
@@ -331,6 +336,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           Combos <span v-if="deck.combo_count" class="text-muted-foreground tabular-nums">{{ deck.combo_count }}</span>
         </TabsTrigger>
         <TabsTrigger value="stats">Stats</TabsTrigger>
+        <TabsTrigger v-if="canSimulate" value="simulate">Simulate</TabsTrigger>
       </TabsList>
 
       <TabsContent ref="deckTab" value="deck" class="grid gap-4 pt-2" @keydown="nav.onKeydown">
@@ -386,6 +392,10 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       <TabsContent value="stats" class="grid gap-4 pt-2">
         <LegalityPanel :deck="deck" />
         <DeckStats :deck="deck" :themes="themes" @filter="showFiltered" @open="showCard" />
+      </TabsContent>
+
+      <TabsContent v-if="canSimulate" value="simulate" class="pt-2">
+        <DeckSimulate :deck="deck" :username="username" />
       </TabsContent>
     </Tabs>
 

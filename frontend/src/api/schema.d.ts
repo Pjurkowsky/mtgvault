@@ -2819,6 +2819,7 @@ export interface components {
             games: number;
             minutes: number;
             seat_mode: components["schemas"]["SeatModeEnum"];
+            fixed_order: number[];
             played: number;
             error: string;
             /** Format: date-time */
@@ -3053,6 +3054,7 @@ export interface components {
             minutes?: number;
             /** @default rotate */
             seat_mode?: components["schemas"]["SeatModeEnum"];
+            order?: number[];
         };
         Stats: {
             curve: {

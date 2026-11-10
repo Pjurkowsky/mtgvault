@@ -156,7 +156,7 @@ class DeckRunsView(APIView):
         data = StartRunSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
-        run = services.start_run(request.user, deck, d['seats'], d['games'], d['minutes'], d['seat_mode'])
+        run = services.start_run(request.user, deck, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'))
         return Response(RunSerializer(run_data(run, request.user)).data, status=status.HTTP_201_CREATED)
 
 

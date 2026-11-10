@@ -7,7 +7,7 @@ import random
 import time
 
 from django.conf import settings
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.utils import timezone
 
 from . import forge
@@ -16,9 +16,11 @@ from .models import SimGame, SimRun
 log = logging.getLogger(__name__)
 
 
-def seat_order(seats: int, game: int, mode: str, run_id: int) -> list[int]:
+def seat_order(seats: int, game: int, mode: str, run_id: int, fixed: list[int] | None = None) -> list[int]:
     """Run seat indexes in turn order for game `game` (0-based); the first goes first (AC-6)."""
     order = list(range(seats))
+    if mode == SimRun.SeatMode.FIXED and sorted(fixed or []) == order:
+        return list(fixed)
     if mode == SimRun.SeatMode.ROTATE:
         shift = game % seats
         return order[shift:] + order[:shift]
@@ -55,7 +57,7 @@ def cancelled(run: SimRun) -> bool:
 
 def play_game(run: SimRun, seats, number: int) -> bool:
     """Plays game `number` (1-based) and stores it. False when the run was cancelled meanwhile."""
-    order = seat_order(len(seats), number - 1, run.seat_mode, run.id)
+    order = seat_order(len(seats), number - 1, run.seat_mode, run.id, run.fixed_order)
     decks = [{'dck': forge.to_dck(seats[i].label, seats[i].cards), 'profile': seats[i].profile} for i in order]
     started = time.monotonic()
     game_id = forge.call('POST', '/games', {'decks': decks, 'timeout': run.minutes * 60, 'seed': run.id * 10_000 + number})['id']
@@ -109,9 +111,19 @@ def play(run: SimRun):
 
 
 def loop(stop=lambda: False):
-    recover()
     while not stop():
-        run = next_run()
+        try:
+            recover()
+            break
+        except DatabaseError:  # not migrated yet
+            time.sleep(settings.SIMS_IDLE_SECONDS)
+    while not stop():
+        try:
+            run = next_run()
+        except DatabaseError:
+            log.warning('Could not read the queue', exc_info=True)
+            time.sleep(settings.SIMS_IDLE_SECONDS)
+            continue
         if run is None:
             time.sleep(settings.SIMS_IDLE_SECONDS)
             continue

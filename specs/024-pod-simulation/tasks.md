@@ -13,7 +13,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Simulate tab
 
-- [ ] **T4 Simulate tab, run form, opponent picker; sim-availability.spec.ts, sim-pod.spec.ts** (AC-1, AC-3 to AC-7)
+- [x] **T4 Simulate tab, run form, opponent picker; sim-availability.spec.ts, sim-pod.spec.ts** (AC-1, AC-3 to AC-7)
 - [ ] **T5 Opponent pool: add this deck or a list, rename, remove; sim-pool.spec.ts** (AC-8 to AC-10)
 - [ ] **T6 Unsupported cards step, suggestions, sim swaps; sim-unsupported.spec.ts** (AC-11 to AC-13)
 - [ ] **T7 Queue panel, run list, results, cancel and delete; sim-runs.spec.ts** (AC-14 to AC-22)
