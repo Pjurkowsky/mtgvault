@@ -617,6 +617,26 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/decks/{id}/combos/:
+    get:
+      operationId: decks_combos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckCombos'
+          description: ''
   /api/decks/{id}/delete/:
     post:
       operationId: decks_delete_create
@@ -1971,6 +1991,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/users/{username}/decks/{id}/combos/:
+    get:
+      operationId: users_decks_combos_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckCombos'
+          description: ''
   /api/users/{username}/locations/:
     get:
       operationId: users_locations_list
@@ -2975,6 +3021,72 @@ components:
         * `R` - R
         * `G` - G
         * `C` - C
+    Combo:
+      type: object
+      properties:
+        id:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComboCard'
+        produces:
+          type: array
+          items:
+            type: string
+        infinite:
+          type: boolean
+        wins:
+          type: boolean
+        prerequisites:
+          type: string
+        description:
+          type: string
+        requires:
+          type: array
+          items:
+            type: string
+          description: Pieces that are not one named card
+        url:
+          type: string
+          description: The combo on Commander Spellbook
+      required:
+      - cards
+      - description
+      - id
+      - infinite
+      - prerequisites
+      - produces
+      - requires
+      - url
+      - wins
+    ComboCard:
+      type: object
+      properties:
+        oracle_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        image:
+          type: string
+        in_deck:
+          type: boolean
+        owned:
+          type: boolean
+          description: A missing card the viewer has in their collection
+        printing:
+          type: string
+          format: uuid
+          nullable: true
+          description: Newest printing, to add a missing card
+      required:
+      - image
+      - in_deck
+      - name
+      - oracle_id
+      - owned
+      - printing
     ConditionEnum:
       enum:
       - NM
@@ -3098,6 +3210,22 @@ components:
           default: main
       required:
       - printing
+    DeckCombos:
+      type: object
+      description: Spec 022, AC-7, AC-8.
+      properties:
+        in_deck:
+          type: array
+          items:
+            $ref: '#/components/schemas/Combo'
+        could_build:
+          type: array
+          items:
+            $ref: '#/components/schemas/Combo'
+          description: Infinite or win combos missing one or two cards
+      required:
+      - could_build
+      - in_deck
     DeckDelete:
       type: object
       properties:
@@ -3152,8 +3280,12 @@ components:
           $ref: '#/components/schemas/Legality'
         stats:
           $ref: '#/components/schemas/Stats'
+        combo_count:
+          type: integer
+          description: Combos fully in the counted cards (spec 022, AC-6)
       required:
       - cards
+      - combo_count
       - counts
       - currency
       - format

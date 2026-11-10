@@ -12,6 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from cards.combos import count_in_deck, deck_combos
 from cards.pricing import CURRENCIES, price, prices_in_all, prices_updated_at
 from cards.tokens import deck_tokens, kind, tokens_by_id
 from cards.views import price_context
@@ -32,6 +33,7 @@ from .serializers import (
     CreateBoxSerializer,
     DeckCardEditSerializer,
     DeckCardWriteSerializer,
+    DeckCombosSerializer,
     DeckDeleteSerializer,
     DeckDetailSerializer,
     DeckExportParamsSerializer,
@@ -103,7 +105,37 @@ def build(deck, ctx, detail=True, public=False) -> dict:
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
-            'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx)}
+            'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx),
+            'combo_count': count_in_deck(counted(cards))}
+
+
+def counted(cards) -> set:
+    return {c.oracle_id for c in cards if c.zone in COUNTED}
+
+
+def combos_response(deck, viewer_id):
+    """Spec 022, AC-7, AC-8: in a Commander deck, combos fit the commander's colours."""
+    cards = deck_cards(deck)
+    commanders = [c for c in cards if c.zone == DeckCard.Zone.COMMANDER]
+    identity = None
+    if FORMATS[deck.format].commander and commanders:
+        identity = {color for c in commanders for color in c.printing.color_identity}
+    return Response(DeckCombosSerializer(deck_combos(counted(cards), identity, viewer_id)).data)
+
+
+class DeckCombosView(APIView):
+    @extend_schema(responses=DeckCombosSerializer)
+    def get(self, request, pk):
+        return combos_response(own_deck(request, pk), request.user.id)
+
+
+class PublicDeckCombosView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=DeckCombosSerializer)
+    def get(self, request, username, pk):
+        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        return combos_response(deck, None)  # visitors see no ownership (AC-9)
 
 
 def own_deck(request, pk) -> Deck:

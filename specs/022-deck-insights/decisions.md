@@ -40,7 +40,7 @@ Status: Written into spec.md (2026-11-10).
 
 ## Round 1
 
-- Pod simulation: its own spec (023), not this one.
+- Pod simulation: its own spec (now 024), not this one.
 - Categorising: automatic when a card is added to a deck, and existing deck
   cards get categories too (not just a button).
 - Combos: every combo in the deck, not only infinite ones, plus combos you could

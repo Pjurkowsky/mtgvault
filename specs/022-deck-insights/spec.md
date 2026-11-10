@@ -2,7 +2,7 @@
 
 Status: Draft
 Depends on: 002-collection-polish, 004-decks, 006-deck-views, 012-ownership-labels, 021-deck-and-layout-polish
-Followed by: 023 (pod simulation, not written yet)
+Followed by: 023-ui-polish; 024 (pod simulation, not written yet)
 
 ## Goal
 
@@ -16,12 +16,13 @@ commander is played in. The app gets a dark theme.
   Tags form a tree; a tag also covers its child tags.
 - **Combo**: a Commander Spellbook combo variant: the cards it uses, what it
   produces ("Infinite colorless mana"), its colour identity and steps.
-- **Infinite combo**: a combo that produces anything infinite (a result marked
-  uncountable by Commander Spellbook, or named "Infinite …").
+- **Infinite combo**: a combo with a result named "Infinite …" or
+  "Near-infinite …". (Commander Spellbook also marks locks and mass effects
+  uncountable; those don't count.)
 - **Win combo**: a combo whose result wins the game or makes opponents lose it.
 - **Salt**: EDHREC's community score for how much players dislike playing
   against a card, 0 to 4. **Deck salt** is the sum over the deck's cards.
-- **Counted cards**: Commander and Mainboard, as in deck stats.
+- **Counted cards**: Commander, Mainboard and Sideboard, as in deck stats.
 
 ## Acceptance criteria
 
@@ -55,7 +56,7 @@ commander is played in. The app gets a dark theme.
   counted card and miss one or two cards. In a Commander deck the combo must
   fit the commander's colour identity; other formats have no colour limit.
   Combos missing one card come first, then the more popular ones. It shows 20
-  and a Show more button for the next 20.
+  and a Show more button for the next 20, up to 200.
 - **AC-9** A combo shows its card images (missing ones dimmed, with the
   ownership badge when you own a copy), what it produces, an Infinite and/or
   Win badge, and a link to the combo on Commander Spellbook. Clicking Steps
@@ -96,7 +97,7 @@ commander is played in. The app gets a dark theme.
 
 ## Out of scope
 
-- Simulating Commander pods (spec 023)
+- Simulating Commander pods (spec 024)
 - An Auto-categorize button or recomputing categories after the first sync
 - Combos missing three or more cards, or needing a colour or commander change
 - Salt on deck tiles in the Decks list
@@ -109,8 +110,7 @@ commander is played in. The app gets a dark theme.
   front is a land counts as a land.
 - AC-3: "first tag sync" is the first successful tag sync on this server; a
   fresh install runs it with its first card sync.
-- AC-7, AC-8: only counted cards take part; Sideboard and Maybeboard cards
-  don't. A combo whose card must be the commander is matched like any other.
+- AC-7, AC-8: only counted cards take part; Maybeboard cards don't. A combo whose card must be the commander is matched like any other.
 - AC-8: popularity is Commander Spellbook's (decks on EDHREC playing it).
 - AC-9: "you own a copy" is any copy in your collection, as the ownership
   badge counts it; visitors see no badge.

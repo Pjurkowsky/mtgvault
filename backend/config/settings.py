@@ -250,6 +250,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_BEAT_SCHEDULE = {
     # NBP publishes around noon Warsaw time; Scryfall refreshes prices daily.
     'sync-cards-daily': {'task': 'cards.tasks.sync_cards', 'schedule': crontab(hour=13, minute=0)},
+    'sync-combos-daily': {'task': 'cards.tasks.sync_combos', 'schedule': crontab(hour=5, minute=0)},
     'sync-scanner-bundle-daily': {'task': 'scanner.tasks.sync_scanner_bundle', 'schedule': crontab(hour=4, minute=0)},
     # Nightly database dump (spec 008, AC-22). Only where BACKUP_DIR is set.
     **({'backup-database-daily': {'task': 'core.tasks.backup_database', 'schedule': crontab(hour=3, minute=0)}}

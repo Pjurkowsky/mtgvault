@@ -350,6 +350,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/combos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_combos_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/delete/": {
         parameters: {
             query?: never;
@@ -998,6 +1014,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/decks/{id}/combos/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_combos_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/locations/": {
         parameters: {
             query?: never;
@@ -1361,6 +1393,33 @@ export interface components {
          * @enum {string}
          */
         ColorEnum: "W" | "U" | "B" | "R" | "G" | "C";
+        Combo: {
+            id: string;
+            cards: components["schemas"]["ComboCard"][];
+            produces: string[];
+            infinite: boolean;
+            wins: boolean;
+            prerequisites: string;
+            description: string;
+            /** @description Pieces that are not one named card */
+            requires: string[];
+            /** @description The combo on Commander Spellbook */
+            url: string;
+        };
+        ComboCard: {
+            /** Format: uuid */
+            oracle_id: string;
+            name: string;
+            image: string;
+            in_deck: boolean;
+            /** @description A missing card the viewer has in their collection */
+            owned: boolean;
+            /**
+             * Format: uuid
+             * @description Newest printing, to add a missing card
+             */
+            printing: string | null;
+        };
         /**
          * @description * `NM` - Near Mint
          *     * `LP` - Lightly Played
@@ -1417,6 +1476,12 @@ export interface components {
             /** @default main */
             zone?: components["schemas"]["ZoneEnum"];
         };
+        /** @description Spec 022, AC-7, AC-8. */
+        DeckCombos: {
+            in_deck: components["schemas"]["Combo"][];
+            /** @description Infinite or win combos missing one or two cards */
+            could_build: components["schemas"]["Combo"][];
+        };
         DeckDelete: {
             box?: components["schemas"]["BoxEnum"];
         };
@@ -1439,6 +1504,8 @@ export interface components {
             tokens: components["schemas"]["DeckToken"][];
             legality: components["schemas"]["Legality"];
             stats: components["schemas"]["Stats"];
+            /** @description Combos fully in the counted cards (spec 022, AC-6) */
+            combo_count: number;
         };
         DeckImportPreview: {
             rows: components["schemas"]["DeckImportRow"][];
@@ -3239,6 +3306,27 @@ export interface operations {
             };
         };
     };
+    decks_combos_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckCombos"];
+                };
+            };
+        };
+    };
     decks_delete_create: {
         parameters: {
             query?: never;
@@ -4435,6 +4523,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    users_decks_combos_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckCombos"];
                 };
             };
         };

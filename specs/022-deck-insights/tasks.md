@@ -9,8 +9,8 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Combos
 
-- [ ] **T3 Combo models, Spellbook sync, fixtures, matching, combos API** (AC-7, AC-8, AC-11)
-- [ ] **T4 Combos tab, combo rows, Add to Maybeboard; deck-combos.spec.ts** (AC-6 to AC-11)
+- [x] **T3 Combo models, Spellbook sync, fixtures, matching, combos API** (AC-7, AC-8, AC-11)
+- [x] **T4 Combos tab, combo rows, Add to Maybeboard; deck-combos.spec.ts** (AC-6 to AC-11)
 
 ## Salt and themes
 

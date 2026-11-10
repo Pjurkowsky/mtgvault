@@ -19,3 +19,11 @@ def sync_cards(file=None, eur_pln=None, usd_pln=None):
         log.exception('Tag sync failed')
     sync_rates(eur_pln, usd_pln)
     return cards.rows
+
+
+@shared_task
+def sync_combos():
+    """Daily combo refresh from Commander Spellbook (spec 022, AC-11)."""
+    from .combos import sync_combos as run_combo_sync
+
+    return run_combo_sync().rows

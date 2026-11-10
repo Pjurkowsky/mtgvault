@@ -133,6 +133,30 @@ class CardInsight(models.Model):
     salt_checked_at = models.DateTimeField(null=True, blank=True)
 
 
+class Combo(models.Model):
+    """A Commander Spellbook combo variant (spec 022, AC-7 to AC-11)."""
+
+    id = models.CharField(max_length=100, primary_key=True, help_text='Commander Spellbook variant id')
+    produces = ArrayField(models.CharField(max_length=300), default=list)
+    infinite = models.BooleanField(default=False)
+    wins = models.BooleanField(default=False)
+    identity = models.CharField(max_length=5, blank=True, help_text='Colour identity, WUBRG letters')
+    popularity = models.PositiveIntegerField(default=0)
+    card_count = models.PositiveSmallIntegerField()
+    prerequisites = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    # Extra pieces that aren't one named card ("a creature with power 3 or more").
+    requires = ArrayField(models.CharField(max_length=300), default=list, blank=True)
+
+
+class ComboCard(models.Model):
+    combo = models.ForeignKey(Combo, on_delete=models.CASCADE, related_name='cards')
+    oracle_id = models.UUIDField(db_index=True)
+    name = models.CharField(max_length=300)
+    image = models.URLField(max_length=500, blank=True)
+    position = models.PositiveSmallIntegerField()
+
+
 class SyncRun(models.Model):
     class Kind(models.TextChoices):
         CARDS = 'cards', 'Cards'

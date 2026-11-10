@@ -139,6 +139,35 @@ class DeckDetailSerializer(DeckSummarySerializer):
     tokens = DeckTokenSerializer(many=True, help_text='Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015)')
     legality = LegalitySerializer()
     stats = StatsSerializer()
+    combo_count = serializers.IntegerField(help_text='Combos fully in the counted cards (spec 022, AC-6)')
+
+
+class ComboCardSerializer(serializers.Serializer):
+    oracle_id = serializers.UUIDField()
+    name = serializers.CharField()
+    image = serializers.CharField()
+    in_deck = serializers.BooleanField()
+    owned = serializers.BooleanField(help_text='A missing card the viewer has in their collection')
+    printing = serializers.UUIDField(allow_null=True, help_text='Newest printing, to add a missing card')
+
+
+class ComboSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    cards = ComboCardSerializer(many=True)
+    produces = serializers.ListField(child=serializers.CharField())
+    infinite = serializers.BooleanField()
+    wins = serializers.BooleanField()
+    prerequisites = serializers.CharField()
+    description = serializers.CharField()
+    requires = serializers.ListField(child=serializers.CharField(), help_text='Pieces that are not one named card')
+    url = serializers.CharField(help_text='The combo on Commander Spellbook')
+
+
+class DeckCombosSerializer(serializers.Serializer):
+    """Spec 022, AC-7, AC-8."""
+
+    in_deck = ComboSerializer(many=True)
+    could_build = ComboSerializer(many=True, help_text='Infinite or win combos missing one or two cards')
 
 
 class DeckListSerializer(serializers.Serializer):
