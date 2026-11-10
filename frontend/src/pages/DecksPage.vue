@@ -25,7 +25,7 @@ onMounted(async () => {
         <Button @click="newOpen = true"><PlusIcon /> New deck</Button>
       </div>
     </div>
-    <ul v-if="list?.decks.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="deck-grid">
+    <ul v-if="list?.decks.length" class="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(13rem,16rem))]" data-testid="deck-grid">
       <li v-for="deck in list.decks" :key="deck.id">
         <DeckTile :deck="deck" :currency="list.currency" :to="{ name: 'deck', params: { id: deck.id } }" />
       </li>

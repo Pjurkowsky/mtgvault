@@ -46,7 +46,7 @@ const joined = (iso?: string) =>
     />
     <section v-if="decks?.decks.length" class="grid gap-3">
       <h2 class="text-lg font-semibold">Decks</h2>
-      <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="profile-decks">
+      <ul class="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(13rem,16rem))]" data-testid="profile-decks">
         <li v-for="deck in decks.decks" :key="deck.id">
           <DeckTile :deck="deck" :currency="decks.currency" :to="{ name: 'public-deck', params: { username: profile.username, id: deck.id } }" />
         </li>

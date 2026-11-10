@@ -10,7 +10,7 @@ defineProps<{ deck: DeckSummary; currency: string; to: RouteLocationRaw }>()
 
 <template>
   <Card class="relative gap-0 overflow-hidden p-0 transition-colors hover:bg-muted/50" data-testid="deck-tile">
-    <div class="h-28 bg-muted">
+    <div class="h-48 bg-muted">
       <img v-if="deck.image" :src="deck.image" alt="" class="size-full object-cover object-[50%_30%]" loading="lazy" />
     </div>
     <div class="grid gap-1 p-3">

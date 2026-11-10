@@ -32,7 +32,7 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
 </script>
 
 <template>
-  <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="location-grid">
+  <ul class="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(16rem,20rem))]" data-testid="location-grid">
     <li v-for="location in locations" :key="location.id">
       <Card class="relative gap-2 p-4 transition-colors hover:bg-muted/50" data-testid="location-tile">
         <div class="flex items-start gap-3">

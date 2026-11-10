@@ -67,4 +67,26 @@ test.describe('UI polish', () => {
       await expect(page.getByTestId('group-commander')).toHaveCount(0)
     }
   })
+
+  test('AC-5, AC-6: tiles have a max width, wider windows get more columns; deck tiles show tall art', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    for (const n of [1, 2, 3, 4, 5]) await api.location(`Binder ${n}`)
+    for (const n of [1, 2, 3, 4, 5, 6]) await api.deck(`Deck ${n}`, 'commander', { text: 'Commander\n1 Krenko, Mob Boss' })
+
+    const columns = async (tiles: string) => new Set(await page.getByTestId(tiles).evaluateAll((els) => els.map((e) => e.getBoundingClientRect().x))).size
+    for (const [width, locations, decks] of [[1280, 3, 4], [1920, 5, 6]] as const) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.goto('/')
+      await expect(page.getByTestId('location-tile')).not.toHaveCount(0)
+      for (const tile of await page.getByTestId('location-tile').all()) expect((await tile.boundingBox())!.width).toBeLessThanOrEqual(320)
+      expect(await columns('location-tile')).toBeGreaterThanOrEqual(locations)
+
+      await page.goto('/decks')
+      await expect(page.getByTestId('deck-tile')).toHaveCount(6)
+      for (const tile of await page.getByTestId('deck-tile').all()) expect((await tile.boundingBox())!.width).toBeLessThanOrEqual(256)
+      expect(await columns('deck-tile')).toBeGreaterThanOrEqual(decks)
+    }
+    const art = (await page.getByTestId('deck-tile').first().locator('img').boundingBox())!
+    expect(art.height).toBeGreaterThanOrEqual(180)
+  })
 })
