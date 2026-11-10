@@ -32,10 +32,12 @@ src/
                           ExpandButton + FullscreenCard, ManaSymbol
   components/browser/CardTile.vue  the grid tile, shared by the collection and the deck Images view
   components/browser/filters/      filter menu pieces, shared by the collection and deck filters
-  components/decks/       deck views (text, list with a sticky side image, images) with
+  components/decks/       deck views (text, list, images) beside a side column with the
+                          commander (DeckCommander) and the List view's hovered card, with
                           card menus, toolbar (search, filters, group, sort, size),
-                          mirrored swap rows, OptimizeDialog (cheapest printings), DeckTokens +
-                          TokenTiles (tokens the deck makes, also in the card dialog),
+                          Swaps tab (unpaired cards, mirrored pairs, Unpair), ProposeSwapDialog
+                          (Out and In), OptimizeDialog (cheapest printings), DeckTokens (rows or
+                          TokenTiles), TokenDialog (price, makers, printing picker),
                           categories (CategoryInput, CategoryDialog), add (built on
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats
@@ -46,7 +48,7 @@ src/
   lib/deckStats.ts        Stats tab numbers and chart data, computed in the browser
   lib/categories.ts       category suggestions, loaded once
   composables/useCardNavigation.ts  arrow keys between cards
-  components/binder/      binder view (specs 007, 009): pages and spreads, pockets in S/M/L,
+  components/binder/      binder view (specs 007, 009, 021): pages and spreads, pockets in S/M/L or Fit,
                           Unplaced sidebar, pagination, search matches, grid picker and
                           settings with inline section filters, move and stack dialogs,
                           scan-in-order dialog

@@ -1,6 +1,6 @@
 # Spec 021: Deck and layout polish
 
-Status: Draft
+Status: Done
 Depends on: 005-deck-improvements, 006-deck-views, 009-binder-polish, 011-deck-and-add-polish, 012-ownership-labels, 015-deck-tokens
 
 ## Goal
