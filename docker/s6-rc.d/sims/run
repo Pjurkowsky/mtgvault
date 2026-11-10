@@ -1,0 +1,5 @@
+#!/command/with-contenv bash
+# Plays simulation runs against the Forge service (spec 024); idle without FORGE_URL.
+if [ -z "$FORGE_URL" ]; then exec sleep infinity; fi
+cd /app
+exec s6-setuidgid mtgvault python manage.py run_sims

@@ -15,6 +15,8 @@ services:
       TZ: ${TZ:-UTC}
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
       BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      # Pod simulation (spec 024): start with `docker compose --profile forge up -d`.
+      FORGE_URL: ${FORGE_URL:-}
     volumes:
       - ${DATA_LOCATION:-./data}/app:/data
     depends_on:
@@ -22,6 +24,12 @@ services:
         condition: service_healthy
       valkey:
         condition: service_healthy
+
+  # Optional Forge service for pod simulation (spec 024). About 1 GB of memory per game.
+  forge:
+    image: ghcr.io/pjurkowsky/mtgvault-forge:${FORGE_IMAGE_VERSION:-latest}
+    profiles: [forge]
+    restart: unless-stopped
 
   postgres:
     image: postgres:18

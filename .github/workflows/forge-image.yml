@@ -1,0 +1,75 @@
+# Forge image for pod simulation (spec 024): build, check /health and the precon list,
+# then push ghcr.io/pjurkowsky/mtgvault-forge. Forge is GPL-3.
+name: Forge image
+
+on:
+  push:
+    branches: [master]
+    paths: [docker/forge/**, .github/workflows/forge-image.yml]
+    tags: ['v*']
+  pull_request:
+    paths: [docker/forge/**, .github/workflows/forge-image.yml]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: forge-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/pjurkowsky/mtgvault-forge
+          flavor: latest=false
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' || (startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-')) }}
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-
+
+      - name: Build for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/forge
+          platforms: linux/amd64
+          load: true
+          tags: mtgvault-forge:local
+          cache-from: type=gha,scope=forge
+          cache-to: type=gha,mode=max,scope=forge
+
+      - name: Smoke test
+        run: |
+          docker run -d --name forge -p 8790:8790 mtgvault-forge:local
+          for i in $(seq 60); do curl -fsS localhost:8790/health && break; sleep 2; done
+          curl -fsS localhost:8790/health | grep -q '"version"'
+          test "$(curl -fsS localhost:8790/precons | python3 -c 'import json,sys; print(len(json.load(sys.stdin)) > 100)')" = True
+          docker rm -f forge
+
+      - if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: docker/forge
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=forge
+          cache-to: type=gha,mode=max,scope=forge
