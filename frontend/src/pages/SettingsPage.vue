@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CURRENCIES, PLN_NOTE, type Currency } from '@/lib/currency'
+import { THEMES, theme, type Theme } from '@/lib/theme'
 import { api } from '@/api/client'
 import { Switch } from '@/components/ui/switch'
 import { onMounted, ref } from 'vue'
@@ -32,6 +33,8 @@ async function setFastScanning(value: boolean) {
   fastScanning.value = data.fast ?? true
   toast.success(value ? 'Fast scanning on.' : 'Fast scanning off.')
 }
+
+const setTheme = (value: unknown) => (theme.value = value as Theme)
 
 async function changeCurrency(value: unknown) {
   const currency = value as Currency
@@ -93,6 +96,24 @@ const changePassword = handleSubmit(async (body) => {
           </SelectContent>
         </Select>
         <p v-if="auth.user.currency === 'PLN'" class="text-sm text-muted-foreground">{{ PLN_NOTE }}</p>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle class="flex items-center gap-2">
+          Appearance
+          <InfoTip text="Saved in this browser. System follows your device." />
+        </CardTitle>
+      </CardHeader>
+      <CardContent class="grid gap-2">
+        <Label for="theme" class="sr-only">Theme</Label>
+        <Select :model-value="theme" @update:model-value="setTheme">
+          <SelectTrigger id="theme" class="w-full" data-testid="theme-select"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem v-for="t in THEMES" :key="t.value" :value="t.value">{{ t.label }}</SelectItem>
+          </SelectContent>
+        </Select>
       </CardContent>
     </Card>
 

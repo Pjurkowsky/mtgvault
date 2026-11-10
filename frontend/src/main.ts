@@ -5,6 +5,7 @@ import App from './App.vue'
 import { onAuthenticationLost } from './api/client'
 import { router } from './router'
 import { installAudioUnlock } from './scanner/sounds'
+import './lib/theme'
 import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)

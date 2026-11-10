@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import FullscreenCard from '@/components/FullscreenCard.vue'
 import { Toaster } from '@/components/ui/sonner'
+import { isDark } from '@/lib/theme'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import AppLayout from '@/layouts/AppLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
@@ -23,5 +24,5 @@ const layout = computed(() => ({ auth: AuthLayout, bare: BareLayout, app: AppLay
     <FullscreenCard />
   </TooltipProvider>
   <!-- Green success, red errors (AC-4). -->
-  <Toaster position="top-center" rich-colors />
+  <Toaster position="top-center" rich-colors :theme="isDark ? 'dark' : 'light'" />
 </template>

@@ -19,7 +19,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Dark theme
 
-- [ ] **T7 Theme setting, no flash; dark-theme.spec.ts** (AC-16)
+- [x] **T7 Theme setting, no flash; dark-theme.spec.ts** (AC-16)
 - [ ] **T8 Dark colours on every page, checked by screenshot** (AC-17)
 
 ## Finish
