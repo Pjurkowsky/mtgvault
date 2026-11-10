@@ -122,10 +122,23 @@ class ExchangeRate(models.Model):
         ]
 
 
+class CardInsight(models.Model):
+    """What a card does and how salty it is, per oracle card (spec 022)."""
+
+    oracle_id = models.UUIDField(primary_key=True)
+    # Deck categories from Scryfall's tags, in priority order (AC-1, AC-2).
+    categories = ArrayField(models.CharField(max_length=40), default=list, blank=True)
+    # EDHREC salt 0-4; null until fetched or when EDHREC has none (AC-14).
+    salt = models.DecimalField(max_digits=5, decimal_places=3, null=True, blank=True)
+    salt_checked_at = models.DateTimeField(null=True, blank=True)
+
+
 class SyncRun(models.Model):
     class Kind(models.TextChoices):
         CARDS = 'cards', 'Cards'
         RATES = 'rates', 'Rates'
+        TAGS = 'tags', 'Tags'
+        COMBOS = 'combos', 'Combos'
 
     class Status(models.TextChoices):
         RUNNING = 'running', 'Running'

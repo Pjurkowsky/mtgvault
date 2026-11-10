@@ -5,10 +5,11 @@ import { cardDialog, choose, closeCardDialog, deckMenu, deckRow, signUpAndLogIn 
 test.describe('Deck categories', () => {
   test('AC-12 to AC-14: edit in the card dialog and the menu, suggestions, group by category, filter', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
-    const deck = await api.deck('Tags', 'casual', { text: '1 Sol Ring\n1 Llanowar Elves\n1 Lightning Bolt\n1 Forest' })
+    // Cards with no automatic category, so the test starts from none (spec 022, AC-1).
+    const deck = await api.deck('Tags', 'casual', { text: '1 Thoughtseize\n1 Giant Growth\n1 Temur Sabertooth\n1 Forest' })
     await page.goto(`/decks/${deck.id}`)
 
-    await deckRow(page, 'Sol Ring').click()
+    await deckRow(page, 'Thoughtseize').click()
     const input = cardDialog(page).getByTestId('category-input')
     await input.getByRole('button', { name: '+ Ramp' }).click() // a common suggestion
     await input.getByLabel('Add category').fill('Artifacts')
@@ -16,7 +17,7 @@ test.describe('Deck categories', () => {
     await expect(input.getByTestId('category-chip')).toHaveText(['Ramp', 'Artifacts'])
     await closeCardDialog(page)
 
-    await deckRow(page, 'Llanowar Elves').click({ button: 'right' })
+    await deckRow(page, 'Giant Growth').click({ button: 'right' })
     await page.getByRole('menuitem', { name: 'Categories…' }).click()
     const quick = page.getByTestId('category-dialog')
     await expect(quick.getByRole('button', { name: '+ Artifacts' })).toBeVisible() // used in your decks
@@ -26,17 +27,17 @@ test.describe('Deck categories', () => {
 
     await choose(page, 'Group by', 'By category')
     await expect(page.getByTestId('group-main-Ramp')).toContainText('Ramp (2)')
-    await expect(page.getByTestId('group-main-Ramp')).toContainText('Sol Ring')
+    await expect(page.getByTestId('group-main-Ramp')).toContainText('Thoughtseize')
     await expect(page.getByTestId('group-main-Artifacts')).toHaveCount(0) // only the primary one groups
-    await expect(page.getByTestId('group-main-Instants')).toContainText('Lightning Bolt')
+    await expect(page.getByTestId('group-main-Creatures')).toContainText('Temur Sabertooth')
 
     await page.getByRole('button', { name: 'Filters' }).click()
     await page.getByTestId('filter-panel').locator('label').filter({ hasText: 'Artifacts' }).getByRole('checkbox').click()
     await page.keyboard.press('Escape')
-    await expect(page.getByTestId('deck-row')).toHaveText([/Sol Ring/])
+    await expect(page.getByTestId('deck-row')).toHaveText([/Thoughtseize/])
 
     // Remove a category with its chip.
-    await deckRow(page, 'Sol Ring').click()
+    await deckRow(page, 'Thoughtseize').click()
     await input.getByRole('button', { name: 'Remove Ramp' }).click()
     await expect(input.getByTestId('category-chip')).toHaveText(['Artifacts'])
   })

@@ -59,7 +59,8 @@ test.describe('Deck import, export and public decks', () => {
     })
     await page.goto(`/decks/${deck.id}`)
     await deckMenu(page, 'Export')
-    const expected = 'Deck\n2 Counterspell (FDC) 61\n4 Lightning Bolt (FDC) 163\n\nSideboard\n1 Shivan Dragon (FDN) 763\n\nMaybeboard\n1 Sol Ring (C21) 263\n'
+    // Automatic categories export as tags (spec 022, AC-1).
+    const expected = 'Deck\n2 Counterspell (FDC) 61 #Counterspell\n4 Lightning Bolt (FDC) 163 #Removal #Burn\n\nSideboard\n1 Shivan Dragon (FDN) 763 #Evasion\n\nMaybeboard\n1 Sol Ring (C21) 263 #Ramp\n'
     await expect(page.getByTestId('export-text')).toHaveValue(expected)
 
     const copy = await api.deck('Copy', 'modern', { text: expected })

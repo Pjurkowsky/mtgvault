@@ -8,6 +8,7 @@ from django.db.models import Sum
 from rest_framework.exceptions import ValidationError
 
 from collection.models import CollectionItem, Location
+from cards.tags import CATEGORIES, auto_categories
 from collection.services import MAX_QUANTITY, Copies, edit_item, save_item
 
 from .legality import FORMATS
@@ -23,16 +24,23 @@ def check_zone(deck: Deck, zone: str):
 
 
 @transaction.atomic
-def add_card(deck: Deck, printing, quantity: int = 1, zone: str = DeckCard.Zone.MAIN) -> DeckCard:
-    """Add copies of a card; the same card in the same zone raises its quantity (AC-10)."""
+def add_card(deck: Deck, printing, quantity: int = 1, zone: str = DeckCard.Zone.MAIN,
+             categories: list[str] | None = None) -> DeckCard:
+    """Add copies of a card; the same card in the same zone raises its quantity (AC-10).
+
+    A new card gets `categories` (an import's tags) or else the automatic ones;
+    a card already there adds `categories` to its own (spec 022, AC-1, AC-4).
+    """
     check_zone(deck, zone)
     card, created = DeckCard.objects.select_for_update().get_or_create(
         deck=deck, oracle_id=printing.oracle_id, zone=zone,
-        defaults={'printing': printing, 'quantity': min(quantity, MAX_QUANTITY)},
+        defaults={'printing': printing, 'quantity': min(quantity, MAX_QUANTITY),
+                  'categories': merge_categories(categories) if categories else auto_categories(printing.oracle_id)},
     )
     if not created:
         card.quantity = min(card.quantity + quantity, MAX_QUANTITY)
-        card.save(update_fields=['quantity'])
+        card.categories = merge_categories(card.categories, categories or [])
+        card.save(update_fields=['quantity', 'categories'])
     return card
 
 
@@ -98,7 +106,7 @@ def set_format(deck: Deck, deck_format: str):
 
 MAX_CATEGORIES = 10
 # Suggested to everyone next to the names used in their decks (spec 006, AC-13).
-COMMON_CATEGORIES = ['Ramp', 'Draw', 'Removal', 'Board wipe', 'Lands', 'Win condition']
+COMMON_CATEGORIES = [*CATEGORIES, 'Lands', 'Win condition']  # automatic ones first (spec 022)
 
 
 def merge_categories(*lists) -> list[str]:
@@ -155,7 +163,8 @@ def maybe_card(deck: Deck, printing) -> DeckCard:
     """The deck's Maybeboard entry for this card, added at `printing` if it has none."""
     card = DeckCard.objects.filter(deck=deck, oracle_id=printing.oracle_id, zone=DeckCard.Zone.MAYBE).first()
     return card or DeckCard.objects.create(deck=deck, printing=printing, oracle_id=printing.oracle_id,
-                                           zone=DeckCard.Zone.MAYBE, quantity=1)
+                                           zone=DeckCard.Zone.MAYBE, quantity=1,
+                                           categories=auto_categories(printing.oracle_id))
 
 
 def add_pair(out: DeckCard, candidate: DeckCard) -> bool:

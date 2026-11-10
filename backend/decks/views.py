@@ -119,10 +119,7 @@ def import_text(deck, text):
     rows, errors = textlist.parse(text)
     with transaction.atomic():
         for zone, row in rows:
-            card = services.add_card(deck, row.printing, row.quantity, services.fit_zone(deck, zone))
-            if row.categories:
-                card.categories = services.merge_categories(card.categories, row.categories)
-                card.save(update_fields=['categories'])
+            services.add_card(deck, row.printing, row.quantity, services.fit_zone(deck, zone), row.categories)
     return rows, errors
 
 

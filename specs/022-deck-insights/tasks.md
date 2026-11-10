@@ -4,8 +4,8 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Categories
 
-- [ ] **T1 CardInsight, tag sync, fixtures, first-sync replace** (AC-2, AC-3)
-- [ ] **T2 Auto categories on add, import tags win; deck-auto-categories.spec.ts; older tests updated** (AC-1, AC-4, AC-5)
+- [x] **T1 CardInsight, tag sync, fixtures, first-sync replace** (AC-2, AC-3)
+- [x] **T2 Auto categories on add, import tags win; deck-auto-categories.spec.ts; older tests updated** (AC-1, AC-4, AC-5)
 
 ## Combos
 

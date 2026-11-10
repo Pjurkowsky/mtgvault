@@ -48,7 +48,8 @@ test.describe('Deck stats', () => {
 
     await expect(page.getByTestId('types').getByTestId('stat-bar')).toHaveText(['Creature2', 'Instant6', 'Artifact1', 'Land20'])
     await expect(page.getByTestId('rarities').getByTestId('stat-bar')).toHaveText(['Common21', 'Uncommon8'])
-    await expect(page.getByTestId('categories').getByTestId('stat-bar')).toHaveText(['Removal4'])
+    // Automatic categories count too (spec 022, AC-1).
+    await expect(page.getByTestId('categories').getByTestId('stat-bar')).toHaveText(['Removal4', 'Counterspell2', 'Ramp2', 'Evasion1'])
     await expect(page.getByTestId('sets').getByTestId('stat-bar').first()).toContainText('20')
 
     const expensive = page.getByTestId('expensive-card')
