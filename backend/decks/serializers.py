@@ -132,6 +132,31 @@ class TokenPrintingChoiceSerializer(serializers.Serializer):
     token = serializers.UUIDField(allow_null=True, help_text='Null goes back to the first maker\'s art')
 
 
+class SaltyCardSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    salt = serializers.FloatField()
+
+
+class DeckSaltSerializer(serializers.Serializer):
+    """Spec 022, AC-12 to AC-14."""
+
+    total = serializers.FloatField(help_text='Sum of the counted cards\' EDHREC salt known so far')
+    average = serializers.IntegerField(help_text="EDHREC's average deck")
+    pending = serializers.IntegerField(help_text='Counted cards whose score is not fetched yet or is stale')
+    top = SaltyCardSerializer(many=True, help_text='The five saltiest counted cards')
+
+
+class DeckThemeSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    count = serializers.IntegerField(help_text='EDHREC decks with this commander and theme')
+    url = serializers.CharField()
+
+
+class DeckInsightsSerializer(serializers.Serializer):
+    salt = DeckSaltSerializer()
+    themes = DeckThemeSerializer(many=True, help_text="The commander's most played EDHREC themes (spec 022, AC-15)")
+
+
 class DeckDetailSerializer(DeckSummarySerializer):
     username = serializers.CharField()
     currency = serializers.CharField()
@@ -140,6 +165,7 @@ class DeckDetailSerializer(DeckSummarySerializer):
     legality = LegalitySerializer()
     stats = StatsSerializer()
     combo_count = serializers.IntegerField(help_text='Combos fully in the counted cards (spec 022, AC-6)')
+    salt = DeckSaltSerializer()
 
 
 class ComboCardSerializer(serializers.Serializer):

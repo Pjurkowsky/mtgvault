@@ -734,6 +734,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/decks/{id}/insights/:
+    get:
+      operationId: decks_insights_retrieve
+      description: 'Spec 022, AC-14, AC-15: fetches missing salt scores, so the page
+        asks after loading.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckInsights'
+          description: ''
   /api/decks/{id}/missing/:
     get:
       operationId: decks_missing_retrieve
@@ -2017,6 +2039,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckCombos'
           description: ''
+  /api/users/{username}/decks/{id}/insights/:
+    get:
+      operationId: users_decks_insights_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckInsights'
+          description: ''
   /api/users/{username}/locations/:
     get:
       operationId: users_locations_list
@@ -3283,6 +3331,8 @@ components:
         combo_count:
           type: integer
           description: Combos fully in the counted cards (spec 022, AC-6)
+        salt:
+          $ref: '#/components/schemas/DeckSalt'
       required:
       - cards
       - combo_count
@@ -3296,6 +3346,7 @@ components:
       - location
       - location_name
       - name
+      - salt
       - stats
       - tokens
       - username
@@ -3340,6 +3391,19 @@ components:
       - printing
       - quantity
       - zone
+    DeckInsights:
+      type: object
+      properties:
+        salt:
+          $ref: '#/components/schemas/DeckSalt'
+        themes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckTheme'
+          description: The commander's most played EDHREC themes (spec 022, AC-15)
+      required:
+      - salt
+      - themes
     DeckList:
       type: object
       properties:
@@ -3458,6 +3522,30 @@ components:
       - set_name
       - type_line
       - types
+    DeckSalt:
+      type: object
+      description: Spec 022, AC-12 to AC-14.
+      properties:
+        total:
+          type: number
+          format: double
+          description: Sum of the counted cards' EDHREC salt known so far
+        average:
+          type: integer
+          description: EDHREC's average deck
+        pending:
+          type: integer
+          description: Counted cards whose score is not fetched yet or is stale
+        top:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaltyCard'
+          description: The five saltiest counted cards
+      required:
+      - average
+      - pending
+      - top
+      - total
     DeckSummary:
       type: object
       properties:
@@ -3507,6 +3595,20 @@ components:
           type: string
       required:
       - text
+    DeckTheme:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+          description: EDHREC decks with this commander and theme
+        url:
+          type: string
+      required:
+      - count
+      - name
+      - url
     DeckToken:
       type: object
       description: A token, emblem or marker a card makes (spec 015).
@@ -5443,6 +5545,17 @@ components:
       - email
       - password
       - username
+    SaltyCard:
+      type: object
+      properties:
+        name:
+          type: string
+        salt:
+          type: number
+          format: double
+      required:
+      - name
+      - salt
     ScanRequest:
       type: object
       properties:

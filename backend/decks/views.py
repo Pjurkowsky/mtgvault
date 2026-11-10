@@ -22,6 +22,7 @@ from collection.services import Copies, save_item
 from collection.views import browse_params, selected_items
 
 from . import services, stats, textlist
+from .insights import deck_insights, deck_salt
 from .legality import COUNTED, FORMATS, issues
 from .models import Deck, DeckCard
 from .optimize import cheapest_changes
@@ -34,6 +35,7 @@ from .serializers import (
     DeckCardEditSerializer,
     DeckCardWriteSerializer,
     DeckCombosSerializer,
+    DeckInsightsSerializer,
     DeckDeleteSerializer,
     DeckDetailSerializer,
     DeckExportParamsSerializer,
@@ -106,7 +108,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
             'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx),
-            'combo_count': count_in_deck(counted(cards))}
+            'combo_count': count_in_deck(counted(cards)), 'salt': deck_salt(cards)}
 
 
 def counted(cards) -> set:
@@ -127,6 +129,24 @@ class DeckCombosView(APIView):
     @extend_schema(responses=DeckCombosSerializer)
     def get(self, request, pk):
         return combos_response(own_deck(request, pk), request.user.id)
+
+
+class DeckInsightsView(APIView):
+    """Spec 022, AC-14, AC-15: fetches missing salt scores, so the page asks after loading."""
+
+    @extend_schema(responses=DeckInsightsSerializer)
+    def get(self, request, pk):
+        deck = own_deck(request, pk)
+        return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
+
+
+class PublicDeckInsightsView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=DeckInsightsSerializer)
+    def get(self, request, username, pk):
+        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
 
 
 class PublicDeckCombosView(APIView):

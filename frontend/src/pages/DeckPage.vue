@@ -64,6 +64,25 @@ async function load() {
 }
 watch([id, username], load, { immediate: true })
 
+// Salt scores still to fetch and the commander's themes come after the deck (spec 022, AC-14, AC-15).
+const themes = ref<Schemas['DeckTheme'][]>([])
+let insightsFor = ''
+async function loadInsights() {
+  const d = deck.value
+  if (!d) return
+  const commanders = d.cards.filter((c) => c.zone === 'commander').map((c) => c.printing.oracle_id).join()
+  const key = `${d.id}:${commanders}`
+  if (!d.salt.pending && key === insightsFor) return
+  insightsFor = key
+  const { data } = username.value
+    ? await api.GET('/api/users/{username}/decks/{id}/insights/', { params: { path: { username: username.value, id: d.id } } })
+    : await api.GET('/api/decks/{id}/insights/', { params: { path: { id: d.id } } })
+  if (!data || deck.value?.id !== d.id) return
+  themes.value = data.themes
+  if (deck.value.salt.pending) deck.value = { ...deck.value, salt: data.salt }
+}
+watch(deck, loadInsights)
+
 // The tab lives in the URL. View, grouping and sort are remembered in the browser for
 // all decks; options in the URL win (spec 005, AC-8).
 type Tab = 'deck' | 'swaps' | 'combos' | 'stats'
@@ -223,6 +242,7 @@ async function optimize() {
 }
 
 const counts = computed(() => deck.value?.counts)
+const counted = computed(() => deck.value?.cards.some((c) => c.zone !== 'maybe') ?? false)
 const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== counts.value.target)
 </script>
 
@@ -280,6 +300,15 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               </button>
             </TooltipTrigger>
             <TooltipContent>{{ deck.legality.legal ? `Legal in ${formatLabel(deck.format)}` : 'Show issues' }}</TooltipContent>
+          </Tooltip>
+        </template>
+        <template v-if="counted">
+          <span>·</span>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <button type="button" class="hover:text-foreground" data-testid="deck-salt" @click="setTab('stats')">Salt {{ Math.round(deck.salt.total) }}</button>
+            </TooltipTrigger>
+            <TooltipContent>Salt score; the average deck is {{ deck.salt.average }}</TooltipContent>
           </Tooltip>
         </template>
         <template v-if="deck.location">
@@ -347,7 +376,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
 
       <TabsContent value="stats" class="grid gap-4 pt-2">
         <LegalityPanel :deck="deck" />
-        <DeckStats :deck="deck" @filter="showFiltered" @open="showCard" />
+        <DeckStats :deck="deck" :themes="themes" @filter="showFiltered" @open="showCard" />
       </TabsContent>
     </Tabs>
 

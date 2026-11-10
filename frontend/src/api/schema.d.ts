@@ -414,6 +414,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/insights/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Spec 022, AC-14, AC-15: fetches missing salt scores, so the page asks after loading. */
+        get: operations["decks_insights_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/missing/": {
         parameters: {
             query?: never;
@@ -1030,6 +1047,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/decks/{id}/insights/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_insights_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/locations/": {
         parameters: {
             query?: never;
@@ -1506,6 +1539,7 @@ export interface components {
             stats: components["schemas"]["Stats"];
             /** @description Combos fully in the counted cards (spec 022, AC-6) */
             combo_count: number;
+            salt: components["schemas"]["DeckSalt"];
         };
         DeckImportPreview: {
             rows: components["schemas"]["DeckImportRow"][];
@@ -1519,6 +1553,11 @@ export interface components {
             printing: components["schemas"]["PrintingBrief"];
             /** @description From #tags on the line */
             categories: string[];
+        };
+        DeckInsights: {
+            salt: components["schemas"]["DeckSalt"];
+            /** @description The commander's most played EDHREC themes (spec 022, AC-15) */
+            themes: components["schemas"]["DeckTheme"][];
         };
         DeckList: {
             currency: string;
@@ -1557,6 +1596,20 @@ export interface components {
             readonly produced_mana: string[];
             readonly can_command: components["schemas"]["CanCommand"];
         };
+        /** @description Spec 022, AC-12 to AC-14. */
+        DeckSalt: {
+            /**
+             * Format: double
+             * @description Sum of the counted cards' EDHREC salt known so far
+             */
+            total: number;
+            /** @description EDHREC's average deck */
+            average: number;
+            /** @description Counted cards whose score is not fetched yet or is stale */
+            pending: number;
+            /** @description The five saltiest counted cards */
+            top: components["schemas"]["SaltyCard"][];
+        };
         DeckSummary: {
             id: number;
             name: string;
@@ -1572,6 +1625,12 @@ export interface components {
         };
         DeckText: {
             text: string;
+        };
+        DeckTheme: {
+            name: string;
+            /** @description EDHREC decks with this commander and theme */
+            count: number;
+            url: string;
         };
         /** @description A token, emblem or marker a card makes (spec 015). */
         DeckToken: {
@@ -2402,6 +2461,11 @@ export interface components {
             email: string;
             password: string;
             currency: components["schemas"]["CurrencyEnum"];
+        };
+        SaltyCard: {
+            name: string;
+            /** Format: double */
+            salt: number;
         };
         ScanRequest: {
             /** @description Gallery art id from arts.json */
@@ -3404,6 +3468,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_insights_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckInsights"];
                 };
             };
         };
@@ -4545,6 +4630,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckCombos"];
+                };
+            };
+        };
+    };
+    users_decks_insights_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckInsights"];
                 };
             };
         };

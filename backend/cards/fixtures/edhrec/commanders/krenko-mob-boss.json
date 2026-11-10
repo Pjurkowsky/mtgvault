@@ -1,0 +1,66 @@
+{
+ "panels": {
+  "taglinks": [
+   {
+    "count": 4222,
+    "slug": "goblins",
+    "value": "Goblins"
+   },
+   {
+    "count": 2670,
+    "slug": "tokens",
+    "value": "Tokens"
+   },
+   {
+    "count": 1866,
+    "slug": "aggro",
+    "value": "Aggro"
+   },
+   {
+    "count": 741,
+    "slug": "combo",
+    "value": "Combo"
+   },
+   {
+    "count": 629,
+    "slug": "burn",
+    "value": "Burn"
+   },
+   {
+    "count": 173,
+    "slug": "plus-1-plus-1-counters",
+    "value": "+1/+1 Counters"
+   },
+   {
+    "count": 142,
+    "slug": "populate",
+    "value": "Populate"
+   },
+   {
+    "count": 94,
+    "slug": "haste",
+    "value": "Haste"
+   },
+   {
+    "count": 89,
+    "slug": "commander-matters",
+    "value": "Commander Matters"
+   },
+   {
+    "count": 87,
+    "slug": "artifacts",
+    "value": "Artifacts"
+   },
+   {
+    "count": 76,
+    "slug": "aristocrats",
+    "value": "Aristocrats"
+   },
+   {
+    "count": 75,
+    "slug": "anthems",
+    "value": "Anthems"
+   }
+  ]
+ }
+}

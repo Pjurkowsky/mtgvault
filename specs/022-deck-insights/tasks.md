@@ -14,8 +14,8 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Salt and themes
 
-- [ ] **T5 Salt and commander themes from EDHREC, insights API, fixtures** (AC-14, AC-15)
-- [ ] **T6 Salt card, themes card, header salt; deck-salt.spec.ts** (AC-12 to AC-15)
+- [x] **T5 Salt and commander themes from EDHREC, insights API, fixtures** (AC-14, AC-15)
+- [x] **T6 Salt card, themes card, header salt; deck-salt.spec.ts** (AC-12 to AC-15)
 
 ## Dark theme
 

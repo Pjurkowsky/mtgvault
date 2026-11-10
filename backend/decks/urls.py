@@ -18,6 +18,7 @@ urlpatterns = [
     path('decks/<int:pk>/swaps/', views.PairsView.as_view(), name='deck-swaps'),
     path('decks/<int:pk>/cards/<int:card_id>/apply-swap/', views.ApplySwapView.as_view(), name='deck-card-apply-swap'),
     path('decks/<int:pk>/combos/', views.DeckCombosView.as_view(), name='deck-combos'),
+    path('decks/<int:pk>/insights/', views.DeckInsightsView.as_view(), name='deck-insights'),
     path('decks/<int:pk>/box/', views.CreateBoxView.as_view(), name='deck-box'),
     path('decks/<int:pk>/import/', views.DeckImportView.as_view(), name='deck-import'),
     path('decks/<int:pk>/export/', views.DeckExportView.as_view(), name='deck-export'),
@@ -27,4 +28,5 @@ urlpatterns = [
     path('users/<str:username>/decks/', views.PublicDeckListView.as_view(), name='public-decks'),
     path('users/<str:username>/decks/<int:pk>/', views.PublicDeckDetailView.as_view(), name='public-deck'),
     path('users/<str:username>/decks/<int:pk>/combos/', views.PublicDeckCombosView.as_view(), name='public-deck-combos'),
+    path('users/<str:username>/decks/<int:pk>/insights/', views.PublicDeckInsightsView.as_view(), name='public-deck-insights'),
 ]

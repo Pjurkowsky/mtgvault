@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Schemas } from '@/api/client'
 import CardPreview from '@/components/CardPreview.vue'
 import ManaSymbol from '@/components/ManaSymbol.vue'
 import Price from '@/components/Price.vue'
@@ -8,10 +9,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { DeckFilter } from '@/lib/deckFilter'
 import { COLOR_NAMES, deckStats, type Bar } from '@/lib/deckStats'
 import type { DeckCard, DeckDetail } from '@/lib/decks'
+import DeckSalt from './DeckSalt.vue'
+import DeckThemes from './DeckThemes.vue'
 import StatBars from './StatBars.vue'
 
 /** Key numbers and charts for the counted zones; chart parts filter the Deck tab (spec 006, AC-16 to AC-18). */
-const props = defineProps<{ deck: DeckDetail }>()
+const props = defineProps<{ deck: DeckDetail; themes: Schemas['DeckTheme'][] }>()
 const emit = defineEmits<{ filter: [patch: Partial<DeckFilter>]; open: [card: DeckCard] }>()
 
 const stats = computed(() => deckStats(props.deck.cards))
@@ -46,6 +49,9 @@ const PLOT = 128 // px, the curve's plot height; the axis labels sit below it
     </dl>
 
     <div class="grid gap-4 lg:grid-cols-2">
+      <DeckSalt v-if="stats.cards" :salt="deck.salt" />
+      <DeckThemes v-if="themes.length" :themes="themes" />
+
       <Card class="gap-3 p-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="text-sm font-semibold">Mana curve</h3>
