@@ -25,4 +25,4 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 ## Finish
 
 - [x] **T9 Compose and dev services, run_sims in the image, forge image in CI; check with the real image** (AC-2)
-- [ ] **T10 Full suite (2 workers), READMEs, spec status**
+- [x] **T10 Full suite (2 workers), READMEs, spec status**

@@ -56,6 +56,12 @@ src/
   composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
+  components/sims/        Simulate tab (spec 024): DeckSimulate, SimQueue, SimRunForm (seats,
+                          AI profiles, seat order), OpponentPicker (pool, my decks, public),
+                          SimSwapStep (unsupported cards), SimRunCard (stats, games);
+                          replay pieces ReplayPlayer, ReplayCard, ReplayEvents
+  pages/SimGamePage.vue   a game's replay: turn stepper, boards, events, Log tab
+  lib/sims.ts             run types, AI profiles, seat modes, useForge
   lib/theme.ts            Light/Dark/System theme, saved in the browser; index.html sets the
                           class before the app loads
   assets/mana/            Scryfall mana symbols

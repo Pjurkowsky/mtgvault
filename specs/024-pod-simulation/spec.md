@@ -1,6 +1,6 @@
 # Spec 024: Pod simulation
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 008-self-hosting, 022-deck-insights
 
 ## Goal

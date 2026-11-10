@@ -64,6 +64,22 @@ server, for example to `./data/app/bundles` (seen inside the container as
 folder installs at once and the daily sync keeps following the folder; choose
 **GitHub releases** to go back.
 
+### Pod simulation (optional)
+
+The Simulate tab on a Commander deck plays AI games with
+[Forge](https://github.com/Card-Forge/forge). It needs the separate
+`ghcr.io/pjurkowsky/mtgvault-forge` image. With compose, set
+`FORGE_URL=http://forge:8790` in `.env`, then:
+
+```bash
+docker compose --profile forge up -d
+```
+
+All-in-one: run the Forge image next to it on a shared Docker network and set
+`FORGE_URL` to its address. One game runs at a time and uses about 1 GB of
+memory; a 4-player game takes about a minute. Without `FORGE_URL`, or while Forge is
+down, the Simulate tab is hidden.
+
 ### Settings
 
 | Variable | Default | |
@@ -164,6 +180,8 @@ docker compose -f docker-compose.dev.yml up --build
 - Postgres: `localhost:5432`, Redis: `localhost:6379`
 - `worker` and `beat` run Celery: the card catalog and exchange rates sync
   daily at 13:00 UTC
+- Pod simulation: `docker compose -f docker-compose.dev.yml --profile forge up -d`
+  adds `forge` (built from `docker/forge`, port 8790) and `sims` (`run_sims`)
 
 ```bash
 docker compose -f docker-compose.dev.yml exec backend python manage.py createsuperuser
@@ -198,6 +216,9 @@ fake camera showing a Sol Ring: plain, with glare over its art, and out of
 focus (`e2e/camera.setup.ts`, built once into `e2e/.cache/`). Both need
 network the first time.
 
+The simulation tests use `manage.py fake_forge`, which replays recorded Forge
+games from `backend/sims/fixtures/forge/`, so they need neither Forge nor Java.
+
 The tests load a fixed card sample (`backend/cards/fixtures/`) with fixed
 exchange rates, so they need no network. Timing tests (`performance.spec.ts`)
 run alone after the others.
@@ -215,7 +236,9 @@ browser recognition pipeline and its published models, trained in
 keep that license and name their source files; the rest of MTG Vault is not
 affected. Card data, images and card tags come from [Scryfall](https://scryfall.com),
 EDHREC data (salt scores, commander themes) from [EDHREC](https://edhrec.com),
-combos from [Commander Spellbook](https://commanderspellbook.com). Mana symbols in
+combos from [Commander Spellbook](https://commanderspellbook.com). Pod simulation
+runs [Forge](https://github.com/Card-Forge/forge) (GPL-3.0) unchanged in its own
+image, `docker/forge`, with a small runner compiled against it. Mana symbols in
 `frontend/src/assets/mana/` are Scryfall's card symbol images.
 
 ## License

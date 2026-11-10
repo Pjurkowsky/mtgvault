@@ -84,6 +84,16 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/scanner/locked-illustrations/` | bearer | Artwork printed in the locked sets |
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
 | `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |
+| `GET /api/sims/status/` | public | Whether Forge is reachable, and its version |
+| `GET, POST /api/decks/{id}/sims/` | read / auth | A deck's runs; start a run (seats, games, minutes, seat order) |
+| `GET, DELETE /api/sims/runs/{id}/` | read / runner | One run; delete it |
+| `POST /api/sims/runs/{id}/cancel/` | runner | Cancel a queued or playing run |
+| `GET /api/sims/runs/{id}/games/{n}/` | read | A game's replay: turns, boards, card images, log |
+| `GET /api/sims/queue/` | public | Queued and playing runs |
+| `GET /api/sims/opponents/` | public | Pool, my and public Commander decks |
+| `POST /api/sims/pool/`, `PATCH, DELETE /api/sims/pool/{id}/` | auth | Add to, rename in and remove from the shared opponent pool |
+| `POST /api/sims/check/`, `GET /api/sims/suggest/` | public | A pod's unsupported cards; suggested swaps |
+| `PUT /api/sims/swaps/` | auth | Save swaps for a deck or pool deck |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
 
@@ -246,6 +256,31 @@ of the collection. Every write goes through `wants/services.py`:
 
 `collection.filters.apply_filters(..., finish_field='price_finish',
 collection=False)` filters and sorts entries; Any finish is priced as non-foil.
+
+## Pod simulation (spec 024)
+
+App `sims`. A Commander deck plays AI games against 1 to 5 opponents in
+[Forge](https://github.com/Card-Forge/forge), which runs as its own service
+(`docker/forge`: Forge's release, our runner `MtgvaultSim.java` compiled against
+it, and `server.py`, an HTTP API on port 8790). `FORGE_URL` points at it; empty
+hides the feature.
+
+- `sims/forge.py` talks to Forge: `/health`, `/cards` (names Forge supports,
+  cached 24 h in Redis), `/precons`, `POST /games`, `GET`/`DELETE /games/{id}`.
+- Opponents: the user's decks, other users' public decks, or the shared pool
+  (`PoolDeck`, seeded with Forge's precons on first use). Unsupported cards must
+  be swapped first; swaps (`SimSwap`) are per user per deck and apply only to
+  simulations.
+- `manage.py run_sims` (s6 service `sims`) plays queued runs one at a time,
+  one game at a time, polling Forge each second (`SIMS_POLL_SECONDS`). A run
+  left Playing by a restart goes back to the queue. Each game keeps its replay
+  as gzipped JSON; `sims/replay.py` turns it into turns, boards and card images.
+- Seat order per game: Rotate, Random (seeded by run and game) or Fixed.
+- Turn numbers: a game's win turn is the winner's own turn count; Forge's game
+  turn counts every player's turn.
+- Tests use `manage.py fake_forge`, which answers like Forge from recorded games
+  in `sims/fixtures/forge/`. Decks named Hangs, Broken and Stalls play slowly,
+  fail and draw.
 
 ## Scanner
 
