@@ -1,0 +1,119 @@
+import { expect, test } from '@playwright/test'
+import { apiAs, createUser, signUpAndLogIn, uniqueUser } from './helpers'
+import { PIPER, commanderDeck, openSimulate, runs, startRun, waitForRun } from './sim-helpers'
+
+// Spec 024, AC-14 to AC-22: the queue, runs and results.
+test.describe('Runs', () => {
+  test.describe.configure({ timeout: 120_000 })
+
+  test('AC-14, AC-16, AC-17: one run at a time, the queue, cancel and delete by who started it', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const stamp = Date.now()
+    const hangs = await commanderDeck(api, `Hangs ${stamp}`, undefined, { is_public: true })
+    const piper = await commanderDeck(api, `Queue Piper ${stamp}`, PIPER)
+    const playing = await startRun(api, hangs.id, [{ deck: piper.id }])
+    const queued = await startRun(api, piper.id, [{ deck: hangs.id }])
+    await openSimulate(page, piper.id)
+
+    // AC-14: the queue shows the playing run and mine, highlighted; one plays at a time.
+    const entry = (name: string) => page.getByTestId('queue-entry').filter({ hasText: name })
+    await expect(entry(`Hangs ${stamp}`)).toContainText(/Playing.*0 \/ 2/)
+    await expect(entry(`Queue Piper ${stamp}`)).toContainText(/Queued \d+/)
+    await expect(entry(`Queue Piper ${stamp}`)).toHaveAttribute('data-mine', 'true')
+    await expect(runs(page).first().getByTestId('run-status')).toHaveText('Queued')
+
+    // AC-17: a queued run cancels at once.
+    await runs(page).first().getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Cancel run' }).click()
+    await expect(runs(page).first().getByTestId('run-status')).toHaveText('Cancelled')
+    expect((await api.get(`/api/sims/runs/${queued.id}/`)).status).toBe('cancelled')
+
+    // A playing run keeps its finished games.
+    await openSimulate(page, hangs.id)
+    await expect(runs(page).first().getByTestId('run-status')).toHaveText('Playing 1 / 2', { timeout: 30_000 })
+    await runs(page).first().getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Cancel run' }).click()
+    await expect(runs(page).first().getByTestId('run-status')).toHaveText('Cancelled', { timeout: 15_000 })
+    expect((await api.get(`/api/sims/runs/${playing.id}/`)).results).toHaveLength(1)
+
+    // Nobody else can cancel or delete; the runner deletes with a confirm.
+    const other = uniqueUser('q')
+    await createUser(request, other)
+    const login = await request.post('/api/auth/login/', { data: { login: other.username, password: other.password } })
+    const headers = { Authorization: `Bearer ${(await login.json()).access}` }
+    expect((await request.delete(`/api/sims/runs/${playing.id}/`, { headers })).status()).toBe(404)
+    expect((await request.post(`/api/sims/runs/${playing.id}/cancel/`, { headers })).status()).toBe(404)
+    await openSimulate(page, hangs.id)
+    await runs(page).first().getByRole('button', { name: 'Delete' }).click()
+    await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Delete' }).click()
+    await expect(page.getByText('Run deleted.')).toBeVisible()
+    await expect(runs(page)).toHaveCount(0)
+  })
+
+  test('AC-15, AC-18 to AC-21: results, the lists used, who can see runs', async ({ page, request }) => {
+    const { user, api } = await signUpAndLogIn(page, request)
+    const stamp = Date.now()
+    const deck = await commanderDeck(api, `Results ${stamp}`, undefined, { is_public: true })
+    const secret = await commanderDeck(api, `Secret ${stamp}`, PIPER)
+    const run = await startRun(api, deck.id, [{ deck: secret.id }])
+    await waitForRun(api, run.id)
+    // AC-15: later changes don't touch the run's copy.
+    await api.post(`/api/decks/${deck.id}/cards/`, { printing: (await api.get(`/api/decks/${secret.id}/`)).cards[0].printing.id, zone: 'main' })
+    await openSimulate(page, deck.id)
+
+    // AC-16, AC-19: who, status and the win rate (the recorded game: the second seat wins on its turn 10).
+    const card = runs(page).first()
+    await expect(card.getByTestId('run-status')).toHaveText('Done')
+    await expect(card).toContainText(user.username)
+    await expect(card.getByTestId('run-win-rate')).toHaveText('Win rate 50%')
+    await expect(card.getByTestId('run-summary')).toContainText('1 / 2')
+    await expect(card.getByTestId('run-avg-turn')).toHaveText('10')
+    // AC-20: a row per deck.
+    await expect(card.getByTestId('pod-row')).toHaveText([
+      new RegExp(`Results ${stamp}.*Krenko, Mob Boss.*Default\\s*1\\s*0\\s*10\\s*1`),
+      new RegExp(`Secret ${stamp}.*The Prismatic Piper.*Default\\s*1\\s*0\\s*10\\s*1`),
+    ])
+    // AC-21: each game with its winner, turn and seat order.
+    await expect(card.getByTestId('run-game')).toHaveText([
+      new RegExp(`Game 1.*Secret ${stamp} won on turn 10.*Results ${stamp} → Secret ${stamp}.*Replay`),
+      new RegExp(`Game 2.*Results ${stamp} won on turn 10.*Secret ${stamp} → Results ${stamp}.*Replay`),
+    ])
+    await card.getByTestId('pod-row').first().getByText(`Results ${stamp}`).click()
+    await expect(card.getByTestId('pod-list').first()).toContainText('36 Forest')
+    await expect(card.getByTestId('pod-list').first()).not.toContainText('Prismatic Piper')
+
+    // AC-18: a public deck's runs show to anyone; a private deck's only to its owner.
+    const other = uniqueUser('r')
+    await createUser(request, other)
+    const otherApi = await apiAs(request, other)
+    expect(await otherApi.get(`/api/decks/${deck.id}/sims/`)).toHaveLength(1)
+    expect((await request.get(`/api/decks/${secret.id}/sims/`)).status()).toBe(404)
+    const anonymous = await request.get(`/api/sims/runs/${run.id}/`)
+    expect(anonymous.ok()).toBe(true)
+    expect((await anonymous.json()).mine).toBe(false)
+  })
+
+  test('AC-22: a game Forge fails doesn\'t count; draws count but aren\'t wins', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    const stamp = Date.now()
+    const broken = await commanderDeck(api, `Broken ${stamp}`)
+    const stalls = await commanderDeck(api, `Stalls ${stamp}`)
+    const piper = await commanderDeck(api, `Odd Piper ${stamp}`, PIPER)
+    const failed = await startRun(api, broken.id, [{ deck: piper.id }])
+    const drawn = await startRun(api, stalls.id, [{ deck: piper.id }])
+    await waitForRun(api, failed.id)
+    await waitForRun(api, drawn.id)
+
+    await openSimulate(page, broken.id)
+    const card = runs(page).first()
+    await expect(card.getByTestId('run-status')).toHaveText('Done')
+    await expect(card.getByTestId('game-result')).toHaveText(['Failed', 'Failed'])
+    await expect(card.getByTestId('run-game').first()).toContainText('Broken deck')
+    await expect(card.getByTestId('run-win-rate')).toHaveCount(0)
+
+    await openSimulate(page, stalls.id)
+    await expect(runs(page).first().getByTestId('run-win-rate')).toHaveText('Win rate 0%')
+    await expect(runs(page).first().getByTestId('game-result').first()).toHaveText(/Draw on game turn \d+/)
+    await expect(runs(page).first().getByTestId('pod-row').first()).toContainText(/Default\s*0\s*2/)
+  })
+})
