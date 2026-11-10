@@ -29,7 +29,7 @@ const shown = computed(() =>
         class="sticky top-4 w-full rounded-[4.75%/3.5%] bg-muted shadow" data-testid="deck-preview"
       />
     </div>
-    <div class="columns-1 gap-6 lg:columns-2" data-testid="deck-list">
+    <div class="columns-1 gap-6 lg:columns-2 2xl:columns-3" data-testid="deck-list">
       <section v-for="g in groups" :key="g.key" class="mb-5 break-inside-avoid" :data-testid="`group-${g.key}`">
         <GroupHeading :group="g" :currency="currency" class="mb-1 border-b pb-1" />
         <ul>

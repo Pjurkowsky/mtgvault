@@ -106,3 +106,7 @@ Status: Written into spec.md (2026-11-10).
     section ownership | quantity, zone, categories | Remove and Save.
   - Ownership shows once ("Missing 1 of 2"), no separate "N missing" line; the
     badge keeps its tooltip but it must stay on screen.
+- Mid-build (2026-11-10): "when propsing a swap between lands it should only
+  account for one land not all". Applying a swap replaces one copy: 30 Islands
+  swapped for a Plains leave 29 Islands and 1 Plains, with one Island in the
+  Maybeboard paired with the Plains.

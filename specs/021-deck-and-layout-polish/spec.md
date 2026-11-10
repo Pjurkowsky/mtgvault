@@ -90,10 +90,14 @@ useful.
   set off by a border (on the left of the column on wide screens, on top on
   phones). Unpair asks to confirm. It removes only the pair: the card stays
   in the Maybeboard, under Unpaired if that was its last pair.
-- **AC-17** Applying a swap of X for A puts X in A's zone at A's quantity.
-  A moves to the Maybeboard, paired with X so the swap can be undone, and
-  A's other proposed cards become proposals for X. X's pairs with other deck
-  cards stay.
+- **AC-17** Applying a swap of X for A replaces one copy. One X goes into A's
+  zone, merging with any X already there.
+  - If A has a single copy, A moves to the Maybeboard, paired with X so the
+    swap can be undone, and A's other proposed cards become proposals for X.
+  - If A has more copies (30 Islands), A keeps the rest and its pairs. One
+    copy of A goes to the Maybeboard, paired with X.
+
+  X's pairs with other deck cards stay.
 - **AC-18** A pair whose In card is not in the Maybeboard (it went into the
   deck) is tinted amber and tagged **In deck**, with the tooltip "X is
   already in the deck". Its Swap button is disabled, and Unpair still works.

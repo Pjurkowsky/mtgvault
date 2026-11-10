@@ -503,7 +503,7 @@ const exportName = computed(() =>
     <p v-else-if="!loading && page && !inBinder" class="py-16 text-center text-muted-foreground" data-testid="browser-empty">
       {{ activeFilterCount || filter.q ? 'No cards match.' : 'No cards yet.' }}
     </p>
-    <div v-if="loading && !rows.length && !inBinder" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div v-if="loading && !rows.length && !inBinder" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8">
       <Skeleton v-for="n in 10" :key="n" class="aspect-[488/680] w-full" />
     </div>
     <div ref="sentinel" aria-hidden="true" />
@@ -517,7 +517,7 @@ const exportName = computed(() =>
       style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px))"
       data-testid="selection-bar"
     >
-      <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <span class="mr-2 font-medium" data-testid="selected-count">{{ selection.count.value }} selected</span>
         <label class="flex items-center gap-2 px-2 text-sm">
           <Checkbox :model-value="selectAllState" data-testid="select-all" @click.prevent="toggleSelectAll" />

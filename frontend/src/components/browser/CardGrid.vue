@@ -34,7 +34,7 @@ const canSelect = () => props.selectable ?? props.editable
 
 <!-- Image-only tiles; name and price on hover (spec 002, AC-17). -->
 <template>
-  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" data-testid="card-grid">
+  <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8" data-testid="card-grid">
     <li v-for="(row, index) in rows" :key="row.id" class="group relative">
       <CardMenu :editable="editable" :items="menu" @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)" @deck="emit('deck', row)" @collect="emit('collect', row)">
         <CardTile

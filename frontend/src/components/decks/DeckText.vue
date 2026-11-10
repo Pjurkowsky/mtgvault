@@ -14,7 +14,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
 </script>
 
 <template>
-  <div class="columns-1 gap-6 sm:columns-2 lg:columns-3" data-testid="deck-text">
+  <div class="columns-1 gap-6 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5" data-testid="deck-text">
     <section v-for="g in groups" :key="g.key" class="mb-4 break-inside-avoid" :data-testid="`group-${g.key}`">
       <GroupHeading :group="g" :currency="currency" class="mb-1" />
       <ul>

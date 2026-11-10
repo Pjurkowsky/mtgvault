@@ -87,7 +87,7 @@ export const labelOf = (list: readonly { value: string; label: string }[], value
 export type CardSize = 'sm' | 'md' | 'lg'
 export const CARD_SIZES = ['sm', 'md', 'lg'] as const
 export const GRID_COLUMNS: Record<CardSize, string> = {
-  sm: 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8',
-  md: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6',
-  lg: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+  sm: 'grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12',
+  md: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10',
+  lg: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6',
 }
