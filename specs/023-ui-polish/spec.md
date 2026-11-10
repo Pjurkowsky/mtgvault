@@ -1,6 +1,6 @@
 # Spec 023: UI polish
 
-Status: Draft
+Status: Done
 Depends on: 002-collection-polish, 006-deck-views, 015-deck-tokens, 021-deck-and-layout-polish
 Followed by: 024 (pod simulation, not written yet)
 
