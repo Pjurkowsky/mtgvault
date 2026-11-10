@@ -1,6 +1,6 @@
 # Spec 024: Pod simulation (decisions so far)
 
-Status: Grilled (2026-11-10). Summary awaiting confirmation.
+Status: Written into spec.md (2026-11-10).
 
 Depends on: 022-deck-insights (where the request and first research came from).
 

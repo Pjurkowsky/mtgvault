@@ -97,7 +97,7 @@ commander is played in. The app gets a dark theme.
 
 ## Out of scope
 
-- Simulating Commander pods (spec 024)
+- Simulating Commander pods (spec 024-pod-simulation)
 - An Auto-categorize button or recomputing categories after the first sync
 - Combos missing three or more cards, or needing a colour or commander change
 - Salt on deck tiles in the Decks list
