@@ -47,7 +47,7 @@ test.describe('Deck import, export and public decks', () => {
     await expect(dialog.getByTestId('deck-import-commander')).toHaveText('1 The Prismatic Piper')
     await dialog.getByRole('button', { name: 'Add 5 cards' }).click()
     await expect(dialog).toBeHidden()
-    await expect(page.getByTestId('group-commander')).toContainText('The Prismatic Piper')
+    await expect(page.getByTestId('deck-commander').getByRole('button', { name: 'The Prismatic Piper' })).toBeVisible() // spec 021, AC-5
     await expect(deckRow(page, 'Sol Ring')).toContainText('2')
     await expect(page.getByTestId('deck-size')).toHaveText('6 / 100 cards')
   })

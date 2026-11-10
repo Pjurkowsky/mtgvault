@@ -9,7 +9,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Deck
 
-- [ ] **T3 Commander showcase and side column; deck-commander.spec.ts** (AC-5 to AC-7)
+- [x] **T3 Commander showcase and side column; deck-commander.spec.ts** (AC-5 to AC-7)
 - [ ] **T4 Pairs backend: many pairs, propose, unpair, apply, API** (AC-13 to AC-18)
 - [ ] **T5 Swaps tab, Propose swap dialog, menus; deck-pairs.spec.ts** (AC-12 to AC-19)
 - [ ] **T6 Token catalog fields and prices, deck token choice, printings endpoint** (AC-10, AC-11)

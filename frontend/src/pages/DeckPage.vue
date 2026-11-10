@@ -12,6 +12,7 @@ import CategoryDialog from '@/components/decks/CategoryDialog.vue'
 import CreateBoxDialog from '@/components/decks/CreateBoxDialog.vue'
 import DeckAddDialog from '@/components/decks/DeckAddDialog.vue'
 import DeckCardDetail from '@/components/decks/DeckCardDetail.vue'
+import DeckCommander from '@/components/decks/DeckCommander.vue'
 import DeckImportDialog from '@/components/decks/DeckImportDialog.vue'
 import DeckList from '@/components/decks/DeckList.vue'
 import DeckSwaps from '@/components/decks/DeckSwaps.vue'
@@ -39,7 +40,7 @@ import { usePreference } from '@/composables/usePreference'
 import { CARD_SIZES, type CardSize } from '@/lib/cards'
 import { clearedQuery, filterFromQuery, filterToQuery, matches, type DeckFilter } from '@/lib/deckFilter'
 import { loadScanTarget, saveScanTarget, scannerUrl, type ScanTarget } from '@/lib/scanTarget'
-import { WANT_MISSING, ZONE_LABELS, formatLabel, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
+import { WANT_MISSING, ZONE_LABELS, formatLabel, groupDeck, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
 
 /** A deck: list, owned and missing cards, stats; also the public view (spec 004, AC-16 to AC-28). */
 const route = useRoute()
@@ -96,6 +97,14 @@ const nav = useCardNavigation(computed(() => (deckTab.value?.$el as HTMLElement 
 // Search and filters live in the URL (spec 006, AC-5 to AC-7).
 const filter = computed(() => filterFromQuery(route.query))
 const shown = computed(() => deck.value?.cards.filter((c) => matches(c, filter.value)) ?? [])
+// The commander shows in the side column, never in the groups, whatever the filters (spec 021, AC-5, AC-6).
+const commanders = computed(() => deck.value?.cards.filter((c) => c.zone === 'commander') ?? [])
+const viewCards = computed(() => shown.value.filter((c) => c.zone !== 'commander'))
+const sideColumn = computed(() => commanders.value.length > 0 || layout.value === 'list')
+// List view: the pointed card if still shown, else the first one (spec 011 AC-1, spec 021 AC-7).
+const pointed = ref<DeckCard | null>(null)
+const preview = computed(() =>
+  (pointed.value && viewCards.value.find((c) => c.id === pointed.value!.id)) ?? groupDeck(viewCards.value, groupBy.value, sortBy.value)[0]?.cards[0] ?? null)
 const setFilter = (patch: Partial<DeckFilter>) => router.replace({ query: { ...route.query, ...filterToQuery(patch) } })
 /** A chart click opens the Deck tab with only that filter (AC-17). */
 const showFiltered = (patch: Partial<DeckFilter>) => router.replace({ query: { ...route.query, ...clearedQuery(), ...filterToQuery(patch), tab: undefined } })
@@ -273,20 +282,34 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           v-if="deck.cards.length" :cards="deck.cards" :filter="filter" :group-by="groupBy" :sort-by="sortBy" :layout="layout" :size="size"
           @filter="setFilter" @clear="clearFilters" @option="setOption"
         />
-        <DeckText
-          v-if="shown.length && layout === 'text'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
-          @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
-        />
-        <DeckList
-          v-else-if="shown.length && layout === 'list'" :cards="shown" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
-          :editable="isOwner" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
-        />
-        <DeckVisual
-          v-else-if="shown.length" :cards="shown" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
-          @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
-        />
-        <p v-else class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
-        <DeckTokens :tokens="deck.tokens" :cards="shown" />
+        <div :class="sideColumn ? 'grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]' : 'grid'">
+          <aside v-if="sideColumn" class="grid content-start gap-4 lg:sticky lg:top-4 lg:self-start" data-testid="deck-side">
+            <DeckCommander
+              v-if="commanders.length" :cards="commanders" :editable="isOwner"
+              @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
+            />
+            <img
+              v-if="layout === 'list' && preview" :src="preview.printing.image_normal" :alt="preview.printing.name"
+              class="hidden w-full rounded-[4.75%/3.5%] bg-muted shadow lg:block" data-testid="deck-preview"
+            />
+          </aside>
+          <div class="grid min-w-0 content-start gap-4">
+            <DeckText
+              v-if="viewCards.length && layout === 'text'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+              @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
+            />
+            <DeckList
+              v-else-if="viewCards.length && layout === 'list'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
+              :editable="isOwner" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard" @point="pointed = $event"
+            />
+            <DeckVisual
+              v-else-if="viewCards.length" :cards="viewCards" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+              @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
+            />
+            <p v-else-if="deck.cards.length > commanders.length || !commanders.length" class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
+            <DeckTokens :tokens="deck.tokens" :cards="shown" />
+          </div>
+        </div>
       </TabsContent>
 
       <TabsContent value="swaps" class="pt-2">

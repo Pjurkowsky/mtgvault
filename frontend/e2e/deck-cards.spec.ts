@@ -103,8 +103,9 @@ test.describe('Deck cards', () => {
       text: 'Commander\n1 The Prismatic Piper\n\nDeck\n1 Lightning Bolt\n1 Counterspell\n1 Shivan Dragon\n1 Sol Ring\n5 Forest',
     })
     await page.goto(`/decks/${deck.id}`)
-    const groups = page.getByTestId('deck-text').locator('section')
-    await expect(groups.first()).toHaveAttribute('data-testid', 'group-commander')
+    // Spec 021, AC-5, AC-6: the commander shows beside the groups, not in them.
+    await expect(page.getByTestId('deck-commander').getByRole('button', { name: 'The Prismatic Piper' })).toBeVisible()
+    await expect(page.getByTestId('group-commander')).toHaveCount(0)
     await expect(page.getByTestId('group-main-Instants')).toContainText('Instants (2)')
     await expect(page.getByTestId('group-main-Lands')).toContainText('Lands (5)')
     const instants = page.getByTestId('group-main-Instants').getByTestId('deck-row')
