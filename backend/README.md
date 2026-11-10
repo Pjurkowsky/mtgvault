@@ -19,7 +19,7 @@ cp .env.example .env          # then set a real SECRET_KEY
 docker compose -f ../docker-compose.dev.yml up -d db redis
 uv sync
 uv run manage.py migrate
-uv run manage.py sync_cards        # card catalog + rates (about 30 s)
+uv run manage.py sync_cards        # card catalog, tags, combos + rates (about 1 min)
 uv run manage.py createsuperuser
 uv run manage.py runserver    # http://localhost:8000
 ```
@@ -65,6 +65,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/<id>/box/` | bearer | Create the deck box and move free copies into it |
 | `POST /api/decks/add-from-collection/` | bearer | One copy of each selected card into a deck |
 | `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings`, `categories` and `tokens` |
+| `GET /api/decks/<id>/combos/`, `GET /api/users/<username>/decks/<id>/combos/` | bearer / public | Combos in the deck and infinite or win combos it could build; missing cards say if you own them (owner only) (spec 022) |
+| `GET /api/decks/<id>/insights/`, `GET /api/users/<username>/decks/<id>/insights/` | bearer / public | Fetches missing salt scores; returns the deck salt and the commander's EDHREC themes (spec 022) |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text; export takes `printings` and `other_decks` |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
@@ -113,13 +115,35 @@ and the frontend types, and fails if either changed.
 ## Card catalog and prices
 
 `manage.py sync_cards` downloads Scryfall's `default_cards` file (every paper
-printing) and NBP's EUR and USD rates. Celery beat runs it daily at 13:00 UTC.
-A failed sync rolls back and keeps the previous data.
+printing), Scryfall's `oracle_tags` file, Commander Spellbook's combos and
+NBP's EUR and USD rates. Celery beat runs the cards, tags and rates daily at
+13:00 UTC and the combos at 05:00 UTC. A failed sync rolls back and keeps the
+previous data.
 
 - USD prices are TCGplayer's, EUR prices Cardmarket's (both via Scryfall).
 - PLN = EUR × the NBP rate, shown as an estimate.
 - `--file <path>` reads a local file instead of downloading (tests use
-  `cards/fixtures/scryfall-sample.jsonl`).
+  `cards/fixtures/scryfall-sample.jsonl`); `--tags-file` and `--combos-file`
+  do the same for tags and combos.
+
+## Deck insights (spec 022)
+
+- **Categories**: `cards/tags.py` maps 16 categories (Ramp, Card draw,
+  Removal …) to Scryfall Tagger tag ids, child tags included, and stores each
+  card's list in `CardInsight.categories` (lands get none). A card added to a
+  deck gets them (`decks.services.add_card`); an import's `#tags` win for new
+  cards. The first successful tag sync on a server replaces every deck card's
+  categories once; later syncs leave deck cards alone.
+- **Combos**: `cards/combos.py` loads `json.commanderspellbook.com/variants.json.gz`
+  (about 120,000 variants, 35 s) into `Combo` and `ComboCard`. A deck matches
+  by oracle id: all cards counted = in deck; one or two missing, infinite or
+  winning, inside the commander's colour identity = could build (200 at most).
+  "Infinite" means a result named "Infinite …" or "Near-infinite …".
+- **Salt and themes**: `cards/edhrec.py` reads `card.salt` from the card pages
+  (8 threads, kept in `CardInsight`, fetched again after 30 days) and
+  `panels.taglinks` from `pages/commanders/<slug>.json` (partners: both slugs,
+  sorted, joined; cached 24 h). The deck detail sums the stored scores; the
+  insights endpoint fetches missing ones.
 
 `manage.py seed_items --username <u> --rows 20000` fills a collection for
 performance checks (only with `DEBUG` on).
@@ -133,8 +157,9 @@ catalog, and caches the result in Redis for 24 hours ("no page" for 1 hour).
 Any failure or unexpected format returns `available: false`, and the tabs show
 "No EDHREC data".
 
-Tests set `EDHREC_FIXTURE_DIR=cards/fixtures/edhrec` so nothing calls EDHREC;
-only `sol-ring.json` exists there.
+Tests set `EDHREC_FIXTURE_DIR=cards/fixtures/edhrec` so nothing calls EDHREC.
+Card pages there: `sol-ring.json` (full) and a few with only a salt score;
+commander pages in `commanders/`.
 
 Every price in the API also comes in all three currencies (`unit_prices`,
 `values`, `prices_all`, …) so the frontend can show the others in a tooltip.
@@ -195,7 +220,9 @@ copies (`decks.services.fill_from_box`, called from `save_item` and
 - Categories: `DeckCard.categories`, an ordered list (the first is primary),
   trimmed, without case-insensitive duplicates, at most 10
   (`decks.services.merge_categories`). Merging two entries of a card merges
-  their categories.
+  their categories. New cards get automatic ones (see Deck insights).
+- The deck detail has `combo_count` and `salt` (`total`, `average`, `pending`,
+  `top`) as well.
 - `decks/stats.py`, `decks/textlist.py`: curve, pips, types, values; zone-aware
   import and export. Categories travel as `#Tag` at the end of a line
   (underscores for spaces; Moxfield's `#!` prefix is accepted).

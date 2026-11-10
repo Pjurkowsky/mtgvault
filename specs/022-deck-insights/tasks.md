@@ -24,4 +24,4 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Finish
 
-- [ ] **T9 Full suite (2 workers), READMEs, spec status**
+- [x] **T9 Full suite (2 workers), READMEs, spec status**

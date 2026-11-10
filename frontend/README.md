@@ -41,7 +41,8 @@ src/
                           categories (CategoryInput, CategoryDialog), add (built on
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats
-                          (StatBars), legality, GroupHeading, ManaCost
+                          (StatBars, DeckSalt, DeckThemes), Combos tab (DeckCombos,
+                          ComboRow), legality, GroupHeading, ManaCost
   components/DestructiveButton.vue  outlined red button with a trash icon
   lib/decks.ts            formats, zones, ownership states, grouping and sorting
   lib/deckFilter.ts       deck search and filters, kept in the URL
@@ -55,6 +56,8 @@ src/
   composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
+  lib/theme.ts            Light/Dark/System theme, saved in the browser; index.html sets the
+                          class before the app loads
   assets/mana/            Scryfall mana symbols
   scanner/                camera (exposure, zoom, focus saved per device), frame loop, sounds (unlocked on
                           the first tap anywhere), glare check, combined frames, guesses; recognition/ is

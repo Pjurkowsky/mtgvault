@@ -213,8 +213,9 @@ browser recognition pipeline and its published models, trained in
 [Mozilla Public License 2.0](https://mozilla.org/MPL/2.0/). The ported files in
 `frontend/src/scanner/recognition/` and `frontend/src/scanner/decision.ts`
 keep that license and name their source files; the rest of MTG Vault is not
-affected. Card data and images come from [Scryfall](https://scryfall.com),
-EDHREC data from [EDHREC](https://edhrec.com). Mana symbols in
+affected. Card data, images and card tags come from [Scryfall](https://scryfall.com),
+EDHREC data (salt scores, commander themes) from [EDHREC](https://edhrec.com),
+combos from [Commander Spellbook](https://commanderspellbook.com). Mana symbols in
 `frontend/src/assets/mana/` are Scryfall's card symbol images.
 
 ## License

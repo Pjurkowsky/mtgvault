@@ -31,3 +31,12 @@ What the cards cover:
 (2026-11-09): only the tags that `cards/tags.py` maps to categories and their
 child tags, with taggings limited to the cards above. The tests load it with
 `sync_cards --tags-file`.
+
+## Combos
+
+`spellbook-sample.json` is cut from Commander Spellbook's `variants.json.gz`
+(2026-11-10): the two combos fully inside the cards above (Dockside
+Extortionist with Cloudstone Curio and with Temur Sabertooth) and the 150 most
+popular combos missing one or two of them, plus Krenko with Intruder Alarm and
+Krenko, Skirk Prospector and Goblin Warchief. Card fields are trimmed to the
+ones `cards/combos.py` reads. The tests load it with `sync_cards --combos-file`.

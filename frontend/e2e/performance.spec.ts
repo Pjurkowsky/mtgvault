@@ -16,10 +16,11 @@ test('AC-36: with 20,000 rows, results show within 1 s of changing search, filte
   await expect(summary).toContainText(/\d+ cards/)
 
   // Each change must update what's shown within 1 s: the summary for search and
-  // filters, the first card for sorting.
-  const firstCard = page.getByTestId('card-tile').first().locator('img')
+  // filters, the order of the first cards for sorting. (Not just the first card:
+  // with spec 022's fixture cards the first card by name can also be first by price.)
+  const order = () => page.getByTestId('card-tile').locator('img').evaluateAll((imgs) => imgs.slice(0, 20).map((i) => i.getAttribute('src')).join())
   const timed = async (label: string, action: () => Promise<void>, watch: 'summary' | 'first' = 'summary') => {
-    const read = () => (watch === 'summary' ? summary.innerText() : firstCard.getAttribute('src'))
+    const read = () => (watch === 'summary' ? summary.innerText() : order())
     const before = await read()
     const start = Date.now()
     await action()

@@ -43,7 +43,7 @@ test.describe('Deck search and filters', () => {
     await api.importList('1 Sol Ring (C21) 263\n1 Forest (M21) 272')
     const deck = await api.deck('Own', 'casual', { text: LIST })
     await page.goto(`/decks/${deck.id}`)
-    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', 'Stats'])
+    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', /Combos/, 'Stats']) // Combos: spec 022, AC-6
 
     await page.getByRole('button', { name: 'Filters' }).click()
     // Spec 012: free copies are Free in collection; Owned is what's in the deck box.

@@ -61,7 +61,7 @@ test.describe('Deck tokens', () => {
     const text = page.getByTestId('export-text')
     const tokens = page.getByTestId('export-options').getByRole('checkbox', { name: 'Tokens' })
     await expect(tokens).not.toBeChecked()
-    await expect(text).not.toHaveValue(/Tokens/)
+    await expect(text).not.toHaveValue(/^Tokens$/m) // not the #Tokens category (spec 022, AC-1)
     await tokens.click()
     await expect(text).toHaveValue(/\n\nTokens\n1 Treasure \(T2X2\) 22\n$/)
     await page.getByTestId('export-options').getByRole('checkbox', { name: 'Printings' }).click()

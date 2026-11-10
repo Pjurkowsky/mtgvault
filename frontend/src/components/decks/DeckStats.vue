@@ -48,10 +48,13 @@ const PLOT = 128 // px, the curve's plot height; the axis labels sit below it
       </Card>
     </dl>
 
-    <div class="grid gap-4 lg:grid-cols-2">
+    <!-- Their own row, so the charts below keep their pairs (spec 022, AC-12, AC-15). -->
+    <div v-if="stats.cards || themes.length" class="grid gap-4 lg:grid-cols-2">
       <DeckSalt v-if="stats.cards" :salt="deck.salt" />
       <DeckThemes v-if="themes.length" :themes="themes" />
+    </div>
 
+    <div class="grid gap-4 lg:grid-cols-2">
       <Card class="gap-3 p-4">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h3 class="text-sm font-semibold">Mana curve</h3>

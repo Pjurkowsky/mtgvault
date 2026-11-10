@@ -138,8 +138,9 @@ test('AC-35: loads more as you scroll and shows totals', async ({ page, request 
   await api.importList(fixtureList())
   await api.importList(fixtureList(), null, { condition: 'LP' })
   await page.goto('/cards')
-  await expect(page.getByTestId('browser-summary')).toContainText('98 cards')
+  // 104: spec 022 added three cards to the fixture.
+  await expect(page.getByTestId('browser-summary')).toContainText('104 cards')
   await expect(page.getByTestId('card-tile')).toHaveCount(60)
   await page.getByTestId('card-tile').last().scrollIntoViewIfNeeded()
-  await expect(page.getByTestId('card-tile')).toHaveCount(98)
+  await expect(page.getByTestId('card-tile')).toHaveCount(104)
 })
