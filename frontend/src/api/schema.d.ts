@@ -481,6 +481,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/sims/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A deck's runs (AC-16, AC-18) and starting one (AC-14). */
+        get: operations["decks_sims_list"];
+        put?: never;
+        /** @description A deck's runs (AC-16, AC-18) and starting one (AC-14). */
+        post: operations["decks_sims_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/swaps/": {
         parameters: {
             query?: never;
@@ -966,6 +984,189 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sims/check/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Unsupported cards of each seat (AC-11). */
+        post: operations["sims_check_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/opponents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Opponent pool, my decks and public decks, searchable by deck or commander name (AC-4). */
+        get: operations["sims_opponents_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/pool/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sims_pool_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/pool/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Anyone can rename or remove any pool deck (AC-9). */
+        delete: operations["sims_pool_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Anyone can rename or remove any pool deck (AC-9). */
+        patch: operations["sims_pool_partial_update"];
+        trace?: never;
+    };
+    "/api/sims/queue/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The run playing and the queued ones, in order (AC-14). */
+        get: operations["sims_queue_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/runs/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sims_runs_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["sims_runs_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/runs/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["sims_runs_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/runs/{id}/games/{number}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One game, turn by turn (AC-23 to AC-28). */
+        get: operations["sims_runs_games_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sims_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/suggest/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Forge-supported stand-ins for a card (AC-12). */
+        get: operations["sims_suggest_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/swaps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["sims_swaps_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/": {
         parameters: {
             query?: never;
@@ -1334,6 +1535,30 @@ export interface components {
         };
         /** @enum {unknown} */
         BlankEnum: "";
+        BoardCard: {
+            id: number;
+            name: string;
+            row?: components["schemas"]["RowEnum"];
+            tapped?: boolean;
+            token?: boolean;
+            power?: number;
+            toughness?: number;
+            counters?: {
+                [key: string]: number;
+            };
+            attached_to?: number;
+            owner?: number;
+        };
+        BoardSeat: {
+            life: number;
+            lost: boolean;
+            hand: number;
+            library: number;
+            battlefield: components["schemas"]["BoardCard"][];
+            graveyard: components["schemas"]["BoardCard"][];
+            exile: components["schemas"]["BoardCard"][];
+            command: components["schemas"]["BoardCard"][];
+        };
         /**
          * @description * `keep` - keep
          *     * `unfile` - unfile
@@ -1394,6 +1619,15 @@ export interface components {
             /** @description Copies on the viewer's want list (spec 010, AC-4) */
             wanted: number;
             printings: components["schemas"]["Printing"][];
+        };
+        CardImage: {
+            image_small: string;
+            image_normal: string;
+        };
+        CardRow: {
+            name: string;
+            quantity: number;
+            commander: boolean;
         };
         CardSearchResult: {
             /** Format: uuid */
@@ -1777,6 +2011,15 @@ export interface components {
             collector_number: string;
             finish: string;
         };
+        Game: {
+            number: number;
+            status: components["schemas"]["SimGameStatusEnum"];
+            winner_seat: number | null;
+            turn: number;
+            winner_turn: number | null;
+            seat_order: number[];
+            error: string;
+        };
         Health: {
             status: string;
         };
@@ -2065,6 +2308,21 @@ export interface components {
         };
         /** @enum {unknown} */
         NullEnum: null;
+        /** @description A deck for an opponent seat: a pool deck or a player's deck (AC-4, AC-10). */
+        Opponent: {
+            id: number;
+            source: components["schemas"]["SourceEnum"];
+            name: string;
+            commanders: string[];
+            image: string;
+            owner: string;
+            precon: boolean;
+        };
+        Opponents: {
+            pool: components["schemas"]["Opponent"][];
+            mine: components["schemas"]["Opponent"][];
+            public: components["schemas"]["Opponent"][];
+        };
         OptimizeApply: {
             /** @description Deck card ids to switch */
             cards: number[];
@@ -2240,6 +2498,9 @@ export interface components {
              */
             readonly is_staff?: boolean;
         };
+        PatchedPoolDeckRename: {
+            name?: string;
+        };
         PatchedScannerSettings: {
             /** @description Multi-threaded recognition (cross-origin isolated page) */
             fast?: boolean;
@@ -2275,6 +2536,17 @@ export interface components {
             deck?: number | null;
             /** @default 1 */
             quantity?: number;
+        };
+        Pod: {
+            seats: components["schemas"]["SeatSpec"][];
+        };
+        PoolDeckCreated: {
+            id: number;
+        };
+        PoolDeckWrite: {
+            name?: string;
+            deck?: number;
+            text?: string;
         };
         /** @description Price per copy for each finish, in the viewer's currency. Null = no price. */
         Prices: {
@@ -2358,6 +2630,14 @@ export interface components {
             /** Format: uri */
             readonly image_back_large: string;
         };
+        /**
+         * @description * `Default` - Default
+         *     * `Cautious` - Cautious
+         *     * `Reckless` - Reckless
+         *     * `Experimental` - Experimental
+         * @enum {string}
+         */
+        ProfileEnum: "Default" | "Cautious" | "Reckless" | "Experimental";
         PublicBinder: {
             rows: number;
             cols: number;
@@ -2457,6 +2737,16 @@ export interface components {
             total_values: components["schemas"]["Money"];
             results: components["schemas"]["PublicWant"][];
         };
+        QueueEntry: {
+            id: number;
+            deck: number;
+            deck_name: string;
+            user: string;
+            mine: boolean;
+            status: components["schemas"]["SimRunStatusEnum"];
+            played: number;
+            games: number;
+        };
         /**
          * @description * `common` - Common
          *     * `uncommon` - Uncommon
@@ -2474,10 +2764,91 @@ export interface components {
             password: string;
             currency: components["schemas"]["CurrencyEnum"];
         };
+        Replay: {
+            run: components["schemas"]["Run"];
+            number: number;
+            status: string;
+            turn: number;
+            winner_seat: number | null;
+            winner_turn: number | null;
+            seat_order: number[];
+            error: string;
+            players: components["schemas"]["ReplayPlayer"][];
+            turns: components["schemas"]["ReplayTurn"][];
+            boards: components["schemas"]["BoardSeat"][][];
+            cards: {
+                [key: string]: components["schemas"]["CardImage"];
+            };
+            log: string[];
+        };
+        ReplayEvent: {
+            type: string;
+            text: string;
+            board: number;
+        };
+        ReplayPlayer: {
+            seat: number;
+            label: string;
+            owner: string;
+            profile: string;
+            commanders: string[];
+            lost_on: number | null;
+        };
+        ReplayTurn: {
+            number: number;
+            active: number | null;
+            own_turn: number | null;
+            board: number;
+            events: components["schemas"]["ReplayEvent"][];
+        };
+        /**
+         * @description * `creature` - creature
+         *     * `land` - land
+         *     * `other` - other
+         * @enum {string}
+         */
+        RowEnum: "creature" | "land" | "other";
+        Run: {
+            id: number;
+            deck: number;
+            deck_name: string;
+            user: string;
+            mine: boolean;
+            status: components["schemas"]["SimRunStatusEnum"];
+            cancelling: boolean;
+            games: number;
+            minutes: number;
+            seat_mode: components["schemas"]["SeatModeEnum"];
+            played: number;
+            error: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            seats: components["schemas"]["Seat"][];
+            stats: components["schemas"]["RunStats"];
+            results: components["schemas"]["Game"][];
+        };
+        RunStats: {
+            finished: number;
+            wins: number;
+            /** Format: double */
+            win_rate: number | null;
+            /** Format: double */
+            avg_win_turn: number | null;
+            seats: components["schemas"]["SeatStats"][];
+        };
         SaltyCard: {
             name: string;
             /** Format: double */
             salt: number;
+        };
+        SaveSwaps: {
+            deck?: number | null;
+            pool?: number | null;
+            swaps: components["schemas"]["Swap"][];
         };
         ScanRequest: {
             /** @description Gallery art id from arts.json */
@@ -2584,6 +2955,45 @@ export interface components {
             /** @description Absolute folder of bundles on the server */
             path?: string;
         };
+        Seat: {
+            index: number;
+            label: string;
+            owner: string;
+            source: string;
+            source_id: number | null;
+            profile: string;
+            commanders: string[];
+            image: string;
+            cards: components["schemas"]["CardRow"][];
+        };
+        SeatCheck: {
+            index: number;
+            label: string;
+            source: string;
+            id: number;
+            unsupported: components["schemas"]["UnsupportedCard"][];
+        };
+        /**
+         * @description * `rotate` - Rotate
+         *     * `random` - Random
+         *     * `fixed` - Fixed
+         * @enum {string}
+         */
+        SeatModeEnum: "rotate" | "random" | "fixed";
+        SeatSpec: {
+            deck?: number | null;
+            pool?: number | null;
+            /** @default Default */
+            profile?: components["schemas"]["ProfileEnum"];
+        };
+        SeatStats: {
+            index: number;
+            wins: number;
+            draws: number;
+            /** Format: double */
+            avg_win_turn: number | null;
+            went_first: number;
+        };
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {
             ids?: number[];
@@ -2594,6 +3004,22 @@ export interface components {
             code: string;
             name: string;
         };
+        /**
+         * @description * `won` - Won
+         *     * `draw` - Draw
+         *     * `failed` - Failed
+         * @enum {string}
+         */
+        SimGameStatusEnum: "won" | "draw" | "failed";
+        /**
+         * @description * `queued` - Queued
+         *     * `playing` - Playing
+         *     * `done` - Done
+         *     * `cancelled` - Cancelled
+         *     * `failed` - Failed
+         * @enum {string}
+         */
+        SimRunStatusEnum: "queued" | "playing" | "done" | "cancelled" | "failed";
         /**
          * @description * `name` - name
          *     * `set` - set
@@ -2613,6 +3039,21 @@ export interface components {
          * @enum {string}
          */
         SoundEnum: "click" | "ding" | "big_ding";
+        /**
+         * @description * `deck` - deck
+         *     * `pool` - pool
+         * @enum {string}
+         */
+        SourceEnum: "deck" | "pool";
+        StartRun: {
+            seats: components["schemas"]["SeatSpec"][];
+            /** @default 10 */
+            games?: number;
+            /** @default 5 */
+            minutes?: number;
+            /** @default rotate */
+            seat_mode?: components["schemas"]["SeatModeEnum"];
+        };
         Stats: {
             curve: {
                 [key: string]: number;
@@ -2627,6 +3068,19 @@ export interface components {
             average_mana_value: number;
             value: components["schemas"]["ValueSplit"];
             values: components["schemas"]["ValuesSplit"];
+        };
+        Status: {
+            available: boolean;
+            version: string;
+        };
+        Suggestion: {
+            name: string;
+            image_small: string;
+            image_normal: string;
+        };
+        Swap: {
+            to: string;
+            from: string;
         };
         SwapProposal: {
             /**
@@ -2708,6 +3162,10 @@ export interface components {
         Unplaced: {
             item: number;
             count: number;
+        };
+        UnsupportedCard: {
+            name: string;
+            swap: string | null;
         };
         ValueSplit: {
             /** Format: double */
@@ -3613,6 +4071,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_sims_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"][];
+                };
+            };
+        };
+    };
+    decks_sims_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRun"];
+                "application/x-www-form-urlencoded": components["schemas"]["StartRun"];
+                "multipart/form-data": components["schemas"]["StartRun"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
                 };
             };
         };
@@ -4536,6 +5042,292 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScannerSource"];
                 };
+            };
+        };
+    };
+    sims_check_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Pod"];
+                "application/x-www-form-urlencoded": components["schemas"]["Pod"];
+                "multipart/form-data": components["schemas"]["Pod"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeatCheck"][];
+                };
+            };
+        };
+    };
+    sims_opponents_retrieve: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Opponents"];
+                };
+            };
+        };
+    };
+    sims_pool_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PoolDeckWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["PoolDeckWrite"];
+                "multipart/form-data": components["schemas"]["PoolDeckWrite"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PoolDeckCreated"];
+                };
+            };
+        };
+    };
+    sims_pool_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sims_pool_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedPoolDeckRename"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedPoolDeckRename"];
+                "multipart/form-data": components["schemas"]["PatchedPoolDeckRename"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sims_queue_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueEntry"][];
+                };
+            };
+        };
+    };
+    sims_runs_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+        };
+    };
+    sims_runs_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sims_runs_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
+                };
+            };
+        };
+    };
+    sims_runs_games_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                number: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Replay"];
+                };
+            };
+        };
+    };
+    sims_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    sims_suggest_list: {
+        parameters: {
+            query: {
+                deck?: number;
+                name: string;
+                pool?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suggestion"][];
+                };
+            };
+        };
+    };
+    sims_swaps_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSwaps"];
+                "application/x-www-form-urlencoded": components["schemas"]["SaveSwaps"];
+                "multipart/form-data": components["schemas"]["SaveSwaps"];
+            };
+        };
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

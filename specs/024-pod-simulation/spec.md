@@ -22,6 +22,9 @@ turn by turn, in the browser.
 - **Unsupported card**: a card Forge doesn't implement.
 - **Sim swap**: a supported card that stands in for an unsupported one in
   simulations only.
+- **Turn** (in results): the deck's own turn count, as players count it (its
+  eighth turn is turn 8). Forge's game turn counts every player's turn; the
+  replay shows both.
 
 ## Acceptance criteria
 
@@ -31,8 +34,8 @@ turn by turn, in the browser.
   Simulate tab for anyone who can open the deck (the owner, and anyone for a
   public deck). Without a Forge service, or on other formats, the tab is hidden.
 - **AC-2** Self-hosters turn Forge on by adding the `forge` service from
-  `compose.yml` and setting `FORGE_URL`. The README says how, and that Forge
-  needs about 1 GB of memory while a game runs.
+  `compose.yml` and setting `FORGE_URL`. The README says how, and how much
+  memory Forge needs while a game runs.
 
 ### Pod
 
@@ -113,7 +116,8 @@ turn by turn, in the browser.
 - **AC-25** Each player has a panel with name, commander, life and the cards
   they control on the battlefield as small images in rows for creatures, other
   permanents and lands. Tapped cards are turned sideways. Graveyard and exile
-  show counts that open a list. Hovering a card shows it large. The active
+  show counts that open a list, and hand and library show their counts.
+  Counters and power / toughness show on creatures. Hovering a card shows it large. The active
   player's panel is highlighted, and a player who lost is dimmed with
   "Lost on turn N".
 - **AC-26** Panels sit in a grid of 2 columns for up to 4 players, 3 for 5 or
@@ -121,16 +125,17 @@ turn by turn, in the browser.
 - **AC-27** A column lists the turn's events (casts, attacks, damage, life
   changes, cards entering and leaving play) in order. Clicking an event shows
   the board at that moment. At phone width the events open in a drawer.
-- **AC-28** The board is rebuilt from Forge's game log. A Log tab on the page
-  shows the full log as text.
+- **AC-28** The board is Forge's own game state, recorded after each event, so
+  it matches the game exactly. A Log tab on the page shows Forge's full log as
+  text.
 
 ## Out of scope
 
 - Changing Forge's AI or using a Forge fork (a later spec; the Forge version is
   a build setting so a fork can replace it)
 - Toasts or browser notifications when a run finishes
-- Hands and libraries in the replay, and an exact board for cards whose effects
-  the log doesn't describe
+- The cards in hands and libraries (the replay shows only their counts)
+- The stack in the replay
 - Simulating formats other than Commander
 - More than one run playing at once
 - Adding a deck to the pool from the deck's menu or another page
@@ -153,5 +158,7 @@ turn by turn, in the browser.
 - AC-17: cancelling a playing run stops the current game; it isn't counted.
 - AC-19: draws and failed games aren't wins; the win rate counts draws in the
   total, failed games not.
-- AC-25: "cards they control" follows the log's zone changes; control changes
-  the log doesn't describe stay with the owner. Commander damage isn't shown.
+- AC-25: a card controlled by another player shows on its controller's panel.
+  Commander damage isn't shown.
+- AC-6: Forge lets a random player choose who starts; MTG Vault's runner makes
+  the first seat in the order start, so Rotate and Fixed hold.

@@ -932,6 +932,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/decks/{id}/sims/:
+    get:
+      operationId: decks_sims_list
+      description: A deck's runs (AC-16, AC-18) and starting one (AC-14).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Run'
+          description: ''
+    post:
+      operationId: decks_sims_create
+      description: A deck's runs (AC-16, AC-18) and starting one (AC-14).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
   /api/decks/{id}/swaps/:
     post:
       operationId: decks_swaps_create
@@ -1922,6 +1979,298 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScannerSource'
           description: ''
+  /api/sims/check/:
+    post:
+      operationId: sims_check_create
+      description: Unsupported cards of each seat (AC-11).
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pod'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pod'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Pod'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeatCheck'
+          description: ''
+  /api/sims/opponents/:
+    get:
+      operationId: sims_opponents_retrieve
+      description: Opponent pool, my decks and public decks, searchable by deck or
+        commander name (AC-4).
+      parameters:
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Opponents'
+          description: ''
+  /api/sims/pool/:
+    post:
+      operationId: sims_pool_create
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolDeckWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PoolDeckWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PoolDeckWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolDeckCreated'
+          description: ''
+  /api/sims/pool/{id}/:
+    patch:
+      operationId: sims_pool_partial_update
+      description: Anyone can rename or remove any pool deck (AC-9).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPoolDeckRename'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPoolDeckRename'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPoolDeckRename'
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+    delete:
+      operationId: sims_pool_destroy
+      description: Anyone can rename or remove any pool deck (AC-9).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/sims/queue/:
+    get:
+      operationId: sims_queue_list
+      description: The run playing and the queued ones, in order (AC-14).
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueueEntry'
+          description: ''
+  /api/sims/runs/{id}/:
+    get:
+      operationId: sims_runs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+    delete:
+      operationId: sims_runs_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/sims/runs/{id}/cancel/:
+    post:
+      operationId: sims_runs_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/sims/runs/{id}/games/{number}/:
+    get:
+      operationId: sims_runs_games_retrieve
+      description: One game, turn by turn (AC-23 to AC-28).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: number
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Replay'
+          description: ''
+  /api/sims/status/:
+    get:
+      operationId: sims_status_retrieve
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+          description: ''
+  /api/sims/suggest/:
+    get:
+      operationId: sims_suggest_list
+      description: Forge-supported stand-ins for a card (AC-12).
+      parameters:
+      - in: query
+        name: deck
+        schema:
+          type: integer
+      - in: query
+        name: name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: pool
+        schema:
+          type: integer
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+          description: ''
+  /api/sims/swaps/:
+    put:
+      operationId: sims_swaps_update
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveSwaps'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SaveSwaps'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SaveSwaps'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/users/:
     get:
       operationId: users_list
@@ -2883,6 +3232,70 @@ components:
     BlankEnum:
       enum:
       - ''
+    BoardCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        row:
+          $ref: '#/components/schemas/RowEnum'
+        tapped:
+          type: boolean
+        token:
+          type: boolean
+        power:
+          type: integer
+        toughness:
+          type: integer
+        counters:
+          type: object
+          additionalProperties:
+            type: integer
+        attached_to:
+          type: integer
+        owner:
+          type: integer
+      required:
+      - id
+      - name
+    BoardSeat:
+      type: object
+      properties:
+        life:
+          type: integer
+        lost:
+          type: boolean
+        hand:
+          type: integer
+        library:
+          type: integer
+        battlefield:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCard'
+        graveyard:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCard'
+        exile:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCard'
+        command:
+          type: array
+          items:
+            $ref: '#/components/schemas/BoardCard'
+      required:
+      - battlefield
+      - command
+      - exile
+      - graveyard
+      - hand
+      - library
+      - life
+      - lost
     BoxEnum:
       enum:
       - keep
@@ -3008,6 +3421,29 @@ components:
       - owned
       - printings
       - wanted
+    CardImage:
+      type: object
+      properties:
+        image_small:
+          type: string
+        image_normal:
+          type: string
+      required:
+      - image_normal
+      - image_small
+    CardRow:
+      type: object
+      properties:
+        name:
+          type: string
+        quantity:
+          type: integer
+        commander:
+          type: boolean
+      required:
+      - commander
+      - name
+      - quantity
     CardSearchResult:
       type: object
       properties:
@@ -3915,6 +4351,35 @@ components:
       - location_id
       - quantity
       - set_code
+    Game:
+      type: object
+      properties:
+        number:
+          type: integer
+        status:
+          $ref: '#/components/schemas/SimGameStatusEnum'
+        winner_seat:
+          type: integer
+          nullable: true
+        turn:
+          type: integer
+        winner_turn:
+          type: integer
+          nullable: true
+        seat_order:
+          type: array
+          items:
+            type: integer
+        error:
+          type: string
+      required:
+      - error
+      - number
+      - seat_order
+      - status
+      - turn
+      - winner_seat
+      - winner_turn
     Health:
       type: object
       properties:
@@ -4588,6 +5053,54 @@ components:
     NullEnum:
       enum:
       - null
+    Opponent:
+      type: object
+      description: 'A deck for an opponent seat: a pool deck or a player''s deck (AC-4,
+        AC-10).'
+      properties:
+        id:
+          type: integer
+        source:
+          $ref: '#/components/schemas/SourceEnum'
+        name:
+          type: string
+        commanders:
+          type: array
+          items:
+            type: string
+        image:
+          type: string
+        owner:
+          type: string
+        precon:
+          type: boolean
+      required:
+      - commanders
+      - id
+      - image
+      - name
+      - owner
+      - precon
+      - source
+    Opponents:
+      type: object
+      properties:
+        pool:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opponent'
+        mine:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opponent'
+        public:
+          type: array
+          items:
+            $ref: '#/components/schemas/Opponent'
+      required:
+      - mine
+      - pool
+      - public
     OptimizeApply:
       type: object
       properties:
@@ -4958,6 +5471,12 @@ components:
           readOnly: true
           title: Staff status
           description: Designates whether the user can log into this admin site.
+    PatchedPoolDeckRename:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
     PatchedScannerSettings:
       type: object
       properties:
@@ -5026,6 +5545,33 @@ components:
           maximum: 999
           minimum: 1
           default: 1
+    Pod:
+      type: object
+      properties:
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeatSpec'
+      required:
+      - seats
+    PoolDeckCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    PoolDeckWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        deck:
+          type: integer
+        text:
+          type: string
+          maxLength: 20000
     Prices:
       type: object
       description: Price per copy for each finish, in the viewer's currency. Null
@@ -5252,6 +5798,18 @@ components:
       - set_code
       - set_name
       - type_line
+    ProfileEnum:
+      enum:
+      - Default
+      - Cautious
+      - Reckless
+      - Experimental
+      type: string
+      description: |-
+        * `Default` - Default
+        * `Cautious` - Cautious
+        * `Reckless` - Reckless
+        * `Experimental` - Experimental
     PublicBinder:
       type: object
       properties:
@@ -5538,6 +6096,34 @@ components:
       - total_quantity
       - total_value
       - total_values
+    QueueEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        deck:
+          type: integer
+        deck_name:
+          type: string
+        user:
+          type: string
+        mine:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/SimRunStatusEnum'
+        played:
+          type: integer
+        games:
+          type: integer
+      required:
+      - deck
+      - deck_name
+      - games
+      - id
+      - mine
+      - played
+      - status
+      - user
     RarityEnum:
       enum:
       - common
@@ -5575,6 +6161,228 @@ components:
       - email
       - password
       - username
+    Replay:
+      type: object
+      properties:
+        run:
+          $ref: '#/components/schemas/Run'
+        number:
+          type: integer
+        status:
+          type: string
+        turn:
+          type: integer
+        winner_seat:
+          type: integer
+          nullable: true
+        winner_turn:
+          type: integer
+          nullable: true
+        seat_order:
+          type: array
+          items:
+            type: integer
+        error:
+          type: string
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplayPlayer'
+        turns:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplayTurn'
+        boards:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/BoardSeat'
+        cards:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/CardImage'
+        log:
+          type: array
+          items:
+            type: string
+      required:
+      - boards
+      - cards
+      - error
+      - log
+      - number
+      - players
+      - run
+      - seat_order
+      - status
+      - turn
+      - turns
+      - winner_seat
+      - winner_turn
+    ReplayEvent:
+      type: object
+      properties:
+        type:
+          type: string
+        text:
+          type: string
+        board:
+          type: integer
+      required:
+      - board
+      - text
+      - type
+    ReplayPlayer:
+      type: object
+      properties:
+        seat:
+          type: integer
+        label:
+          type: string
+        owner:
+          type: string
+        profile:
+          type: string
+        commanders:
+          type: array
+          items:
+            type: string
+        lost_on:
+          type: integer
+          nullable: true
+      required:
+      - commanders
+      - label
+      - lost_on
+      - owner
+      - profile
+      - seat
+    ReplayTurn:
+      type: object
+      properties:
+        number:
+          type: integer
+        active:
+          type: integer
+          nullable: true
+        own_turn:
+          type: integer
+          nullable: true
+        board:
+          type: integer
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplayEvent'
+      required:
+      - active
+      - board
+      - events
+      - number
+      - own_turn
+    RowEnum:
+      enum:
+      - creature
+      - land
+      - other
+      type: string
+      description: |-
+        * `creature` - creature
+        * `land` - land
+        * `other` - other
+    Run:
+      type: object
+      properties:
+        id:
+          type: integer
+        deck:
+          type: integer
+        deck_name:
+          type: string
+        user:
+          type: string
+        mine:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/SimRunStatusEnum'
+        cancelling:
+          type: boolean
+        games:
+          type: integer
+        minutes:
+          type: integer
+        seat_mode:
+          $ref: '#/components/schemas/SeatModeEnum'
+        played:
+          type: integer
+        error:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/Seat'
+        stats:
+          $ref: '#/components/schemas/RunStats'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+      required:
+      - cancelling
+      - created_at
+      - deck
+      - deck_name
+      - error
+      - finished_at
+      - games
+      - id
+      - mine
+      - minutes
+      - played
+      - results
+      - seat_mode
+      - seats
+      - started_at
+      - stats
+      - status
+      - user
+    RunStats:
+      type: object
+      properties:
+        finished:
+          type: integer
+        wins:
+          type: integer
+        win_rate:
+          type: number
+          format: double
+          nullable: true
+        avg_win_turn:
+          type: number
+          format: double
+          nullable: true
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeatStats'
+      required:
+      - avg_win_turn
+      - finished
+      - seats
+      - win_rate
+      - wins
     SaltyCard:
       type: object
       properties:
@@ -5586,6 +6394,21 @@ components:
       required:
       - name
       - salt
+    SaveSwaps:
+      type: object
+      properties:
+        deck:
+          type: integer
+          nullable: true
+        pool:
+          type: integer
+          nullable: true
+        swaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Swap'
+      required:
+      - swaps
     ScanRequest:
       type: object
       properties:
@@ -5820,6 +6643,107 @@ components:
           description: Absolute folder of bundles on the server
       required:
       - kind
+    Seat:
+      type: object
+      properties:
+        index:
+          type: integer
+        label:
+          type: string
+        owner:
+          type: string
+        source:
+          type: string
+        source_id:
+          type: integer
+          nullable: true
+        profile:
+          type: string
+        commanders:
+          type: array
+          items:
+            type: string
+        image:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardRow'
+      required:
+      - cards
+      - commanders
+      - image
+      - index
+      - label
+      - owner
+      - profile
+      - source
+      - source_id
+    SeatCheck:
+      type: object
+      properties:
+        index:
+          type: integer
+        label:
+          type: string
+        source:
+          type: string
+        id:
+          type: integer
+        unsupported:
+          type: array
+          items:
+            $ref: '#/components/schemas/UnsupportedCard'
+      required:
+      - id
+      - index
+      - label
+      - source
+      - unsupported
+    SeatModeEnum:
+      enum:
+      - rotate
+      - random
+      - fixed
+      type: string
+      description: |-
+        * `rotate` - Rotate
+        * `random` - Random
+        * `fixed` - Fixed
+    SeatSpec:
+      type: object
+      properties:
+        deck:
+          type: integer
+          nullable: true
+        pool:
+          type: integer
+          nullable: true
+        profile:
+          allOf:
+          - $ref: '#/components/schemas/ProfileEnum'
+          default: Default
+    SeatStats:
+      type: object
+      properties:
+        index:
+          type: integer
+        wins:
+          type: integer
+        draws:
+          type: integer
+        avg_win_turn:
+          type: number
+          format: double
+          nullable: true
+        went_first:
+          type: integer
+      required:
+      - avg_win_turn
+      - draws
+      - index
+      - went_first
+      - wins
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions
@@ -5847,6 +6771,30 @@ components:
       required:
       - code
       - name
+    SimGameStatusEnum:
+      enum:
+      - won
+      - draw
+      - failed
+      type: string
+      description: |-
+        * `won` - Won
+        * `draw` - Draw
+        * `failed` - Failed
+    SimRunStatusEnum:
+      enum:
+      - queued
+      - playing
+      - done
+      - cancelled
+      - failed
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `playing` - Playing
+        * `done` - Done
+        * `cancelled` - Cancelled
+        * `failed` - Failed
     SortEnum:
       enum:
       - name
@@ -5877,6 +6825,35 @@ components:
         * `click` - click
         * `ding` - ding
         * `big_ding` - big_ding
+    SourceEnum:
+      enum:
+      - deck
+      - pool
+      type: string
+      description: |-
+        * `deck` - deck
+        * `pool` - pool
+    StartRun:
+      type: object
+      properties:
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeatSpec'
+        games:
+          type: integer
+          minimum: 1
+          default: 10
+        minutes:
+          type: integer
+          minimum: 1
+          default: 5
+        seat_mode:
+          allOf:
+          - $ref: '#/components/schemas/SeatModeEnum'
+          default: rotate
+      required:
+      - seats
     Stats:
       type: object
       properties:
@@ -5906,6 +6883,41 @@ components:
       - types
       - value
       - values
+    Status:
+      type: object
+      properties:
+        available:
+          type: boolean
+        version:
+          type: string
+      required:
+      - available
+      - version
+    Suggestion:
+      type: object
+      properties:
+        name:
+          type: string
+        image_small:
+          type: string
+        image_normal:
+          type: string
+      required:
+      - image_normal
+      - image_small
+      - name
+    Swap:
+      type: object
+      properties:
+        to:
+          type: string
+          maxLength: 300
+        from:
+          type: string
+          maxLength: 300
+      required:
+      - from
+      - to
     SwapProposal:
       type: object
       properties:
@@ -6082,6 +7094,17 @@ components:
       required:
       - count
       - item
+    UnsupportedCard:
+      type: object
+      properties:
+        name:
+          type: string
+        swap:
+          type: string
+          nullable: true
+      required:
+      - name
+      - swap
     ValueSplit:
       type: object
       properties:

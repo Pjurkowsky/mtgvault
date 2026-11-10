@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'scanner',
     'decks',
     'wants',
+    'sims',
 ]
 
 MIDDLEWARE = [
@@ -234,6 +235,8 @@ SPECTACULAR_SETTINGS = {
         'FormatEnum': 'decks.models.Deck.Format',
         'WantFinishEnum': 'wants.models.FINISH_CHOICES',
         'ScannerSourceKindEnum': 'scanner.models.ScannerSource.KINDS',
+        'SimRunStatusEnum': 'sims.models.SimRun.Status',
+        'SimGameStatusEnum': 'sims.models.SimGame.Status',
     },
 }
 
@@ -247,6 +250,11 @@ EDHREC_FIXTURE_DIR = env('EDHREC_FIXTURE_DIR', default='')
 CACHES = {'default': {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL}}
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_TIMEZONE = 'UTC'
+
+# Pod simulation (spec 024): the Forge service; empty turns Simulate off.
+FORGE_URL = env('FORGE_URL', default='')
+SIMS_POLL_SECONDS = env.float('SIMS_POLL_SECONDS', default=1.0)
+SIMS_IDLE_SECONDS = env.float('SIMS_IDLE_SECONDS', default=2.0)
 CELERY_BEAT_SCHEDULE = {
     # NBP publishes around noon Warsaw time; Scryfall refreshes prices daily.
     'sync-cards-daily': {'task': 'cards.tasks.sync_cards', 'schedule': crontab(hour=13, minute=0)},

@@ -4,12 +4,12 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Forge
 
-- [ ] **T1 Forge image and HTTP wrapper; real game logs recorded as fixtures; AI profile per seat checked** (AC-2, AC-5)
-- [ ] **T2 sims models, precons into the pool, support check, fake Forge for tests** (AC-8, AC-11)
+- [x] **T1 Forge image, MTG Vault runner and HTTP API; real games recorded as fixtures** (AC-2, AC-5, AC-6, AC-28)
+- [x] **T2 sims models, precons into the pool, support check, fake Forge for tests** (AC-8, AC-11)
 
 ## Runs
 
-- [ ] **T3 Start a run, forge queue worker, seat orders, cancel, delete, API** (AC-6, AC-7, AC-14 to AC-18, AC-22)
+- [x] **T3 Start a run, run_sims worker, seat orders, cancel, delete, API** (AC-6, AC-7, AC-14 to AC-18, AC-22)
 
 ## Simulate tab
 
@@ -24,5 +24,5 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Finish
 
-- [ ] **T9 Compose and dev services, forge worker in the image, forge image in CI; check with the real image** (AC-2)
+- [ ] **T9 Compose and dev services, run_sims in the image, forge image in CI; check with the real image** (AC-2)
 - [ ] **T10 Full suite (2 workers), READMEs, spec status**
