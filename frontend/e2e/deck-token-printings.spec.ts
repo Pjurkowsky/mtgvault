@@ -14,7 +14,7 @@ test.describe('Deck token printings', () => {
     for (const layout of ['text', 'list']) {
       await page.goto(`/decks/${deck.id}?layout=${layout}`)
       const row = tokens(page).getByTestId('token-row')
-      await expect(row).toHaveText(/Treasure\s*Token Artifact — Treasure/)
+      await expect(row).toHaveText('Treasure') // spec 023, AC-3: the name only
       await expect(tokens(page).locator('img')).toHaveCount(0)
     }
     const row = tokens(page).getByRole('button', { name: 'Treasure' })

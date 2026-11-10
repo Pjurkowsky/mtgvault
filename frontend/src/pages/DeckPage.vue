@@ -119,8 +119,10 @@ const filter = computed(() => filterFromQuery(route.query))
 const shown = computed(() => deck.value?.cards.filter((c) => matches(c, filter.value)) ?? [])
 // The commander shows in the side column, never in the groups, whatever the filters (spec 021, AC-5, AC-6).
 const commanders = computed(() => deck.value?.cards.filter((c) => c.zone === 'commander') ?? [])
-const viewCards = computed(() => shown.value.filter((c) => c.zone !== 'commander'))
-const sideColumn = computed(() => commanders.value.length > 0 || layout.value === 'list')
+// List view lists the commander as a group; the side column then shows only the preview (spec 023, AC-4).
+const viewCards = computed(() => (layout.value === 'list' ? shown.value : shown.value.filter((c) => c.zone !== 'commander')))
+const showcase = computed(() => layout.value !== 'list' && commanders.value.length > 0)
+const sideColumn = computed(() => showcase.value || layout.value === 'list')
 // List view: the pointed card if still shown, else the first one (spec 011 AC-1, spec 021 AC-7).
 const pointed = ref<DeckCard | null>(null)
 const preview = computed(() =>
@@ -339,7 +341,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
         <div :class="sideColumn ? 'grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]' : 'grid'">
           <aside v-if="sideColumn" class="grid content-start gap-4 lg:sticky lg:top-4 lg:self-start" data-testid="deck-side">
             <DeckCommander
-              v-if="commanders.length" :cards="commanders" :editable="isOwner"
+              v-if="showcase" :cards="commanders" :editable="isOwner"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
             />
             <img
@@ -351,17 +353,24 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
             <DeckText
               v-if="viewCards.length && layout === 'text'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
-            />
+            >
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+            </DeckText>
             <DeckList
               v-else-if="viewCards.length && layout === 'list'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
               :editable="isOwner" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard" @point="pointed = $event"
-            />
+            >
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+            </DeckList>
             <DeckVisual
               v-else-if="viewCards.length" :cards="viewCards" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
-            />
+            >
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+            </DeckVisual>
             <p v-else-if="deck.cards.length > commanders.length || !commanders.length" class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
-            <DeckTokens :deck="deck" :cards="shown" :layout="layout" :editable="isOwner" @changed="changed" />
+            <!-- A deck of only the commander still lists its tokens -->
+            <DeckTokens v-if="!viewCards.length" :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" />
           </div>
         </div>
       </TabsContent>

@@ -12,7 +12,8 @@ test.describe('Deck commander', () => {
     const showcase = page.getByTestId('deck-commander')
     const piper = showcase.getByRole('button', { name: 'The Prismatic Piper' })
 
-    for (const layout of ['text', 'list', 'visual']) {
+    // Spec 023, AC-4: List view lists the commander as a group instead.
+    for (const layout of ['text', 'visual']) {
       await page.goto(`/decks/${deck.id}?layout=${layout}`)
       await expect(piper).toBeVisible()
       await expect(page.getByTestId('group-commander')).toHaveCount(0)
@@ -51,7 +52,7 @@ test.describe('Deck commander', () => {
     expect(side.y + side.height).toBeLessThanOrEqual(text.y)
   })
 
-  test('AC-7: List view previews below the commander; without one, only List view has the column', async ({ page, request }) => {
+  test('AC-7: List view previews in the side column; without a commander, only List view has the column', async ({ page, request }) => {
     await page.setViewportSize({ width: 1400, height: 1000 })
     const { api } = await signUpAndLogIn(page, request)
     const deck = await api.deck('Piper', 'commander', { text: LIST })
@@ -59,7 +60,7 @@ test.describe('Deck commander', () => {
     await deckRow(page, 'Shivan Dragon').hover()
     const preview = page.getByTestId('deck-preview')
     await expect(preview).toHaveAttribute('alt', 'Shivan Dragon')
-    expect((await preview.boundingBox())!.y).toBeGreaterThan((await page.getByTestId('deck-commander').boundingBox())!.y)
+    await expect(page.getByTestId('deck-commander')).toHaveCount(0) // spec 023, AC-4: only the preview
     await expect(page.getByTestId('deck-list').getByAltText('Shivan Dragon')).toHaveCount(0) // no image column inside the list
 
     const plain = await api.deck('Plain', 'casual', { text: 'Deck\n1 Lightning Bolt\n1 Sol Ring' })

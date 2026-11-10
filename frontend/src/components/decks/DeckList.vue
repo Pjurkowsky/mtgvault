@@ -40,5 +40,7 @@ const groups = computed(() => groupDeck(props.cards, props.groupBy, props.sortBy
         </li>
       </ul>
     </section>
+    <!-- Tokens, after Maybeboard (spec 023, AC-3) -->
+    <slot name="after" />
   </div>
 </template>

@@ -5,14 +5,15 @@ import CardPreview from '@/components/CardPreview.vue'
 import type { DeckCard, DeckDetail } from '@/lib/decks'
 import type { Layout } from './DeckToolbar.vue'
 import TokenDialog from './TokenDialog.vue'
-import TokenTiles from './TokenTiles.vue'
+import { GRID_COLUMNS, type CardSize } from '@/lib/cards'
+import { cn } from '@/lib/utils'
 
 /**
  * Tokens made by the cards shown (search and filters narrow it), one per kind (spec 015,
- * AC-2 to AC-4): text rows in Text and List views, tiles in Images (spec 021, AC-8).
- * Display only: counts toward nothing.
+ * AC-2 to AC-4). A group after Maybeboard, styled like the view's other groups, rows
+ * with just the name (spec 023, AC-3). Display only: counts toward nothing.
  */
-const props = defineProps<{ deck: DeckDetail; cards: DeckCard[]; layout: Layout; editable: boolean }>()
+const props = defineProps<{ deck: DeckDetail; cards: DeckCard[]; layout: Layout; editable: boolean; size?: CardSize }>()
 const emit = defineEmits<{ changed: [deck: DeckDetail] }>()
 
 const shown = computed(() => {
@@ -27,15 +28,35 @@ const show = (t: Schemas['Token']) => (openKind.value = (t as Schemas['DeckToken
 </script>
 
 <template>
-  <section v-if="shown.length" class="grid gap-2" data-testid="deck-tokens">
-    <h3 class="text-sm font-semibold">Tokens <span class="font-normal text-muted-foreground">({{ shown.length }})</span></h3>
-    <TokenTiles v-if="layout === 'visual'" :tokens="shown" openable @open="show" />
-    <ul v-else class="columns-1 gap-6 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
-      <li v-for="t in shown" :key="t.kind" class="break-inside-avoid" data-testid="token">
+  <section
+    v-if="shown.length" :class="layout === 'visual' ? '' : layout === 'list' ? 'mb-5 break-inside-avoid' : 'mb-4 break-inside-avoid'"
+    data-testid="deck-tokens"
+  >
+    <h3
+      :class="cn('flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold', layout === 'visual' ? 'mb-2' : layout === 'list' ? 'mb-1 border-b pb-1' : 'mb-1')"
+      data-testid="group-tokens"
+    >
+      Tokens <span class="font-normal text-muted-foreground">({{ shown.length }})</span>
+    </h3>
+    <ul v-if="layout === 'visual'" :class="cn('grid gap-3', GRID_COLUMNS[size ?? 'md'])">
+      <li v-for="t in shown" :key="t.kind" data-testid="token">
         <CardPreview :image="t.image_normal" :name="t.name">
-          <button type="button" class="flex w-full items-center gap-1.5 rounded px-1 text-left text-sm leading-6 hover:bg-muted" :aria-label="t.name" data-testid="token-row" @click="show(t)">
-            <span class="min-w-0 truncate">{{ t.name }}</span>
-            <span class="min-w-0 flex-1 truncate text-xs text-muted-foreground">{{ t.type_line }}</span>
+          <button type="button" :aria-label="t.name" class="block w-full" @click="show(t)">
+            <img v-if="t.image_normal" :src="size === 'sm' ? t.image_small : t.image_normal" :alt="t.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
+            <span v-else class="flex aspect-[488/680] items-center rounded-md bg-muted p-2 text-xs">{{ t.name }}</span>
+          </button>
+        </CardPreview>
+      </li>
+    </ul>
+    <ul v-else>
+      <li v-for="t in shown" :key="t.kind" data-testid="token">
+        <CardPreview :image="t.image_normal" :name="t.name">
+          <button
+            type="button" :class="cn('flex w-full items-center gap-1.5 rounded px-1 text-left text-sm hover:bg-muted', layout === 'list' ? 'py-0.5' : 'leading-6')"
+            :aria-label="t.name" data-testid="token-row" @click="show(t)"
+          >
+            <span class="w-5 shrink-0" />
+            <span class="min-w-0 flex-1 truncate">{{ t.name }}</span>
           </button>
         </CardPreview>
       </li>

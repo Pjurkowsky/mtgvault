@@ -9,8 +9,8 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Deck page
 
-- [ ] **T3 Toolbar block and keys tooltip** (AC-1, AC-2)
-- [ ] **T4 Tokens group, List view commander group; ui-polish.spec.ts** (AC-3, AC-4)
+- [x] **T3 Toolbar block and keys tooltip** (AC-1, AC-2)
+- [x] **T4 Tokens group, List view commander group; ui-polish.spec.ts** (AC-3, AC-4)
 
 ## Tiles and binder
 

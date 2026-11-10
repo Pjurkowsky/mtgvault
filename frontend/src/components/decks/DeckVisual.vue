@@ -38,5 +38,7 @@ const state = (card: DeckCard) => OWN_STATES[card.ownership.state as OwnState]
         </li>
       </ul>
     </section>
+    <!-- Tokens, after Maybeboard (spec 023, AC-3) -->
+    <slot name="after" />
   </div>
 </template>

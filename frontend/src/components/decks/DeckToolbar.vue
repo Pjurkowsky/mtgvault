@@ -2,7 +2,6 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { LayoutGridIcon, ListIcon, RowsIcon, SearchIcon } from '@lucide/vue'
 import CardSizeToggle from '@/components/CardSizeToggle.vue'
-import InfoTip from '@/components/InfoTip.vue'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -44,16 +43,24 @@ function onSearchKey(event: KeyboardEvent) {
 onMounted(() => window.addEventListener('keydown', onKey))
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
+// Open on hover (the tooltip's own state) or while the input has focus.
+const hoverTip = ref(false)
+const focused = ref(false)
 const KEYS = '/ focuses the search, Escape clears it. Arrow keys move between cards; Enter opens one.'
 </script>
 
 <template>
   <div class="flex flex-wrap items-center gap-2" data-testid="deck-toolbar">
-    <div class="relative w-full sm:w-60">
-      <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input ref="search" v-model="query" type="search" placeholder="Search cards" aria-label="Search deck" class="pl-8" @keydown="onSearchKey" />
-    </div>
-    <InfoTip :text="KEYS" />
+    <!-- The keys help sits on the search box itself (spec 023, AC-2). -->
+    <Tooltip :open="hoverTip || focused" @update:open="hoverTip = $event">
+      <TooltipTrigger as-child>
+        <div class="relative w-full sm:w-60" data-testid="deck-search" @focusin="focused = true" @focusout="focused = false">
+          <SearchIcon class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input ref="search" v-model="query" type="search" placeholder="Search cards" aria-label="Search deck" :aria-description="KEYS" class="pl-8" @keydown="onSearchKey" />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent class="max-w-64" data-testid="search-keys">{{ KEYS }}</TooltipContent>
+    </Tooltip>
     <DeckFilterPopover :cards="cards" :filter="filter" @update="(p) => emit('filter', p)" @clear="emit('clear')" />
     <Select :model-value="groupBy" @update:model-value="(v) => emit('option', 'group', String(v))">
       <SelectTrigger class="w-40" aria-label="Group by"><SelectValue /></SelectTrigger>
@@ -72,7 +79,8 @@ const KEYS = '/ focuses the search, Escape clears it. Arrow keys move between ca
         <SelectItem value="price">Price</SelectItem>
       </SelectContent>
     </Select>
-    <div class="ml-auto flex gap-2">
+    <!-- With the rest, not pushed to the right edge (spec 023, AC-1). -->
+    <div class="flex gap-2">
       <CardSizeToggle v-if="layout === 'visual'" :model-value="size" @update:model-value="(v) => emit('option', 'size', v)" />
       <ToggleGroup type="single" variant="outline" :model-value="layout" @update:model-value="(v) => v && emit('option', 'layout', String(v))">
         <Tooltip>
