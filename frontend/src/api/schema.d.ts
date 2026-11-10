@@ -274,7 +274,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Spec 005, AC-11: the candidate goes in, the old card becomes its candidate. */
+        /** @description Spec 005 AC-11, spec 021 AC-17: one copy goes in, that copy of the old card becomes its candidate. */
         post: operations["decks_cards_apply_swap_create"];
         delete?: never;
         options?: never;
@@ -311,6 +311,23 @@ export interface paths {
         /** @description Spec 005, AC-9: a Maybeboard candidate to replace this card. */
         post: operations["decks_cards_swaps_create"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/cards/{card_id}/swaps/{out_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Spec 021, AC-16: drop a pair; the cards stay. */
+        delete: operations["decks_cards_swaps_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -408,6 +425,23 @@ export interface paths {
         put?: never;
         /** @description Cheapest printings for the cards this deck lacks (spec 013). */
         post: operations["decks_optimize_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/swaps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Spec 021, AC-14: propose a swap between a deck card and a Maybeboard or new card. */
+        post: operations["decks_swaps_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1100,6 +1134,10 @@ export interface components {
             /** @description Distinct cards added */
             cards: number;
         };
+        ApplySwap: {
+            /** @description The deck card it replaces */
+            out: number;
+        };
         /** @description Body returned by register and login. The refresh token goes in a cookie. */
         AuthResponse: {
             access: string;
@@ -1329,8 +1367,8 @@ export interface components {
             price: number | null;
             prices: components["schemas"]["Money"];
             ownership: components["schemas"]["Ownership"];
-            /** @description Deck card this Maybeboard card could replace */
-            swap_for: number | null;
+            /** @description Deck cards this Maybeboard card could replace (spec 021, AC-13) */
+            swap_for: number[];
             /** @description Your names for the card; the first is primary */
             categories: string[];
         };
@@ -1917,6 +1955,18 @@ export interface components {
          * @enum {string}
          */
         OwnershipStateEnum: "in_box" | "owned" | "other_decks" | "missing";
+        /** @description Spec 021, AC-14: a deck card out, and a Maybeboard card or a new card in. */
+        Pair: {
+            /** @description Deck card to replace */
+            out: number;
+            /** @description A Maybeboard card of this deck */
+            card?: number;
+            /**
+             * Format: uuid
+             * @description Or a card to add to the Maybeboard
+             */
+            printing?: string;
+        };
         PasswordChange: {
             current_password: string;
             new_password: string;
@@ -3001,7 +3051,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplySwap"];
+                "application/x-www-form-urlencoded": components["schemas"]["ApplySwap"];
+                "multipart/form-data": components["schemas"]["ApplySwap"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -3066,6 +3122,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DeckDetail"];
                 };
+            };
+        };
+    };
+    decks_cards_swaps_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                card_id: number;
+                id: number;
+                out_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3253,6 +3331,33 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_swaps_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Pair"];
+                "application/x-www-form-urlencoded": components["schemas"]["Pair"];
+                "multipart/form-data": components["schemas"]["Pair"];
+            };
+        };
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

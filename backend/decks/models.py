@@ -45,8 +45,8 @@ class DeckCard(models.Model):
     oracle_id = models.UUIDField(db_index=True)
     zone = models.CharField(max_length=10, choices=Zone.choices, default=Zone.MAIN)
     quantity = models.PositiveSmallIntegerField(default=1)
-    # A Maybeboard card proposed to replace another card of the deck (spec 005, AC-9).
-    swap_for = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='candidates')
+    # Deck cards this Maybeboard card is proposed to replace (spec 005 AC-9, spec 021 AC-13).
+    swaps_for = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='candidates')
     # Your own names for the card in this deck; the first is the primary one (spec 006, AC-12).
     categories = ArrayField(models.CharField(max_length=40), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

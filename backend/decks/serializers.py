@@ -58,7 +58,7 @@ class DeckCardSerializer(serializers.Serializer):
     price = serializers.DecimalField(**MONEY)
     prices = MoneySerializer()
     ownership = OwnershipSerializer()
-    swap_for = serializers.IntegerField(allow_null=True, help_text='Deck card this Maybeboard card could replace')
+    swap_for = serializers.ListField(child=serializers.IntegerField(), help_text='Deck cards this Maybeboard card could replace (spec 021, AC-13)')
     categories = serializers.ListField(child=serializers.CharField(), help_text='Your names for the card; the first is primary')
 
 
@@ -178,6 +178,24 @@ class NewCopySerializer(serializers.Serializer):
 
 class SwapProposalSerializer(serializers.Serializer):
     printing = serializers.PrimaryKeyRelatedField(queryset=Printing.objects.all(), help_text='The card to propose')
+
+
+class PairSerializer(serializers.Serializer):
+    """Spec 021, AC-14: a deck card out, and a Maybeboard card or a new card in."""
+
+    out = serializers.IntegerField(help_text='Deck card to replace')
+    card = serializers.IntegerField(required=False, help_text='A Maybeboard card of this deck')
+    printing = serializers.PrimaryKeyRelatedField(queryset=Printing.objects.all(), required=False,
+                                                  help_text='Or a card to add to the Maybeboard')
+
+    def validate(self, data):
+        if ('card' in data) == ('printing' in data):
+            raise serializers.ValidationError({'detail': 'Give a card or a printing.'})
+        return data
+
+
+class ApplySwapSerializer(serializers.Serializer):
+    out = serializers.IntegerField(help_text='The deck card it replaces')
 
 
 class MarkOwnedSerializer(serializers.Serializer):

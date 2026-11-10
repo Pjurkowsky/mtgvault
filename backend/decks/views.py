@@ -44,6 +44,8 @@ from .serializers import (
     OptimizeApplySerializer,
     OptimizePreviewSerializer,
     SwapProposalSerializer,
+    ApplySwapSerializer,
+    PairSerializer,
 )
 
 PAGE_DEFAULT, PAGE_MAX = 60, 200
@@ -54,7 +56,7 @@ def preferred_finish(printing) -> str:
 
 
 def deck_cards(deck):
-    return list(deck.cards.select_related('printing__set').order_by('printing__name'))
+    return list(deck.cards.select_related('printing__set').prefetch_related('swaps_for').order_by('printing__name'))
 
 
 def build(deck, ctx, detail=True, public=False) -> dict:
@@ -95,7 +97,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'price': price(c.printing, finish, ctx['currency'], ctx['rates']),
             'prices': prices_in_all(c.printing, finish, ctx['rates']),
             'ownership': ownership,
-            'swap_for': c.swap_for_id,
+            'swap_for': sorted(o.id for o in c.swaps_for.all()),
             'categories': c.categories,
         })
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
@@ -270,12 +272,48 @@ class ProposeSwapView(APIView):
 
 
 class ApplySwapView(APIView):
-    """Spec 005, AC-11: the candidate goes in, the old card becomes its candidate."""
+    """Spec 005 AC-11, spec 021 AC-17: one copy goes in, that copy of the old card becomes its candidate."""
 
-    @extend_schema(request=None, responses=DeckDetailSerializer)
+    @extend_schema(request=ApplySwapSerializer, responses=DeckDetailSerializer)
     def post(self, request, pk, card_id):
         deck = own_deck(request, pk)
-        services.apply_swap(get_object_or_404(DeckCard.objects.select_related('swap_for'), pk=card_id, deck=deck))
+        data = ApplySwapSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        candidate = get_object_or_404(DeckCard.objects.select_related('printing'), pk=card_id, deck=deck)
+        services.apply_swap(candidate, get_object_or_404(DeckCard, pk=data.validated_data['out'], deck=deck))
+        return detail_response(request, deck)
+
+
+class PairsView(APIView):
+    """Spec 021, AC-14: propose a swap between a deck card and a Maybeboard or new card."""
+
+    @extend_schema(request=PairSerializer, responses={201: DeckDetailSerializer})
+    def post(self, request, pk):
+        deck = own_deck(request, pk)
+        data = PairSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        out = get_object_or_404(DeckCard, pk=d['out'], deck=deck)
+        with transaction.atomic():
+            if 'card' in d:
+                candidate = get_object_or_404(DeckCard, pk=d['card'], deck=deck)
+            else:
+                if d['printing'].oracle_id == out.oracle_id:
+                    raise ValidationError({'printing': ['Pick a different card.']})
+                candidate = services.maybe_card(deck, d['printing'])
+            if not services.add_pair(out, candidate):
+                raise ValidationError({'detail': 'Already proposed.'})
+        return detail_response(request, deck, status.HTTP_201_CREATED)
+
+
+class UnpairView(APIView):
+    """Spec 021, AC-16: drop a pair; the cards stay."""
+
+    @extend_schema(request=None, responses=DeckDetailSerializer)
+    def delete(self, request, pk, card_id, out_id):
+        deck = own_deck(request, pk)
+        candidate = get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        services.unpair(candidate, get_object_or_404(DeckCard, pk=out_id, deck=deck))
         return detail_response(request, deck)
 
 

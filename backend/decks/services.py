@@ -128,27 +128,49 @@ def category_suggestions(user) -> list[str]:
 
 @transaction.atomic
 def move_zone(card: DeckCard, zone: str) -> DeckCard:
-    """Move a card to another zone, merging with that card's entry there. Keeps swap links
-    pointing at the card; a card leaving the Maybeboard stops being a candidate (spec 005, AC-12)."""
+    """Move a card to another zone, merging with that card's entry there. Pairs follow the
+    card. A card going into the Maybeboard replaces nothing, so its own candidates are dropped
+    (spec 005 AC-12); a candidate leaving the Maybeboard keeps its pairs (spec 021, AC-18)."""
     if zone == card.zone:
         return card
     check_zone(card.deck, zone)
     target = DeckCard.objects.select_for_update().filter(deck=card.deck, oracle_id=card.oracle_id, zone=zone).first()
     if target is None:
         card.zone = zone
-        if zone != DeckCard.Zone.MAYBE:
-            card.swap_for = None
-        card.save(update_fields=['zone', 'swap_for'])
+        card.save(update_fields=['zone'])
         if zone == DeckCard.Zone.MAYBE:
-            card.candidates.update(swap_for=None)  # a Maybeboard card replaces nothing
+            card.candidates.clear()
         return card
     target.quantity = min(target.quantity + card.quantity, MAX_QUANTITY)
     target.categories = merge_categories(target.categories, card.categories)
     target.save(update_fields=['quantity', 'categories'])
     if zone != DeckCard.Zone.MAYBE:
-        card.candidates.update(swap_for=target)
+        target.candidates.add(*card.candidates.all())
+    target.swaps_for.add(*card.swaps_for.all())
     card.delete()
     return target
+
+
+def maybe_card(deck: Deck, printing) -> DeckCard:
+    """The deck's Maybeboard entry for this card, added at `printing` if it has none."""
+    card = DeckCard.objects.filter(deck=deck, oracle_id=printing.oracle_id, zone=DeckCard.Zone.MAYBE).first()
+    return card or DeckCard.objects.create(deck=deck, printing=printing, oracle_id=printing.oracle_id,
+                                           zone=DeckCard.Zone.MAYBE, quantity=1)
+
+
+def add_pair(out: DeckCard, candidate: DeckCard) -> bool:
+    """Propose `candidate` (a Maybeboard card) to replace `out`; False if already proposed
+    (spec 021, AC-13, AC-14)."""
+    if out.zone == DeckCard.Zone.MAYBE:
+        raise ValidationError({'detail': 'Maybeboard cards cannot be swapped out.'})
+    if candidate.zone != DeckCard.Zone.MAYBE:
+        raise ValidationError({'detail': 'Pick a Maybeboard card or a new card.'})
+    if out.oracle_id == candidate.oracle_id:
+        raise ValidationError({'printing': ['Pick a different card.']})
+    if candidate.swaps_for.filter(pk=out.pk).exists():
+        return False
+    candidate.swaps_for.add(out)
+    return True
 
 
 @transaction.atomic
@@ -158,34 +180,53 @@ def propose_swap(card: DeckCard, printing) -> DeckCard:
         raise ValidationError({'detail': 'Maybeboard cards cannot be swapped out.'})
     if printing.oracle_id == card.oracle_id:
         raise ValidationError({'printing': ['Pick a different card.']})
-    candidate = DeckCard.objects.filter(deck=card.deck, oracle_id=printing.oracle_id, zone=DeckCard.Zone.MAYBE).first()
-    if candidate is None:
-        candidate = DeckCard.objects.create(deck=card.deck, printing=printing, oracle_id=printing.oracle_id,
-                                            zone=DeckCard.Zone.MAYBE, quantity=1)
-    candidate.swap_for = card
-    candidate.save(update_fields=['swap_for'])
+    candidate = maybe_card(card.deck, printing)
+    add_pair(card, candidate)
     return candidate
 
 
+def _one_copy_into(card: DeckCard, zone: str) -> DeckCard:
+    """Split one copy of `card` off into `zone`, merging with its entry there."""
+    card.quantity -= 1
+    card.save(update_fields=['quantity'])
+    target, created = DeckCard.objects.get_or_create(
+        deck=card.deck, oracle_id=card.oracle_id, zone=zone,
+        defaults={'printing': card.printing, 'quantity': 1, 'categories': card.categories},
+    )
+    if not created:
+        target.quantity = min(target.quantity + 1, MAX_QUANTITY)
+        target.save(update_fields=['quantity'])
+    return target
+
+
 @transaction.atomic
-def apply_swap(candidate: DeckCard) -> DeckCard:
-    """The candidate takes the old card's zone and quantity; the old card becomes a
-    Maybeboard candidate for it, so the swap can be undone (spec 005, AC-11)."""
-    old = candidate.swap_for
-    if candidate.zone != DeckCard.Zone.MAYBE or old is None:
+def apply_swap(candidate: DeckCard, out: DeckCard) -> DeckCard:
+    """One copy of the candidate takes one copy of `out`'s place. That copy of `out` goes to the
+    Maybeboard paired with the candidate, so the swap can be undone (spec 005 AC-11, spec 021 AC-17)."""
+    if not candidate.swaps_for.filter(pk=out.pk).exists():
         raise ValidationError({'detail': 'This card is not a swap candidate.'})
-    zone, quantity = old.zone, old.quantity
-    others = list(old.candidates.exclude(pk=candidate.pk).values_list('pk', flat=True))
-    # Old card out first, so the zone it leaves is free for the candidate.
-    old_card = move_zone(old, DeckCard.Zone.MAYBE)
-    candidate.quantity = quantity
-    candidate.save(update_fields=['quantity'])
-    new_card = move_zone(candidate, zone)
-    old_card.swap_for = new_card
-    old_card.save(update_fields=['swap_for'])
-    # The other candidates were alternatives for that slot: they now point at the new card.
-    DeckCard.objects.filter(pk__in=others).update(swap_for=new_card)
+    if candidate.zone != DeckCard.Zone.MAYBE:
+        raise ValidationError({'detail': f'{candidate.printing.name} is already in the deck.'})
+    zone = out.zone
+    candidate.swaps_for.remove(out)
+    if candidate.quantity > 1:
+        new_card = _one_copy_into(candidate, zone)
+    else:
+        new_card = move_zone(candidate, zone)
+    if out.quantity > 1:
+        old_card = _one_copy_into(out, DeckCard.Zone.MAYBE)
+    else:
+        # The other candidates were alternatives for that slot: they now pair with the new card.
+        new_card.candidates.add(*out.candidates.exclude(oracle_id=new_card.oracle_id))
+        old_card = move_zone(out, DeckCard.Zone.MAYBE)
+    old_card.swaps_for.add(new_card)
     return new_card
+
+
+@transaction.atomic
+def unpair(candidate: DeckCard, out: DeckCard):
+    """Drop one pair; both cards stay (spec 021, AC-16)."""
+    candidate.swaps_for.remove(out)
 
 
 COUNTED_ZONES = (DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN, DeckCard.Zone.SIDE)

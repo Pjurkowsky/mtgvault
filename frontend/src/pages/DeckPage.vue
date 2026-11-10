@@ -122,14 +122,18 @@ function editCategories(card: DeckCard) {
   openCard.value = card
   categoriesOpen.value = true
 }
+// Propose swap: a deck card fills Out, a Maybeboard card fills In (spec 021, AC-15).
 const swapOpen = ref(false)
-const swapCard = ref<DeckCard | null>(null)
-function proposeSwap(card: DeckCard) {
-  swapCard.value = card
+const swapOut = ref<DeckCard | null>(null)
+const swapIn = ref<DeckCard | null>(null)
+function openPropose(out: DeckCard | null, into: DeckCard | null) {
+  swapOut.value = out
+  swapIn.value = into
   swapOpen.value = true
 }
+const proposeSwap = (card: DeckCard) => (card.zone === 'maybe' ? openPropose(null, card) : openPropose(card, null))
 
-/** Delete from the menu (AC-7) or Remove a candidate (AC-11): the card leaves the deck. */
+/** Delete from the menu (AC-7): the card leaves the deck. */
 async function removeCard(card: DeckCard) {
   const ok = await confirm({
     title: `Remove ${card.printing.name}?`, description: `From ${deck.value!.name} (${ZONE_LABELS[card.zone as Zone]}).`, action: 'Remove',
@@ -141,10 +145,27 @@ async function removeCard(card: DeckCard) {
   changed(data)
 }
 
-async function applySwap(candidate: DeckCard) {
-  const { data } = await api.POST('/api/decks/{id}/cards/{card_id}/apply-swap/', { params: { path: { id: id.value, card_id: candidate.id } } })
+async function applySwap(candidate: DeckCard, out: DeckCard) {
+  const { data } = await api.POST('/api/decks/{id}/cards/{card_id}/apply-swap/', {
+    params: { path: { id: id.value, card_id: candidate.id } }, body: { out: out.id },
+  })
   if (!data) return toast.error('Could not apply the swap.')
   toast.success(`Swapped in ${candidate.printing.name}.`)
+  changed(data)
+}
+
+/** Drop a pair; both cards stay (spec 021, AC-16). */
+async function unpair(candidate: DeckCard, out: DeckCard) {
+  const name = candidate.printing.name
+  const ok = await confirm({
+    title: `Unpair ${name}?`, description: `${name} stays in the Maybeboard; it's no longer proposed for ${out.printing.name}.`, action: 'Unpair',
+  })
+  if (!ok) return
+  const { data } = await api.DELETE('/api/decks/{id}/cards/{card_id}/swaps/{out_id}/', {
+    params: { path: { id: id.value, card_id: candidate.id, out_id: out.id } },
+  })
+  if (!data) return toast.error('Could not unpair.')
+  toast.success(`Unpaired ${name}.`)
   changed(data)
 }
 
@@ -313,7 +334,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       </TabsContent>
 
       <TabsContent value="swaps" class="pt-2">
-        <DeckSwaps :deck="deck" :readonly="!isOwner" @open="showCard" @apply="applySwap" @remove="removeCard" />
+        <DeckSwaps :deck="deck" :readonly="!isOwner" @open="showCard" @apply="applySwap" @unpair="unpair" @propose="(into) => openPropose(null, into)" />
       </TabsContent>
 
       <TabsContent value="stats" class="grid gap-4 pt-2">
@@ -330,7 +351,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
         v-model:open="scanOpen" :deck-id="deck.id" :box-id="deck.location" :current="loadScanTarget(deck.id)"
         @confirm="scan"
       />
-      <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :card="swapCard" @changed="changed" />
+      <ProposeSwapDialog v-model:open="swapOpen" :deck="deck" :out="swapOut" :into="swapIn" @changed="changed" />
       <DeckImportDialog v-model:open="importOpen" :deck="deck" @changed="changed" />
       <ExportDialog v-model:open="exportOpen" :load="loadExport" :filename="deck.name" :options="['printings', 'categories', 'tokens']" />
       <OptimizeDialog v-model:open="optimizeOpen" :deck="deck" :changes="optimizeChanges" @changed="changed" />

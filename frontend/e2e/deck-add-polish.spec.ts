@@ -57,7 +57,7 @@ test.describe('Deck and add polish', () => {
     expect(name).toContain((await preview.getAttribute('alt'))!)
   })
 
-  test('AC-3, AC-4: mirrored swap rows end with a trash icon that confirms', async ({ page, request }) => {
+  test('AC-3, AC-4: mirrored swap rows end with an Unpair icon that confirms (spec 021, AC-16)', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const deck = await api.deck('Swaps', 'casual', { text: LIST })
     const cards = (await api.get(`/api/decks/${deck.id}/`)).cards as { id: number; printing: { id: string; name: string } }[]
@@ -72,18 +72,20 @@ test.describe('Deck and add polish', () => {
     expect(Math.abs(out!.width - inn!.width)).toBeLessThan(2)
     expect(out!.x).toBeLessThan(inn!.x)
 
-    const remove = row.getByRole('button', { name: 'Remove' })
-    await expect(remove).toHaveText('')
-    const box = await remove.boundingBox()
+    const unpair = row.getByRole('button', { name: 'Unpair' })
+    await expect(unpair).toHaveText('')
+    const box = await unpair.boundingBox()
     expect(box!.x).toBeGreaterThan(inn!.x + inn!.width - 1) // the fourth part, at the end
 
-    await remove.click()
+    await unpair.click()
     await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click()
     await expect(row).toHaveCount(1)
-    await remove.click()
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click()
-    await expect(toast(page, /Removed/)).toBeVisible()
+    await unpair.click()
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Unpair' }).click()
+    await expect(toast(page, /Unpaired/)).toBeVisible()
     await expect(row).toHaveCount(0)
+    // Spec 021, AC-16: the card stays in the Maybeboard, now unpaired.
+    await expect(page.getByTestId('unpaired-card')).toContainText('Shivan Dragon')
   })
 
   test('AC-5: the Add dialog keeps its size while searching', async ({ page, request }) => {
@@ -164,9 +166,9 @@ test.describe('Deck and add polish', () => {
     await expect(page.getByTestId('card-menu').getByRole('menuitem')).toHaveText(['Open', 'Propose swap'])
     await page.getByRole('menuitem', { name: 'Propose swap' }).click()
     await expect(toast(page, 'Rhystic Study could replace Sol Ring.')).toBeVisible()
-    const cards = (await api.get(`/api/decks/${deck.id}/`)).cards as { id: number; zone: string; swap_for: number | null; printing: { name: string } }[]
+    const cards = (await api.get(`/api/decks/${deck.id}/`)).cards as { id: number; zone: string; swap_for: number[]; printing: { name: string } }[]
     const sol = cards.find((c) => c.printing.name === 'Sol Ring')!
-    expect(cards.find((c) => c.printing.name === 'Rhystic Study')).toMatchObject({ zone: 'maybe', swap_for: sol.id })
+    expect(cards.find((c) => c.printing.name === 'Rhystic Study')).toMatchObject({ zone: 'maybe', swap_for: [sol.id] })
 
     // Open stacks the card.
     await rhystic.click({ button: 'right' })

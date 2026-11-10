@@ -453,8 +453,8 @@ paths:
   /api/decks/{id}/cards/{card_id}/apply-swap/:
     post:
       operationId: decks_cards_apply_swap_create
-      description: 'Spec 005, AC-11: the candidate goes in, the old card becomes its
-        candidate.'
+      description: 'Spec 005 AC-11, spec 021 AC-17: one copy goes in, that copy of
+        the old card becomes its candidate.'
       parameters:
       - in: path
         name: card_id
@@ -468,6 +468,18 @@ paths:
         required: true
       tags:
       - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplySwap'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ApplySwap'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ApplySwap'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -552,6 +564,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/decks/{id}/cards/{card_id}/swaps/{out_id}/:
+    delete:
+      operationId: decks_cards_swaps_destroy
+      description: 'Spec 021, AC-16: drop a pair; the cards stay.'
+      parameters:
+      - in: path
+        name: card_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: out_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/decks/{id}/delete/:
     post:
       operationId: decks_delete_create
@@ -820,6 +859,40 @@ paths:
       - jwtAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/swaps/:
+    post:
+      operationId: decks_swaps_create
+      description: 'Spec 021, AC-14: propose a swap between a deck card and a Maybeboard
+        or new card.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Pair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Pair'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
           content:
             application/json:
               schema:
@@ -2398,6 +2471,14 @@ components:
           description: Distinct cards added
       required:
       - cards
+    ApplySwap:
+      type: object
+      properties:
+        out:
+          type: integer
+          description: The deck card it replaces
+      required:
+      - out
     AuthResponse:
       type: object
       description: Body returned by register and login. The refresh token goes in
@@ -2921,9 +3002,10 @@ components:
         ownership:
           $ref: '#/components/schemas/Ownership'
         swap_for:
-          type: integer
-          nullable: true
-          description: Deck card this Maybeboard card could replace
+          type: array
+          items:
+            type: integer
+          description: Deck cards this Maybeboard card could replace (spec 021, AC-13)
         categories:
           type: array
           items:
@@ -4338,6 +4420,23 @@ components:
         * `owned` - owned
         * `other_decks` - other_decks
         * `missing` - missing
+    Pair:
+      type: object
+      description: 'Spec 021, AC-14: a deck card out, and a Maybeboard card or a new
+        card in.'
+      properties:
+        out:
+          type: integer
+          description: Deck card to replace
+        card:
+          type: integer
+          description: A Maybeboard card of this deck
+        printing:
+          type: string
+          format: uuid
+          description: Or a card to add to the Maybeboard
+      required:
+      - out
     PasswordChange:
       type: object
       properties:
