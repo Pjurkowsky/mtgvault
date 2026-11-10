@@ -20,7 +20,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Replay
 
-- [ ] **T8 Log parser and replay API, replay page, board, events, Log tab; sim-replay.spec.ts** (AC-23 to AC-28)
+- [x] **T8 Log parser and replay API, replay page, board, events, Log tab; sim-replay.spec.ts** (AC-23 to AC-28)
 
 ## Finish
 

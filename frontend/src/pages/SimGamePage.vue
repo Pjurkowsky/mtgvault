@@ -96,7 +96,7 @@ const eventsOpen = ref(false)
             <template v-else>Before the game</template>
           </span>
           <span v-if="current && current.number > 0" class="text-sm text-muted-foreground" data-testid="replay-game-turn">Game turn {{ current.number }} of {{ game.turn }}</span>
-          <Slider v-model="slider" :min="0" :max="Math.max(game.turns.length - 1, 0)" :step="1" class="min-w-40 flex-1" aria-label="Turn" />
+          <Slider v-model="slider" :min="0" :max="Math.max(game.turns.length - 1, 0)" :step="1" class="min-w-40 flex-1" label="Turn" />
           <Sheet v-model:open="eventsOpen">
             <SheetTrigger as-child>
               <Button variant="outline" class="lg:hidden"><ListIcon /> Events</Button>

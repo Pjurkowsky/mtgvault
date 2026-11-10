@@ -47,7 +47,7 @@ async function remove() {
   <article class="grid gap-4 rounded-lg border p-4" data-testid="sim-run" :data-status="run.status">
     <header class="flex flex-wrap items-center gap-2 text-sm">
       <Badge :variant="run.status === 'failed' ? 'destructive' : active(run.status) ? 'default' : 'outline'" data-testid="run-status">{{ status }}</Badge>
-      <span class="text-muted-foreground">{{ run.user }} · {{ when }} · {{ run.games }} games, {{ run.minutes }} min each · {{ SEAT_MODES.find((m) => m.value === run.seat_mode)?.label }}</span>
+      <span class="text-muted-foreground">{{ run.user }} · {{ when }} · {{ run.games }} {{ run.games === 1 ? 'game' : 'games' }}, {{ run.minutes }} min each · {{ SEAT_MODES.find((m) => m.value === run.seat_mode)?.label }}</span>
       <span class="ml-auto" />
       <span v-if="run.stats.finished" class="font-semibold" data-testid="run-win-rate">Win rate {{ percent(run.stats.win_rate) }}</span>
       <Button v-if="run.mine && active(run.status) && !run.cancelling" size="sm" variant="outline" @click="cancel"><CircleStopIcon /> Cancel</Button>
