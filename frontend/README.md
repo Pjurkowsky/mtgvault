@@ -23,21 +23,23 @@ src/
   pages/      one component per route
   components/browser/     the shared card browser (spec 001, principle P-2); ExportDialog
                           (fixed text box, Printings/Categories/other decks options, remembered)
-  components/collection/  locations, add card, edit, card detail with EDHREC tabs (right-click
+  components/collection/  locations, add card, edit, card detail (two columns, the right one
+                          scrolls; EDHREC tabs with sticky group pills, lift, right-click
                           menu with Propose swap), import, PrintingPicker (finish filter,
                           sort and prices, remembered per browser)
   components/             shared: Price (tooltip with other currencies), ConfirmDialog
-                          (useConfirm), IconButton (tooltip), CardPreview (hover, and
-                          arrow keys via useCardNavigation),
-                          ExpandButton + FullscreenCard, ManaSymbol
+                          (useConfirm), IconButton (tooltip), CardPreview (hover, both faces
+                          of a double-faced card, arrow keys via useCardNavigation),
+                          ExpandButton + FullscreenCard (Turn over), ManaSymbol
   components/browser/CardTile.vue  the grid tile, shared by the collection and the deck Images view
   components/browser/filters/      filter menu pieces, shared by the collection and deck filters
   components/decks/       deck views (text, list, images) beside a side column with the
-                          commander (DeckCommander) and the List view's hovered card, with
-                          card menus, toolbar (search, filters, group, sort, size),
+                          commander (DeckCommander; List view lists it as a group instead)
+                          and the List view's hovered card, with card menus, toolbar (search
+                          with the keys tooltip, filters, group, sort, size),
                           Swaps tab (unpaired cards, mirrored pairs, Unpair), ProposeSwapDialog
-                          (Out and In), OptimizeDialog (cheapest printings), DeckTokens (rows or
-                          TokenTiles), TokenDialog (price, makers, printing picker),
+                          (Out and In), OptimizeDialog (cheapest printings), DeckTokens (a Tokens group
+                          after Maybeboard in each view), TokenDialog (price, makers, printing picker),
                           categories (CategoryInput, CategoryDialog), add (built on
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats
@@ -49,7 +51,8 @@ src/
   lib/deckStats.ts        Stats tab numbers and chart data, computed in the browser
   lib/categories.ts       category suggestions, loaded once
   composables/useCardNavigation.ts  arrow keys between cards
-  components/binder/      binder view (specs 007, 009, 021): pages and spreads, pockets in S/M/L or Fit,
+  components/binder/      binder view (specs 007, 009, 021, 023): pages and spreads, pockets in
+                          S/M/L shrunk to fit the window height, used slots in the header,
                           Unplaced sidebar, pagination, search matches, grid picker and
                           settings with inline section filters, move and stack dialogs,
                           scan-in-order dialog

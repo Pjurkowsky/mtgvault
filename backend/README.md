@@ -130,6 +130,8 @@ NBP's EUR and USD rates. Celery beat runs the cards, tags and rates daily at
 13:00 UTC and the combos at 05:00 UTC. A failed sync rolls back and keeps the
 previous data.
 
+- Double-faced cards keep their back face image (`Printing.image_back_normal`,
+  `image_back_large`) when Scryfall gives each face its own image (spec 023).
 - USD prices are TCGplayer's, EUR prices Cardmarket's (both via Scryfall).
 - PLN = EUR × the NBP rate, shown as an estimate.
 - `--file <path>` reads a local file instead of downloading (tests use

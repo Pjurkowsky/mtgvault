@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useElementBounding, useElementSize, useWindowSize } from '@vueuse/core'
+import { useElementSize, useResizeObserver, useWindowSize } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import type { BrowserRow, BrowserSource } from '@/components/browser/types'
@@ -80,24 +80,39 @@ const unplaced = computed(() =>
 // Facing pages only when two pages of this size fit side by side (AC-4).
 const pagesEl = ref<HTMLElement | null>(null)
 const { width: pagesWidth } = useElementSize(pagesEl)
-// Fit (spec 021, AC-4): pockets as big as the width and the window height below the pages allow.
-const { top: pagesTop } = useElementBounding(pagesEl)
-const { height: windowHeight } = useWindowSize()
-const PAGINATION = 72
+// The size is the largest pocket; on desktop it shrinks so the pages and their pagination
+// fit the window height: no page scrollbar (spec 023, AC-8). Phones scroll as before.
+const { width: windowWidth, height: windowHeight } = useWindowSize()
+// Room for the pages: the window less what sits above and below them (pagination, main's
+// padding). Measured in one snapshot so it never chases its own result.
+const room = ref(Infinity)
+function measure() {
+  const el = pagesEl.value
+  const main = el?.closest('main')
+  if (!el || !main) return
+  const pages = el.getBoundingClientRect()
+  const below = main.getBoundingClientRect().bottom - pages.bottom
+  room.value = Math.round(window.innerHeight - (pages.top + window.scrollY) - below - 4)
+}
+useResizeObserver(() => pagesEl.value?.closest('main') ?? null, measure)
+watch(windowHeight, measure)
+const MIN_POCKET = 3
+const capped = computed(() => {
+  const b = binder.value
+  if (!b) return POCKET_REM.md
+  if (windowWidth.value < 768) return POCKET_REM[props.size]
+  return Math.min(POCKET_REM[props.size], fitHeight(b.rows, room.value))
+})
 const spread = computed(() => {
   const b = binder.value
   if (!b?.spread) return false
-  if (props.size === 'fit') return fitWidth(b.cols, 2, pagesWidth.value) >= POCKET_REM.sm
-  return pagesWidth.value >= 2 * pageWidth(b.cols, POCKET_REM[props.size]) + PAGE_GAP
+  return pagesWidth.value >= 2 * pageWidth(b.cols, Math.max(MIN_POCKET, capped.value)) + PAGE_GAP
 })
 const pocket = computed(() => {
   const b = binder.value
   if (!b) return POCKET_REM.md
-  if (props.size !== 'fit') return POCKET_REM[props.size]
-  const top = pagesTop.value + window.scrollY
   const byWidth = fitWidth(b.cols, spread.value ? 2 : 1, pagesWidth.value)
-  const byHeight = fitHeight(b.rows, windowHeight.value - top - PAGINATION)
-  return Math.max(POCKET_REM.sm, Math.floor(Math.min(byWidth, byHeight) * 4) / 4)
+  return Math.max(MIN_POCKET, Math.floor(Math.min(capped.value, byWidth) * 4) / 4)
 })
 const onePage = computed(() => (binder.value ? pageWidth(binder.value.cols, pocket.value) : 0))
 const allViews = computed(() => views(binder.value?.page_count ?? 1, spread.value))
@@ -297,7 +312,10 @@ defineExpose({
         </div>
         <BinderPagination :views="allViews" :current="viewIndex" @go="goTo" />
         <span class="sr-only" aria-live="polite" data-testid="binder-pages">{{ pageLabel }}</span>
-        <p v-if="binder.total" class="text-center text-sm text-muted-foreground" data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</p>
+        <!-- In the location header, after the card count and value (spec 023, AC-9) -->
+        <Teleport v-if="binder.total" defer to="#binder-used-line">
+          <span aria-hidden="true">·</span> <span data-testid="binder-used">{{ binder.used }} / {{ binder.total }} slots</span>
+        </Teleport>
       </div>
 
       <UnplacedSidebar

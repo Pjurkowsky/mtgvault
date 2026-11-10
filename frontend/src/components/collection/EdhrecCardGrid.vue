@@ -6,7 +6,7 @@ import CardPreview from '@/components/CardPreview.vue'
 import ExpandButton from '@/components/ExpandButton.vue'
 import { Button } from '@/components/ui/button'
 
-type Card = Schemas['EdhrecCard'] & { share?: number }
+type Card = Schemas['EdhrecCard'] & { share?: number; synergy?: number | null }
 
 /**
  * EDHREC cards: click opens the card, ⤢ shows it full screen, right-click opens a menu with
@@ -20,6 +20,8 @@ const later = (fn: () => void) => setTimeout(fn)
 const expanded = ref(false)
 const visible = computed(() => (expanded.value ? props.cards : props.cards.slice(0, props.limit)))
 const pct = (share?: number) => (share === undefined ? '' : `${Math.round(share * 100)}% of decks`)
+// EDHREC's synergy is how much more often decks with this card play the other: "lift" (spec 023, AC-12).
+const lift = (synergy: number) => `lift ${synergy.toFixed(2)}`
 </script>
 
 <template>
@@ -40,6 +42,7 @@ const pct = (share?: number) => (share === undefined ? '' : `${Math.round(share 
               <img v-if="c.image_small" :src="c.image_small" :alt="c.name" loading="lazy" class="aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted" />
               <span v-else class="flex aspect-[488/680] items-center rounded-md bg-muted p-2 text-xs">{{ c.name }}</span>
               <span v-if="c.share !== undefined" class="mt-1 block text-xs text-muted-foreground">{{ pct(c.share) }}</span>
+              <span v-else-if="c.synergy != null" class="mt-1 block text-xs text-muted-foreground tabular-nums" data-testid="lift">{{ lift(c.synergy) }}</span>
             </button>
           </CardPreview>
         </component>
