@@ -1,6 +1,6 @@
 # Spec 022: Deck insights (decisions so far)
 
-Status: Grilling (2026-11-10). Written into spec.md when done.
+Status: Written into spec.md (2026-11-10).
 
 ## Requests
 
@@ -37,3 +37,45 @@ Status: Grilling (2026-11-10). Written into spec.md when done.
 | Simulate pods | Forge 2.0.15 `forge.sh sim -d a.dck b.dck c.dck d.dck -f commander -n N -c 300` | Winner per game on stdout; turn from the log | GPL-3, Java 17, headless works. Separate container. AI plays combos/politics poorly. Tens of seconds to minutes a game. XMage has no AI-vs-AI CLI |
 | Combos | Commander Spellbook `POST /find-my-combos` | Combos included / almost included; features with `uncountable` = infinite, "Win the game" | MIT, ~80 req/min, credit them. Bulk `variants.json.gz` 32 MB daily |
 | Salt | EDHREC card JSON `container.json_dict.card.salt` | 0 to 4 per card | No bulk file (top 100 only). Deck salt is usually the sum; average deck about 36 |
+
+## Round 1
+
+- Pod simulation: its own spec (023), not this one.
+- Categorising: automatic when a card is added to a deck, and existing deck
+  cards get categories too (not just a button).
+- Combos: every combo in the deck, not only infinite ones, plus combos you could
+  have because you own the missing card.
+- Theme: Light / Dark / System, saved on this device, System by default.
+
+## Round 2
+
+- Existing categories: replace all (auto categories replace the ones typed so far).
+- Several matches: a card gets every matching category, in a fixed priority
+  order, so the primary is the most useful.
+- Combos: a separate deck tab. It scans every card in the deck and shows the
+  combos already in the deck, and the infinite combos a deck card takes part
+  in that you could build.
+- Salt: the sum of card salt, shown as a meter against the average deck, with
+  a tooltip listing the saltiest cards.
+
+## Round 3
+
+- Replacing: once, when this ships. No Auto-categorize button. After that a
+  card gets its categories when it is added to a deck, and your edits stay.
+- Combos you could build: missing up to two cards (so the daily Spellbook
+  dataset, matched locally).
+- Could build lists infinite or win-the-game combos only. In deck lists every combo.
+- Deck themes: show the commander's EDHREC themes.
+
+## Round 4
+
+- Fit: in Commander decks the missing cards must be in the commander's colour
+  identity; other formats have no colour limit. Owned missing cards get the
+  ownership badge.
+- Combo row: card images (missing ones dimmed, with Add), what it produces,
+  Infinite/Win badges, steps opened on click, link to Commander Spellbook.
+- Categories, in priority order: Ramp, Card draw, Removal, Board wipe,
+  Counterspell, Tutor, Protection, Recursion, Tokens, Counters, Sacrifice,
+  Graveyard, Lifegain, Burn, Evasion, Stax. Lands get none. Every zone.
+- Placement: salt meter and theme chips (linking to EDHREC) in the Stats tab;
+  a small salt number by the legality badge in the deck header opens Stats.
