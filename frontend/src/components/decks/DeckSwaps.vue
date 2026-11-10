@@ -130,7 +130,7 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
               <ArrowLeftRightIcon v-else class="size-5" />
               <Tooltip v-if="blocked(c)">
                 <TooltipTrigger as-child>
-                  <Badge variant="outline" class="border-amber-500/60 text-amber-700 dark:text-amber-400" tabindex="0" data-testid="in-deck">In deck</Badge>
+                  <Badge variant="outline" class="border-amber-500/60 text-amber-700 dark:text-amber-400 dark:text-amber-400" tabindex="0" data-testid="in-deck">In deck</Badge>
                 </TooltipTrigger>
                 <TooltipContent>{{ c.printing.name }} is already in the deck</TooltipContent>
               </Tooltip>
