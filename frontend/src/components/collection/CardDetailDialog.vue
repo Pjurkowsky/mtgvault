@@ -181,6 +181,9 @@ async function switchTo(printing: Schemas['Printing']) {
   emit('changed')
 }
 
+// A group pill scrolls its group to just under the pills (spec 023, AC-11).
+const jump = (i: number) => document.getElementById(`played-with-${i}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+
 const tabs = computed(() => [
   { value: 'commanders', label: 'Commanders' },
   { value: 'played_with', label: 'Played with' },
@@ -190,7 +193,8 @@ const tabs = computed(() => [
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-h-[92vh] overflow-y-auto sm:max-w-5xl" data-testid="card-detail" @open-auto-focus.prevent>
+    <!-- Desktop: two columns, the left one stays while the right one scrolls; phones: one scrolling column (spec 023, AC-10, AC-13) -->
+    <DialogContent class="max-h-[92vh] overflow-y-auto sm:max-w-5xl md:h-[88vh] md:grid-rows-[auto_minmax(0,1fr)] md:overflow-hidden" data-testid="card-detail" @open-auto-focus.prevent>
       <DialogHeader>
         <div class="flex items-center gap-2">
           <IconButton v-if="stack.length > 1" label="Back" variant="ghost" class="size-7" @click="back"><ArrowLeftIcon /></IconButton>
@@ -199,24 +203,26 @@ const tabs = computed(() => [
         <DialogDescription v-if="shown">{{ shown.set_name }} #{{ shown.collector_number }}</DialogDescription>
       </DialogHeader>
 
-      <div class="grid gap-6 md:grid-cols-[20rem_1fr]">
-        <!-- Big image and reprints (AC-24, AC-26) -->
-        <div class="grid content-start gap-3">
+      <div class="grid gap-6 md:min-h-0 md:grid-cols-[18rem_minmax(0,1fr)]">
+        <!-- Big image and reprints (AC-24, AC-26). On phones its parts interleave with the right column's by order. -->
+        <div class="contents md:grid md:min-h-0 md:content-start md:gap-3 md:overflow-y-auto md:pr-1" data-testid="detail-left">
+          <div class="order-1 grid content-start gap-3 md:order-none">
           <button
             v-if="shown" type="button" class="cursor-zoom-in" :aria-label="`Preview ${shown.name}`"
             @click="showFullscreen(shown.image_large || shown.image_normal, shown.name, shown.image_back_large || shown.image_back_normal)"
           >
             <img :src="shownImage" :alt="shown.name" class="w-full rounded-[4.75%/3.5%] bg-muted" :data-face="flipped ? 'back' : 'front'" data-testid="detail-image" />
           </button>
+          <Skeleton v-else class="aspect-[488/680] w-full" />
           <Button v-if="shown?.image_back_normal" variant="outline" size="sm" class="justify-self-start" data-testid="turn-over" @click="flipped = !flipped">
             <RefreshCwIcon /> Turn over
           </Button>
-          <Skeleton v-else class="aspect-[488/680] w-full" />
           <p v-if="priceLine" class="text-sm" data-testid="detail-image-price">
             <Price :value="priceLine.value" :values="priceLine.values" :currency="currency" />
           </p>
-          <Separator v-if="card" />
-          <div v-if="card" class="flex gap-2 overflow-x-auto pb-2" role="radiogroup" aria-label="Reprints" data-testid="reprints">
+          </div>
+          <Separator v-if="card" class="order-3 md:order-none" />
+          <div v-if="card" class="order-3 flex gap-2 overflow-x-auto pb-2 md:order-none" role="radiogroup" aria-label="Reprints" data-testid="reprints">
             <div v-for="p in card.printings" :key="p.id" class="group relative shrink-0">
             <ExpandButton :image="p.image_large || p.image_normal" :name="`${p.name} (${p.set_name})`" />
             <component
@@ -231,14 +237,15 @@ const tabs = computed(() => [
             </component>
             </div>
           </div>
-          <Separator v-if="tokens.length" />
-          <section v-if="tokens.length" class="grid gap-2" data-testid="card-tokens">
+          <Separator v-if="tokens.length" class="order-4 md:order-none" />
+          <section v-if="tokens.length" class="order-4 grid gap-2 md:order-none" data-testid="card-tokens">
             <h3 class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Tokens</h3>
             <TokenTiles :tokens="tokens" size="sm" />
           </section>
         </div>
 
-        <div class="grid content-start gap-6">
+        <div class="contents md:grid md:min-h-0 md:content-start md:gap-6 md:overflow-y-auto md:pr-1" data-testid="detail-right">
+          <div class="order-2 grid content-start md:order-none">
           <!-- A deck card: the deck section (spec 005, AC-3) -->
           <slot v-if="$slots.deck && atRoot" name="deck" />
           <!-- A want list entry (spec 010, AC-10) -->
@@ -272,9 +279,10 @@ const tabs = computed(() => [
             </template>
           </section>
 
-          <Separator />
+          </div>
+          <Separator class="order-5 md:order-none" />
           <!-- EDHREC tabs (AC-28 to AC-36) -->
-          <Tabs v-model="tab">
+          <Tabs v-model="tab" class="order-5 md:order-none">
             <TabsList>
               <TabsTrigger v-for="t in tabs" :key="t.value" :value="t.value">{{ t.label }}</TabsTrigger>
             </TabsList>
@@ -289,7 +297,13 @@ const tabs = computed(() => [
             <div v-else class="mt-4">
               <EdhrecCardGrid v-if="shownTab === 'commanders'" :cards="edhrec.commanders" testid="edhrec-commanders" @open="push" :swappable="swappable" @swap="(o) => emit('propose-swap', o)" />
               <div v-else-if="shownTab === 'played_with'" class="grid gap-5" data-testid="edhrec-played-with">
-                <section v-for="g in edhrec.played_with" :key="g.group" class="grid gap-2">
+                <!-- Group pills stay at the top of the scrolling column (spec 023, AC-11, AC-13) -->
+                <nav class="sticky -top-px z-10 -mx-1 flex gap-1.5 overflow-x-auto bg-background px-1 py-2 md:flex-wrap" aria-label="Groups" data-testid="group-pills">
+                  <Button v-for="(g, i) in edhrec.played_with" :key="g.group" variant="outline" size="sm" class="h-7 shrink-0 rounded-full px-3 text-xs" @click="jump(i)">
+                    {{ g.group }}
+                  </Button>
+                </nav>
+                <section v-for="(g, i) in edhrec.played_with" :id="`played-with-${i}`" :key="g.group" class="grid scroll-mt-14 gap-2" data-testid="played-with-group">
                   <h3 class="text-sm font-medium">{{ g.group }}</h3>
                   <EdhrecCardGrid :cards="g.cards" :limit="10" @open="push" :swappable="swappable" @swap="(o) => emit('propose-swap', o)" />
                 </section>

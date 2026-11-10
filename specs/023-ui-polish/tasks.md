@@ -19,7 +19,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Card dialog
 
-- [ ] **T7 Two columns, scrolling right column, group pills, Show all, lift; phone layout; card-dialog-layout.spec.ts** (AC-10 to AC-14)
+- [x] **T7 Two columns, scrolling right column, group pills, Show all, lift; phone layout; card-dialog-layout.spec.ts** (AC-10 to AC-14)
 
 ## Finish
 
