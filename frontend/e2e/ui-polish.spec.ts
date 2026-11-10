@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
-import { deckRow, signUpAndLogIn } from './helpers'
+import { binderSlot, deckRow, signUpAndLogIn } from './helpers'
 
 // Spec 023: UI polish. Krenko makes a Goblin; Dockside and Smothering Tithe make a Treasure.
 const LIST = 'Commander\n1 Krenko, Mob Boss\n\nDeck\n1 Dockside Extortionist\n1 Sol Ring\n\nMaybeboard\n1 Smothering Tithe'
 const box = async (page: Page, id: string) => (await page.getByTestId(id).boundingBox())!
+const slotWidth = async (page: Page) => (await binderSlot(page, 2, 1).boundingBox())!.width
 
 test.describe('UI polish', () => {
   test('AC-1, AC-2: the toolbar is one left block; the keys show on the search box', async ({ page, request }) => {
@@ -88,5 +89,56 @@ test.describe('UI polish', () => {
     }
     const art = (await page.getByTestId('deck-tile').first().locator('img').boundingBox())!
     expect(art.height).toBeGreaterThanOrEqual(180)
+  })
+
+  test('AC-7, AC-8: S, M, L only; pockets shrink so the pages fit the window; a saved Fit falls back to M', async ({ page, request }) => {
+    await page.setViewportSize({ width: 1800, height: 900 })
+    const { api } = await signUpAndLogIn(page, request)
+    const binder = await api.location('Sizes')
+    await api.importList('1 Sol Ring (C21) 263', binder)
+    const item = (await api.get(`/api/locations/${binder}/binder/`)).items[0].id
+    await api.post(`/api/locations/${binder}/binder/move/`, { item, to: { page: 3, row: 1, col: 1 } })
+
+    await page.addInitScript(() => localStorage.getItem('mtgvault.binder.size') ?? localStorage.setItem('mtgvault.binder.size', 'fit'))
+    await page.goto(`/locations/${binder}?page=2`)
+    const toggle = page.getByRole('group', { name: 'Card size' })
+    await expect(toggle.getByRole('button')).toHaveText(['S', 'M', 'L'])
+    await expect(toggle.getByRole('button', { name: 'Medium cards' })).toHaveAttribute('data-state', 'on')
+
+    const pocket = () => slotWidth(page)
+    await toggle.getByRole('button', { name: 'Large cards' }).click()
+    await expect(page.getByTestId('binder-page')).toHaveCount(2)
+    await expect.poll(pocket).toBeLessThan(152) // L is capped by the window height
+    const noScroll = () => page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)
+    await expect.poll(noScroll).toBe(true)
+    const pagination = (await page.getByTestId('binder-pagination').boundingBox())!
+    expect(pagination.y + pagination.height).toBeLessThanOrEqual(900)
+
+    // A taller window lets L reach its size, never more.
+    await page.setViewportSize({ width: 1800, height: 1600 })
+    await expect.poll(pocket).toBe(152)
+    await toggle.getByRole('button', { name: 'Small cards' }).click()
+    await expect.poll(pocket).toBe(80)
+
+    // Phones keep one full-width page and scroll.
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(page.getByTestId('binder-page')).toHaveCount(1)
+    expect((await page.getByTestId('binder-page').boundingBox())!.x + (await page.getByTestId('binder-page').boundingBox())!.width).toBeLessThanOrEqual(390)
+  })
+
+  test('AC-9: the slots count sits in the binder header after the card count and value', async ({ page, request }) => {
+    await page.setViewportSize({ width: 1400, height: 900 })
+    const { api } = await signUpAndLogIn(page, request)
+    const binder = await api.location('Header', 'binder', true)
+    await api.patch(`/api/locations/${binder}/binder/`, { pages: 8 }) // 3 × 3 × 8 = 72
+    await api.importList('1 Sol Ring (C21) 263', binder)
+    await page.goto(`/locations/${binder}`)
+    const used = page.getByTestId('binder-used')
+    await expect(used).toHaveText('0 / 72 slots') // imported cards arrive unplaced
+    const totals = (await page.getByTestId('location-totals').boundingBox())!
+    const box = (await used.boundingBox())!
+    expect(Math.abs(box.y - totals.y)).toBeLessThan(8)
+    expect(box.x).toBeGreaterThan(totals.x + totals.width - 1)
+    expect(box.y).toBeLessThan((await page.getByTestId('binder-page').first().boundingBox())!.y)
   })
 })

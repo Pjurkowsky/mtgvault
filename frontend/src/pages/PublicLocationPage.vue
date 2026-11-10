@@ -43,7 +43,10 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         <component :is="kindOf(location.kind)?.icon" class="size-6 text-muted-foreground" />
         <h1 class="text-2xl font-semibold" data-testid="location-name">{{ location.name }}</h1>
       </div>
-      <p class="text-muted-foreground" data-testid="location-totals">{{ cards(location.card_count) }} · <Price :value="location.value" :values="location.values" :currency="currency" /></p>
+      <div class="flex flex-wrap items-baseline gap-x-1 text-muted-foreground">
+        <p class="text-muted-foreground" data-testid="location-totals">{{ cards(location.card_count) }} · <Price :value="location.value" :values="location.values" :currency="currency" /></p>
+        <span id="binder-used-line" class="contents" />
+      </div>
     </div>
     <CardBrowser :key="`${username}/${id}`" :source="{ kind: 'public', username, locationId: id }" :binder="location.kind === 'binder'" readonly />
   </div>

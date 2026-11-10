@@ -15,7 +15,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 ## Tiles and binder
 
 - [x] **T5 Tile widths and taller deck tiles** (AC-5, AC-6)
-- [ ] **T6 Binder S/M/L capped to the window, slots in the header** (AC-7 to AC-9)
+- [x] **T6 Binder S/M/L capped to the window, slots in the header** (AC-7 to AC-9)
 
 ## Card dialog
 

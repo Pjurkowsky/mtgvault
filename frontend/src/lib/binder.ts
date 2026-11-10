@@ -12,9 +12,12 @@ export const binderCache = new Map<string, Binder>()
 /** Pocket width per card size, in rem (spec 009 AC-4, spec 021 AC-3). */
 export const POCKET_REM = { sm: 5, md: 7, lg: 9.5 } as const
 
-/** S, M, L, or Fit: pockets as big as the window allows (spec 021, AC-4). */
-export type BinderSize = keyof typeof POCKET_REM | 'fit'
-export const BINDER_SIZES = ['sm', 'md', 'lg', 'fit'] as const
+/**
+ * S, M, L: the largest pocket each reaches; smaller when the window can't hold it (spec 023,
+ * AC-7, AC-8). Fit is gone; a saved 'fit' isn't allowed, so it falls back to M.
+ */
+export type BinderSize = keyof typeof POCKET_REM
+export const BINDER_SIZES = ['sm', 'md', 'lg'] as const
 
 /** A page's width in px: its pockets, the 0.5rem gaps, 0.75rem padding and the border. */
 export function pageWidth(cols: number, pocketRem: number) {

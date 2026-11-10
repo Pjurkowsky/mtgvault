@@ -44,9 +44,12 @@ const cards = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`
         <span v-if="location" class="text-sm text-muted-foreground" data-testid="location-kind">{{ kindOf(location.kind)?.label }}</span>
         <GlobeIcon v-if="location?.is_public" class="size-4 text-muted-foreground" aria-label="Public" />
       </div>
-      <p v-if="totals" class="text-muted-foreground" data-testid="location-totals">
-        {{ cards(totals.card_count) }} · <Price :value="totals.value" :values="totals.values" :currency="store.currency" />
-      </p>
+      <div class="flex flex-wrap items-baseline gap-x-1 text-muted-foreground">
+        <p v-if="totals" class="text-muted-foreground" data-testid="location-totals">
+          {{ cards(totals.card_count) }} · <Price :value="totals.value" :values="totals.values" :currency="store.currency" />
+        </p>
+        <span id="binder-used-line" class="contents" />
+      </div>
     </div>
 
     <CardBrowser

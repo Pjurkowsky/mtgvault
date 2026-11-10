@@ -85,7 +85,7 @@ test.describe('Binder polish', () => {
   test('AC-4: S, M and L pocket sizes; facing pages only when both fit; remembered', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
-    await page.setViewportSize({ width: 800, height: 900 }) // 752 px for the pages: two large ones don't fit
+    await page.setViewportSize({ width: 800, height: 1400 }) // tall enough that L isn't capped (spec 023, AC-8); 752 px for the pages: two large ones don't fit
     await page.goto(`/locations/${binder}?page=2`)
     const pocket = slot(page, 2, 1)
 

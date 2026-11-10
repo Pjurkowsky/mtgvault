@@ -399,7 +399,8 @@ const exportName = computed(() =>
 </script>
 
 <template>
-  <div class="grid gap-4 pb-20">
+  <!-- pb-20: room for the bulk bar; the binder fits the window without it (spec 023, AC-8) -->
+  <div :class="['grid gap-4', (!inBinder || selecting) && 'pb-20']">
     <!-- Toolbar: the same in every view, so nothing moves when switching (spec 009, AC-1, AC-2) -->
     <div class="flex flex-wrap items-center gap-2" data-testid="browser-toolbar">
       <ToggleGroup type="single" variant="outline" :model-value="shownView" @update:model-value="(v) => v && pickView(v as View)">
@@ -447,7 +448,7 @@ const exportName = computed(() =>
         <ArrowDownWideNarrowIcon v-else />
       </IconButton>
       <!-- Binder view only; elsewhere its space stays, so the buttons after it don't move (AC-2) -->
-      <CardSizeToggle v-if="binderId" v-model="binderSize" fit :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
+      <CardSizeToggle v-if="binderId" v-model="binderSize" :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
 
       <div class="ml-auto flex items-center gap-2">
         <IconButton v-if="editable && !isWants" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>
