@@ -22,7 +22,7 @@ import { api, type Schemas } from '@/api/client'
 import BinderSearchNav from '@/components/binder/BinderSearchNav.vue'
 import BinderView from '@/components/binder/BinderView.vue'
 import UnplacedSidebar from '@/components/binder/UnplacedSidebar.vue'
-import { binderCache } from '@/lib/binder'
+import { BINDER_SIZES, binderCache, type BinderSize } from '@/lib/binder'
 import AddCardDialog from '@/components/collection/AddCardDialog.vue'
 import CardSizeToggle from '@/components/CardSizeToggle.vue'
 import AddToDeckDialog from '@/components/decks/AddToDeckDialog.vue'
@@ -46,7 +46,7 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useInfiniteItems, type Page } from '@/composables/useInfiniteItems'
 import { usePreference } from '@/composables/usePreference'
 import { useSelection, type Selection } from '@/composables/useSelection'
-import { CARD_SIZES, SORTS, type CardSize } from '@/lib/cards'
+import { SORTS } from '@/lib/cards'
 import type { Money } from '@/lib/money'
 import BulkDialog, { type BulkAction } from './BulkDialog.vue'
 import CardGrid from './CardGrid.vue'
@@ -128,7 +128,7 @@ const binderVersion = ref(0)
 const binderRef = ref<InstanceType<typeof BinderView> | null>(null)
 const inBinder = computed(() => shownView.value === 'binder' && !!binderId.value)
 // Pocket size, remembered in this browser (spec 009, AC-4).
-const binderSize = usePreference<CardSize>('binder.size', 'md', CARD_SIZES)
+const binderSize = usePreference<BinderSize>('binder.size', 'md', BINDER_SIZES)
 // Grid and Table view of a binder keep its Unplaced sidebar, so switching views moves nothing (AC-2, AC-7).
 const sideUnplaced = ref<{ row: BrowserRow; count: number }[]>([])
 const sidebarHere = computed(() => !!binderId.value && editable.value && !inBinder.value)
@@ -447,7 +447,7 @@ const exportName = computed(() =>
         <ArrowDownWideNarrowIcon v-else />
       </IconButton>
       <!-- Binder view only; elsewhere its space stays, so the buttons after it don't move (AC-2) -->
-      <CardSizeToggle v-if="binderId" v-model="binderSize" :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
+      <CardSizeToggle v-if="binderId" v-model="binderSize" fit :class="!inBinder && 'invisible'" :aria-hidden="!inBinder || undefined" />
 
       <div class="ml-auto flex items-center gap-2">
         <IconButton v-if="editable && !isWants" label="Scan cards" @click="openScanner()"><CameraIcon /></IconButton>

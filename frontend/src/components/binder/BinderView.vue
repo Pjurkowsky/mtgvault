@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useElementSize } from '@vueuse/core'
+import { useElementBounding, useElementSize, useWindowSize } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import type { BrowserRow, BrowserSource } from '@/components/browser/types'
@@ -11,10 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBinderDrag, type DragSource, type DropKey } from '@/composables/useBinderDrag'
 import {
-  binderCache, pageWidth, placeKey, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
-  type Binder, type BinderSlot, type Place,
+  binderCache, fitHeight, fitWidth, PAGE_GAP, pageWidth, placeKey, POCKET_REM, pockets as toPockets, samePlace, sectionOf, viewIndexOf, views,
+  type Binder, type BinderSize, type BinderSlot, type Place,
 } from '@/lib/binder'
-import type { CardSize } from '@/lib/cards'
 import BinderPage from './BinderPage.vue'
 import BinderPagination from './BinderPagination.vue'
 import BinderSettingsDialog from './BinderSettingsDialog.vue'
@@ -33,8 +32,8 @@ const props = defineProps<{
   locationId: number
   editable: boolean
   version: number
-  /** Pocket size (spec 009, AC-4). */
-  size: CardSize
+  /** Pocket size (spec 009 AC-4, spec 021 AC-3, AC-4). */
+  size: BinderSize
   /** The browser's search text (AC-5). */
   q: string
   /** Binder settings asked for from the ⋯ menu (AC-1). */
@@ -81,9 +80,26 @@ const unplaced = computed(() =>
 // Facing pages only when two pages of this size fit side by side (AC-4).
 const pagesEl = ref<HTMLElement | null>(null)
 const { width: pagesWidth } = useElementSize(pagesEl)
-const onePage = computed(() => (binder.value ? pageWidth(binder.value.cols, props.size) : 0))
-const PAGE_GAP = 12
-const spread = computed(() => !!binder.value?.spread && pagesWidth.value >= 2 * onePage.value + PAGE_GAP)
+// Fit (spec 021, AC-4): pockets as big as the width and the window height below the pages allow.
+const { top: pagesTop } = useElementBounding(pagesEl)
+const { height: windowHeight } = useWindowSize()
+const PAGINATION = 72
+const spread = computed(() => {
+  const b = binder.value
+  if (!b?.spread) return false
+  if (props.size === 'fit') return fitWidth(b.cols, 2, pagesWidth.value) >= POCKET_REM.sm
+  return pagesWidth.value >= 2 * pageWidth(b.cols, POCKET_REM[props.size]) + PAGE_GAP
+})
+const pocket = computed(() => {
+  const b = binder.value
+  if (!b) return POCKET_REM.md
+  if (props.size !== 'fit') return POCKET_REM[props.size]
+  const top = pagesTop.value + window.scrollY
+  const byWidth = fitWidth(b.cols, spread.value ? 2 : 1, pagesWidth.value)
+  const byHeight = fitHeight(b.rows, windowHeight.value - top - PAGINATION)
+  return Math.max(POCKET_REM.sm, Math.floor(Math.min(byWidth, byHeight) * 4) / 4)
+})
+const onePage = computed(() => (binder.value ? pageWidth(binder.value.cols, pocket.value) : 0))
 const allViews = computed(() => views(binder.value?.page_count ?? 1, spread.value))
 const page = computed(() => Math.max(1, Number(route.query.page) || 1))
 const viewIndex = computed(() => Math.min(viewIndexOf(page.value, spread.value), allViews.value.length - 1))
@@ -270,7 +286,7 @@ defineExpose({
             <BinderPage
               v-if="p !== null"
               :page="p" :binder="binder" :pockets="pockets" :items="items" :section="sectionOf(p, binder.sections)"
-              :size="size" :matches="matchKeys" :current="current ? placeKey(current) : null"
+              :pocket="pocket" :matches="matchKeys" :current="current ? placeKey(current) : null"
               :editable="editable" :has-unplaced="unplaced.length > 0" :over="drag.over.value" :dragging="!!drag.source.value"
               @open="emit('open', $event)" @stack="openStack" @edit="(r) => later(() => emit('edit', r))" @delete="(r) => later(() => emit('delete', r))"
               @deck="(r) => later(() => emit('deck', r))" @move="openMove" @unplace="(s) => put({ slot: s }, null)"

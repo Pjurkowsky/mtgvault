@@ -9,12 +9,31 @@ export type Direction = 'rows' | 'columns'
 /** The last binder state per binder, so switching views shows it at once (spec 009, AC-2). */
 export const binderCache = new Map<string, Binder>()
 
-/** Pocket width per card size, in rem (spec 009, AC-4). */
-export const POCKET_REM = { sm: 4, md: 5.5, lg: 7.5 } as const
+/** Pocket width per card size, in rem (spec 009 AC-4, spec 021 AC-3). */
+export const POCKET_REM = { sm: 5, md: 7, lg: 9.5 } as const
+
+/** S, M, L, or Fit: pockets as big as the window allows (spec 021, AC-4). */
+export type BinderSize = keyof typeof POCKET_REM | 'fit'
+export const BINDER_SIZES = ['sm', 'md', 'lg', 'fit'] as const
 
 /** A page's width in px: its pockets, the 0.5rem gaps, 0.75rem padding and the border. */
-export function pageWidth(cols: number, size: keyof typeof POCKET_REM) {
-  return 16 * (cols * POCKET_REM[size] + (cols - 1) * 0.5 + 1.5) + 2
+export function pageWidth(cols: number, pocketRem: number) {
+  return 16 * (cols * pocketRem + (cols - 1) * 0.5 + 1.5) + 2
+}
+
+/** Space between facing pages, px. */
+export const PAGE_GAP = 12
+
+/** The widest pocket (rem) with which `pages` pages fit `width` px across. */
+export function fitWidth(cols: number, pages: number, width: number) {
+  const page = (width - (pages - 1) * PAGE_GAP) / pages
+  return ((page - 2) / 16 - 1.5 - (cols - 1) * 0.5) / cols
+}
+
+/** The tallest pocket (rem) with which a page fits `height` px: border, padding, header line and gaps. */
+export function fitHeight(rows: number, height: number) {
+  const pocketHeight = ((height - 2) / 16 - 1.5 - 1 - 0.5 - (rows - 1) * 0.5) / rows
+  return (pocketHeight * 488) / 680
 }
 
 /** Pagination entries (AC-6): every view's label, or '…' between far ones. */

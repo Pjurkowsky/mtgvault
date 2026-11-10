@@ -5,7 +5,7 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 ## Layout
 
 - [x] **T1 Full width and growing columns; layout-width.spec.ts** (AC-1, AC-2)
-- [ ] **T2 Bigger binder pockets and Fit; binder-sizes.spec.ts** (AC-3, AC-4)
+- [x] **T2 Bigger binder pockets and Fit; binder-sizes.spec.ts** (AC-3, AC-4)
 
 ## Deck
 

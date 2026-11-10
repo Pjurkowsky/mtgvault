@@ -85,22 +85,22 @@ test.describe('Binder polish', () => {
   test('AC-4: S, M and L pocket sizes; facing pages only when both fit; remembered', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const binder = await stockedBinder(api)
-    await page.setViewportSize({ width: 800, height: 900 }) // 768 px for the pages: two large ones don't fit
+    await page.setViewportSize({ width: 800, height: 900 }) // 752 px for the pages: two large ones don't fit
     await page.goto(`/locations/${binder}?page=2`)
     const pocket = slot(page, 2, 1)
 
     await page.getByRole('button', { name: 'Small cards' }).click()
-    await expect.poll(async () => (await pocket.boundingBox())!.width).toBe(64)
+    await expect.poll(async () => (await pocket.boundingBox())!.width).toBe(80) // spec 021, AC-3: 5 rem
     await expect(page.getByTestId('binder-page')).toHaveCount(2)
 
     await page.getByRole('button', { name: 'Large cards' }).click()
-    await expect.poll(async () => (await pocket.boundingBox())!.width).toBe(120)
+    await expect.poll(async () => (await pocket.boundingBox())!.width).toBe(152) // spec 021, AC-3: 9.5 rem
     await expect(page.getByTestId('binder-page')).toHaveCount(1) // two don't fit
     await expect(page.getByTestId('binder-pages')).toHaveText('Page 2 of 4')
 
     await page.reload()
     await expect(page.getByRole('button', { name: 'Large cards' })).toHaveAttribute('data-state', 'on')
-    await page.getByRole('button', { name: 'Medium cards' }).click()
+    await page.getByRole('button', { name: 'Small cards' }).click()
     await expect(page.getByTestId('binder-page')).toHaveCount(2)
   })
 

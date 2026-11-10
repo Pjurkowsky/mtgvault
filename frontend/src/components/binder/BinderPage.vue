@@ -2,8 +2,7 @@
 import type { BrowserRow } from '@/components/browser/types'
 import ManaSymbol from '@/components/ManaSymbol.vue'
 import type { DragSource } from '@/composables/useBinderDrag'
-import { placeKey, POCKET_REM, type Binder, type BinderSlot as Slot, type Place } from '@/lib/binder'
-import type { CardSize } from '@/lib/cards'
+import { placeKey, type Binder, type BinderSlot as Slot, type Place } from '@/lib/binder'
 import BinderSlot from './BinderSlot.vue'
 
 /** One binder page: its section name and its grid of pockets (spec 007, AC-2, AC-10). */
@@ -13,7 +12,8 @@ const props = defineProps<{
   pockets: Map<string, Slot[]>
   items: Map<number, BrowserRow>
   section: Binder['sections'][number] | null
-  size: CardSize
+  /** Pocket width in rem (spec 021, AC-3, AC-4). */
+  pocket: number
   /** Pockets matching the search, or null without one (spec 009, AC-5). */
   matches: Set<string> | null
   /** The match the search is on. */
@@ -57,7 +57,7 @@ const places = () => {
       </span>
       <span class="shrink-0">Page {{ page }}</span>
     </header>
-    <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(${binder.cols}, ${POCKET_REM[size]}rem)` }">
+    <div class="grid gap-2" :style="{ gridTemplateColumns: `repeat(${binder.cols}, ${pocket}rem)` }">
       <BinderSlot
         v-for="place in places()" :key="placeKey(place)"
         :place="place" :cols="binder.cols" :stack="pockets.get(placeKey(place)) ?? []" :items="items"
