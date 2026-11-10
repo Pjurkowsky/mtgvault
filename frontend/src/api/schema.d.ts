@@ -1588,6 +1588,10 @@ export interface components {
             readonly image_normal: string;
             /** Format: uri */
             readonly image_large: string;
+            /** Format: uri */
+            readonly image_back_normal: string;
+            /** Format: uri */
+            readonly image_back_large: string;
             readonly mana_cost: string;
             /** Format: double */
             readonly cmc: number;
@@ -2316,6 +2320,10 @@ export interface components {
             readonly image_normal: string;
             /** Format: uri */
             readonly image_large: string;
+            /** Format: uri */
+            readonly image_back_normal: string;
+            /** Format: uri */
+            readonly image_back_large: string;
             readonly prices: components["schemas"]["Prices"];
             readonly prices_all: components["schemas"]["PricesAll"];
             readonly can_command: components["schemas"]["CanCommand"];
@@ -2345,6 +2353,10 @@ export interface components {
             readonly image_normal: string;
             /** Format: uri */
             readonly image_large: string;
+            /** Format: uri */
+            readonly image_back_normal: string;
+            /** Format: uri */
+            readonly image_back_large: string;
         };
         PublicBinder: {
             rows: number;

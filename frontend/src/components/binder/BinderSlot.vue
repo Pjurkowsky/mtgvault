@@ -80,7 +80,7 @@ function press(event: PointerEvent) {
         @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)" @deck="emit('deck', row)"
         @slot="emit('move', top)" @unplace="emit('unplace', top)"
       >
-        <CardPreview :image="row.printing.image_normal" :name="row.printing.name" :stack="preview" :disabled="dragging">
+        <CardPreview :image="row.printing.image_normal" :back="row.printing.image_back_normal" :name="row.printing.name" :stack="preview" :disabled="dragging">
           <button
             type="button" class="block size-full touch-manipulation overflow-hidden rounded-[4.75%/3.5%] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             :aria-label="label" @click="click" @pointerdown="press"

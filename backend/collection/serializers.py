@@ -103,7 +103,7 @@ class PrintingBriefSerializer(serializers.ModelSerializer):
         model = Printing
         fields = [
             'id', 'oracle_id', 'name', 'set_code', 'set_name', 'collector_number', 'rarity',
-            'colors', 'type_line', 'finishes', 'image_small', 'image_normal', 'image_large',
+            'colors', 'type_line', 'finishes', 'image_small', 'image_normal', 'image_large', 'image_back_normal', 'image_back_large',
         ]
         read_only_fields = fields  # output only; also marks them required in the schema
 

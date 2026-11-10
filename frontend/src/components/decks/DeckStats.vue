@@ -140,7 +140,7 @@ const PLOT = 128 // px, the curve's plot height; the axis labels sit below it
         <h3 class="text-sm font-semibold">Most expensive</h3>
         <ol class="grid gap-0.5">
           <li v-for="card in stats.expensive" :key="card.id">
-            <CardPreview :image="card.printing.image_normal" :name="card.printing.name">
+            <CardPreview :image="card.printing.image_normal" :back="card.printing.image_back_normal" :name="card.printing.name">
               <button
                 type="button" class="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-sm hover:bg-muted"
                 :aria-label="card.printing.name" data-testid="expensive-card" @click="emit('open', card)"

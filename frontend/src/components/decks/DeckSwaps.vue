@@ -91,7 +91,7 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
             <Button v-if="!readonly" size="sm" variant="outline" @click="emit('propose', c)"><ArrowLeftRightIcon /> Pair with…</Button>
           </div>
           <div class="flex min-w-0 items-center gap-3">
-            <CardPreview :image="c.printing.image_normal" :name="c.printing.name">
+            <CardPreview :image="c.printing.image_normal" :back="c.printing.image_back_normal" :name="c.printing.name">
               <button type="button" class="shrink-0" :aria-label="c.printing.name" @click="emit('open', c)">
                 <img :src="c.printing.image_small" :alt="c.printing.name" loading="lazy" class="w-16 rounded-[4.75%/3.5%] bg-muted" />
               </button>
@@ -142,7 +142,7 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
               :class="cn('flex min-w-0 items-center gap-3', i === 0 && 'sm:flex-row-reverse sm:text-right')"
               :data-testid="i === 0 ? 'swap-out' : 'swap-in'"
             >
-              <CardPreview :image="side.printing.image_normal" :name="side.printing.name">
+              <CardPreview :image="side.printing.image_normal" :back="side.printing.image_back_normal" :name="side.printing.name">
                 <button type="button" class="shrink-0" :aria-label="side.printing.name" @click="emit('open', side)">
                   <img :src="side.printing.image_small" :alt="side.printing.name" loading="lazy" class="w-16 rounded-[4.75%/3.5%] bg-muted" />
                 </button>

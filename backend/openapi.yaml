@@ -3469,6 +3469,14 @@ components:
           type: string
           format: uri
           readOnly: true
+        image_back_normal:
+          type: string
+          format: uri
+          readOnly: true
+        image_back_large:
+          type: string
+          format: uri
+          readOnly: true
         mana_cost:
           type: string
           readOnly: true
@@ -3510,6 +3518,8 @@ components:
       - colors
       - finishes
       - id
+      - image_back_large
+      - image_back_normal
       - image_large
       - image_normal
       - image_small
@@ -5124,6 +5134,14 @@ components:
           type: string
           format: uri
           readOnly: true
+        image_back_normal:
+          type: string
+          format: uri
+          readOnly: true
+        image_back_large:
+          type: string
+          format: uri
+          readOnly: true
         prices:
           allOf:
           - $ref: '#/components/schemas/Prices'
@@ -5142,6 +5160,8 @@ components:
       - colors
       - finishes
       - id
+      - image_back_large
+      - image_back_normal
       - image_large
       - image_normal
       - image_small
@@ -5208,11 +5228,21 @@ components:
           type: string
           format: uri
           readOnly: true
+        image_back_normal:
+          type: string
+          format: uri
+          readOnly: true
+        image_back_large:
+          type: string
+          format: uri
+          readOnly: true
       required:
       - collector_number
       - colors
       - finishes
       - id
+      - image_back_large
+      - image_back_normal
       - image_large
       - image_normal
       - image_small

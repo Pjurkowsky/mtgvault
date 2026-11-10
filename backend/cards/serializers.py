@@ -55,7 +55,7 @@ class PrintingSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'oracle_id', 'name', 'set_code', 'set_name', 'collector_number',
             'released_at', 'rarity', 'colors', 'type_line', 'mana_cost', 'finishes',
-            'image_small', 'image_normal', 'image_large', 'prices', 'prices_all', 'can_command',
+            'image_small', 'image_normal', 'image_large', 'image_back_normal', 'image_back_large', 'prices', 'prices_all', 'can_command',
         ]
         read_only_fields = fields  # output only; also marks them required in the schema
 

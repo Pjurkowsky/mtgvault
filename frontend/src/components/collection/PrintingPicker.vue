@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth'
 
 // Card printings, or a token's (spec 021, AC-10): only the fields shown here.
-type Printing = Pick<Schemas['Printing'], 'id' | 'name' | 'set_code' | 'set_name' | 'collector_number' | 'finishes' | 'image_small' | 'image_normal' | 'image_large' | 'prices' | 'prices_all'>
+type Printing = Pick<Schemas['Printing'], 'id' | 'name' | 'set_code' | 'set_name' | 'collector_number' | 'finishes' | 'image_small' | 'image_normal' | 'image_large' | 'prices' | 'prices_all'> & { image_back_normal?: string }
 type FinishFilter = 'all' | Finish
 
 const props = defineProps<{
@@ -83,7 +83,7 @@ onMounted(() => props.syncFinish && filter.value !== 'all' && emit('finish', fil
     </div>
     <div role="radiogroup" aria-label="Printing" class="flex gap-3 overflow-x-auto pb-2" data-testid="printing-picker">
       <div v-for="p in shown" :key="p.id" class="group relative shrink-0">
-      <CardPreview :image="p.image_normal" :name="p.name">
+      <CardPreview :image="p.image_normal" :back="p.image_back_normal" :name="p.name">
       <button
         type="button" role="radio" :aria-checked="selected === p.id"
         :aria-label="`${p.set_name} #${p.collector_number}`"

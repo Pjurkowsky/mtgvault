@@ -60,6 +60,9 @@ class Printing(models.Model):
     image_small = models.URLField(max_length=500, blank=True)
     image_normal = models.URLField(max_length=500, blank=True)
     image_large = models.URLField(max_length=500, blank=True)
+    # The second face of transform, modal double-faced, meld and battle cards (spec 023, AC-15).
+    image_back_normal = models.URLField(max_length=500, blank=True)
+    image_back_large = models.URLField(max_length=500, blank=True)
     usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     usd_foil = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     usd_etched = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

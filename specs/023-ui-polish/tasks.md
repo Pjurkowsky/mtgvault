@@ -4,8 +4,8 @@ Spec: [spec.md](spec.md) · Plan: [plan.md](plan.md)
 
 ## Back faces
 
-- [ ] **T1 Back face images in the sync and API** (AC-15)
-- [ ] **T2 Turn over in the dialog and fullscreen, both faces on hover; back-faces.spec.ts** (AC-16, AC-17)
+- [x] **T1 Back face images in the sync and API** (AC-15)
+- [x] **T2 Turn over in the dialog and fullscreen, both faces on hover; back-faces.spec.ts** (AC-16, AC-17)
 
 ## Deck page
 

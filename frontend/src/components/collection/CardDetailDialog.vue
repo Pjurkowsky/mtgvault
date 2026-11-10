@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ArrowLeftIcon } from '@lucide/vue'
+import { ArrowLeftIcon, RefreshCwIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import type { BrowserRow } from '@/components/browser/types'
@@ -75,6 +75,15 @@ const shown = computed(() => {
   const wanted = row.value?.printing.id ?? (atRoot.value ? props.printingId : null)
   return printings.find((p) => p.id === wanted) ?? printings[0] ?? null
 })
+
+// Turn over shows a double-faced card's back (spec 023, AC-16); a new card starts on its front.
+const flipped = ref(false)
+const shownImage = computed(() => {
+  const p = shown.value
+  if (!p) return ''
+  return flipped.value && p.image_back_normal ? p.image_back_large || p.image_back_normal : p.image_large || p.image_normal
+})
+watch(() => shown.value?.id, () => (flipped.value = false))
 
 // The price under the image (spec 021, AC-20): a copy's finish, the deck's price, else non-foil or the only finish.
 const priceLine = computed(() => {
@@ -193,9 +202,15 @@ const tabs = computed(() => [
       <div class="grid gap-6 md:grid-cols-[20rem_1fr]">
         <!-- Big image and reprints (AC-24, AC-26) -->
         <div class="grid content-start gap-3">
-          <button v-if="shown" type="button" class="cursor-zoom-in" :aria-label="`Preview ${shown.name}`" @click="showFullscreen(shown.image_large || shown.image_normal, shown.name)">
-            <img :src="shown.image_large || shown.image_normal" :alt="shown.name" class="w-full rounded-[4.75%/3.5%] bg-muted" data-testid="detail-image" />
+          <button
+            v-if="shown" type="button" class="cursor-zoom-in" :aria-label="`Preview ${shown.name}`"
+            @click="showFullscreen(shown.image_large || shown.image_normal, shown.name, shown.image_back_large || shown.image_back_normal)"
+          >
+            <img :src="shownImage" :alt="shown.name" class="w-full rounded-[4.75%/3.5%] bg-muted" :data-face="flipped ? 'back' : 'front'" data-testid="detail-image" />
           </button>
+          <Button v-if="shown?.image_back_normal" variant="outline" size="sm" class="justify-self-start" data-testid="turn-over" @click="flipped = !flipped">
+            <RefreshCwIcon /> Turn over
+          </Button>
           <Skeleton v-else class="aspect-[488/680] w-full" />
           <p v-if="priceLine" class="text-sm" data-testid="detail-image-price">
             <Price :value="priceLine.value" :values="priceLine.values" :currency="currency" />

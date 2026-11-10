@@ -36,6 +36,9 @@ def token_ids(card: dict) -> list[str]:
 def token_fields(card: dict) -> dict:
     front = (card.get('card_faces') or [{}])[0]
     images = card.get('image_uris') or front.get('image_uris') or {}
+    # A back face has its own images only when the card has no shared ones (spec 023, AC-15).
+    faces = card.get('card_faces') or []
+    back = (faces[1].get('image_uris') or {}) if len(faces) > 1 and not card.get('image_uris') else {}
     prices = card.get('prices') or {}
     return {
         'set_name': card.get('set_name', ''),
@@ -76,6 +79,9 @@ def printing_fields(card: dict) -> dict:
     # Double-faced cards keep images, colors and costs on their faces.
     front = (card.get('card_faces') or [{}])[0]
     images = card.get('image_uris') or front.get('image_uris') or {}
+    # A back face has its own images only when the card has no shared ones (spec 023, AC-15).
+    faces = card.get('card_faces') or []
+    back = (faces[1].get('image_uris') or {}) if len(faces) > 1 and not card.get('image_uris') else {}
     colors = card.get('colors')
     if colors is None:
         colors = front.get('colors', [])
@@ -109,6 +115,8 @@ def printing_fields(card: dict) -> dict:
         'image_small': images.get('small', ''),
         'image_normal': images.get('normal', ''),
         'image_large': images.get('large', ''),
+        'image_back_normal': back.get('normal', ''),
+        'image_back_large': back.get('large', ''),
         'token_ids': token_ids(card),
         **{field: _decimal(prices.get(field)) for field in PRICE_FIELDS},
     }

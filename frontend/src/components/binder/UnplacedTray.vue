@@ -43,7 +43,7 @@ function press(row: BrowserRow, event: PointerEvent) {
 
     <ul v-if="shown.length" class="grid grid-cols-3 gap-2.5 p-4">
       <li v-for="u in shown" :key="u.row.id" class="relative">
-        <CardPreview :image="u.row.printing.image_normal" :name="u.row.printing.name">
+        <CardPreview :image="u.row.printing.image_normal" :back="u.row.printing.image_back_normal" :name="u.row.printing.name">
           <button
             type="button"
             class="block w-full touch-manipulation overflow-hidden rounded-[4.75%/3.5%] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"

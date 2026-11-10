@@ -97,7 +97,7 @@ async function propose() {
           <Input v-model="outQuery" placeholder="Deck card" aria-label="Deck card" autocomplete="off" />
           <ul class="grid max-h-56 gap-1 overflow-y-auto" data-testid="swap-out-options">
             <li v-for="c in outOptions" :key="c.id">
-              <CardPreview :image="c.printing.image_normal" :name="c.printing.name">
+              <CardPreview :image="c.printing.image_normal" :back="c.printing.image_back_normal" :name="c.printing.name">
                 <button type="button" class="flex w-full items-center gap-3 rounded-md p-1.5 text-left text-sm hover:bg-muted" :aria-label="c.printing.name" @click="outCard = c">
                   <img :src="c.printing.image_small" alt="" class="h-10 rounded-sm" loading="lazy" />
                   <span class="flex-1">{{ c.printing.name }}</span>

@@ -84,12 +84,12 @@ const deckLabel = (row: BrowserRow) => (row.want && 'deck_name' in row.want ? ro
             </TableCell>
             <!-- The thumbnail is small: hovering it or the name shows the card (spec 006, AC-2). -->
             <TableCell>
-              <CardPreview :image="row.printing.image_normal" :name="row.printing.name">
+              <CardPreview :image="row.printing.image_normal" :back="row.printing.image_back_normal" :name="row.printing.name">
                 <img :src="row.printing.image_small" alt="" loading="lazy" class="h-10 rounded-sm" />
               </CardPreview>
             </TableCell>
             <TableCell class="font-medium">
-              <CardPreview :image="row.printing.image_normal" :name="row.printing.name"><span>{{ row.printing.name }}</span></CardPreview>
+              <CardPreview :image="row.printing.image_normal" :back="row.printing.image_back_normal" :name="row.printing.name"><span>{{ row.printing.name }}</span></CardPreview>
             </TableCell>
             <template v-if="wants">
               <TableCell :title="row.printing.set_name" data-testid="want-printing">{{ printingLabel(row) }}</TableCell>

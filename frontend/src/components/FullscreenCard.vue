@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
-import { XIcon } from '@lucide/vue'
+import { RefreshCwIcon, XIcon } from '@lucide/vue'
 import { fullscreen, hideFullscreen } from '@/composables/useFullscreen'
 
 // Escape closes only the preview: stop it before dialogs underneath see it.
@@ -24,7 +24,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey, true))
       role="dialog" aria-modal="true" :aria-label="fullscreen.name" data-testid="fullscreen"
       @click="hideFullscreen"
     >
-      <img :src="fullscreen.image" :alt="fullscreen.name" class="max-h-full max-w-full rounded-[4.75%/3.5%] shadow-2xl" />
+      <img
+        :src="fullscreen.flipped && fullscreen.back ? fullscreen.back : fullscreen.image" :alt="fullscreen.name"
+        class="max-h-full max-w-full rounded-[4.75%/3.5%] shadow-2xl" :data-face="fullscreen.flipped ? 'back' : 'front'" data-testid="fullscreen-image"
+      />
+      <!-- Spec 023, AC-16 -->
+      <button
+        v-if="fullscreen.back" type="button" class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm text-white hover:bg-white/25"
+        data-testid="turn-over" @click.stop="fullscreen.flipped = !fullscreen.flipped"
+      >
+        <RefreshCwIcon class="size-4" /> Turn over
+      </button>
       <button type="button" class="absolute top-4 right-4 rounded-full bg-white/15 p-2 text-white hover:bg-white/25" aria-label="Close preview">
         <XIcon class="size-5" />
       </button>
