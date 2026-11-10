@@ -2,7 +2,9 @@ import { expect, type Page } from '@playwright/test'
 import type { apiAs } from './helpers'
 
 // Spec 024: pod simulation against the fake Forge service (backend/sims/management/commands/fake_forge.py).
-// Its card list leaves out Abstergo Entertainment and Brotherhood Headquarters, so they are unsupported.
+// Its card list leaves out Abstergo Entertainment, Brotherhood Headquarters, Dockside Extortionist and
+// Shivan Dragon,
+// so they are unsupported.
 // A deck named "Hangs" plays 8 seconds a game, "Broken" fails and "Stalls" is a draw; others take a second.
 export type Api = Awaited<ReturnType<typeof apiAs>>
 
@@ -24,6 +26,7 @@ export async function openSimulate(page: Page, deckId: number, username?: string
 /** Pick a deck for seat `seat` (1-based) from a picker group. */
 export async function pickOpponent(page: Page, seat: number, group: 'Opponent pool' | 'My decks' | 'Public decks', name: string) {
   const s = seats(page).nth(seat - 1)
+  await expect(s.getByRole('combobox')).toBeVisible()
   const empty = s.getByRole('button', { name: 'Choose opponent' })
   await ((await empty.count()) ? empty : s.getByTestId('seat-tile')).click()
   await picker(page).getByLabel('Search opponents').fill(name)
