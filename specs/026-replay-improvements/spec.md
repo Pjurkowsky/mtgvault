@@ -32,6 +32,9 @@ autoplay, on a board that stays still while cards come and go.
 
 - **AC-4** Clicking any card, on the battlefield, in a zone or a commander,
   shows its large image full screen. Closing it leaves an open zone dialog open.
+- **AC-16** With players side by side, the board is mirrored toward its centre:
+  the left column's rows, labels and zones line up on the right; the right
+  column's stay on the left, with the player's life on the left of their header.
 - **AC-5** Each battlefield row (Creatures, Other, Lands) keeps room for one line
   of cards while empty, so the first card entering doesn't move anything.
 
@@ -99,6 +102,8 @@ autoplay, on a board that stays still while cards come and go.
   names, so "Krenko Forest" isn't read as Forest.
 - AC-15: the card names in the reason are bold, not hoverable (it already sits in
   a hover preview).
+- AC-16: with three columns (five or six players) the middle column is centred;
+  on a phone (one column) nothing changes.
 - AC-11: Play at the end starts again from the first step; any manual step,
   turn change or the slider pauses autoplay.
 - AC-12: Pause at combat stops on the step where attackers are declared;

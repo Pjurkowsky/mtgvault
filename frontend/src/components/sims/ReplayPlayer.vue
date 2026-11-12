@@ -18,7 +18,10 @@ const props = defineProps<{
   active: boolean; lostTurn: number | null; changes?: Changes; showGhosts?: boolean; showFresh?: boolean
   /** Why each ghost died, by card id (AC-15). */
   reasons?: Map<number, string[]>; split?: (text: string) => Segment[]
+  /** Its column on a wide board: cards lean toward the centre, mirrored (AC-16). */
+  side?: 'left' | 'centre' | 'right' | null
 }>()
+const align = computed(() => (props.side === 'left' ? 'justify-end text-right' : props.side === 'centre' ? 'justify-center text-center' : ''))
 const ROWS = [{ key: 'creature', label: 'Creatures' }, { key: 'other', label: 'Other' }, { key: 'land', label: 'Lands' }] as const
 const rows = computed(() => ROWS.map((r) => {
   const cards = props.seat.battlefield.filter((c) => (c.row ?? 'other') === r.key).map((card) => ({ card, ghost: false }))
@@ -43,10 +46,11 @@ const zone = computed(() => zones.value.find((z) => z.key === opened.value))
 <template>
   <section
     :class="cn('flex flex-col gap-2 rounded-lg border p-3', active && 'border-primary ring-1 ring-primary', seat.lost && 'opacity-50')"
-    :data-active="active || undefined" :data-lost="seat.lost || undefined" :data-seat="player.seat" :aria-label="player.label" data-testid="replay-player"
+    :data-active="active || undefined" :data-lost="seat.lost || undefined" :data-seat="player.seat" :data-side="side || undefined" :aria-label="player.label" data-testid="replay-player"
   >
-    <header class="flex items-center gap-2" :data-target-seat="player.seat">
-      <div class="grid min-w-0">
+    <!-- A right-hand player's life is on the left, nearest the centre (AC-16) -->
+    <header :class="cn('flex items-center gap-2', side === 'right' && 'flex-row-reverse')" :data-target-seat="player.seat">
+      <div :class="cn('grid min-w-0', side === 'right' && 'text-right')">
         <span class="truncate font-semibold">{{ player.label }}</span>
         <span class="truncate text-xs text-muted-foreground">
           <template v-for="(name, i) in player.commanders" :key="name">
@@ -56,19 +60,19 @@ const zone = computed(() => zones.value.find((z) => z.key === opened.value))
           · {{ player.profile }}
         </span>
       </div>
-      <span class="ml-auto flex items-center gap-1 text-lg font-semibold tabular-nums" data-testid="player-life"><HeartIcon class="size-4 text-destructive" />{{ seat.life }}</span>
+      <span :class="cn('flex items-center gap-1 text-lg font-semibold tabular-nums', side === 'right' ? 'mr-auto' : 'ml-auto')" data-testid="player-life"><HeartIcon class="size-4 text-destructive" />{{ seat.life }}</span>
     </header>
-    <p v-if="seat.lost" class="text-sm font-medium" data-testid="player-lost">Lost on turn {{ lostTurn ?? '?' }}</p>
+    <p v-if="seat.lost" :class="cn('text-sm font-medium', align)" data-testid="player-lost">Lost on turn {{ lostTurn ?? '?' }}</p>
     <div v-for="row in rows" :key="row.key" class="grid gap-1" :data-testid="`row-${row.key}`">
-      <span class="text-xs text-muted-foreground">{{ row.label }} <span class="tabular-nums">{{ row.count }}</span></span>
+      <span :class="cn('text-xs text-muted-foreground', align)">{{ row.label }} <span class="tabular-nums">{{ row.count }}</span></span>
       <!-- Room for one line of cards, empty or not (AC-5) -->
-      <div class="flex min-h-[4.9rem] flex-wrap items-center gap-1" data-testid="row-cards">
+      <div :class="cn('flex min-h-[4.9rem] flex-wrap items-center gap-1', align)" data-testid="row-cards">
         <ReplayCard v-for="c in row.cards" :key="c.card.id" :card="c.card" :image="cards[c.card.name]" :ghost="c.ghost"
           :reason="c.ghost ? reasons?.get(c.card.id) : undefined" :split="split" :images="cards"
         />
       </div>
     </div>
-    <footer class="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground" data-testid="player-zones">
+    <footer :class="cn('mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground', align)" data-testid="player-zones">
       <button
         v-for="z in zones" :key="z.key" type="button"
         :class="cn('rounded-md border px-2 py-1 hover:bg-muted hover:text-foreground', z.fresh?.size && 'border-amber-500 text-foreground')"

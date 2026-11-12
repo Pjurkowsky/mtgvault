@@ -76,3 +76,6 @@ Depends on: 024-pod-simulation, 025-simulations-page
 16. Card names in events are **hoverable**, each showing its card.
 17. Hovering a ghost shows the card and **what hit it this turn**: the events
     naming it, the last three, else "Put into the graveyard".
+18. A **mirrored board**: everything leans toward the centre. Left players' rows
+    and zones align right; right players stay left-aligned with their life on
+    the left.

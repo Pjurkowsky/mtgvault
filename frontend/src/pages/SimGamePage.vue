@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { onKeyStroke } from '@vueuse/core'
+import { onKeyStroke, useMediaQuery } from '@vueuse/core'
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from '@lucide/vue'
 import { api, type Schemas } from '@/api/client'
 import IconButton from '@/components/IconButton.vue'
@@ -61,6 +61,16 @@ function lostTurn(seat: number) {
 }
 // Two columns up to four players, three for five or six, one on a phone (spec 024, AC-26).
 const columns = computed(() => ((game.value?.players.length ?? 0) > 4 ? 'md:grid-cols-2 2xl:grid-cols-3' : 'md:grid-cols-2'))
+// Spec 026 AC-16: a mirrored board. The left column's cards lean right, toward the centre; with three columns the middle one is centred.
+const md = useMediaQuery('(min-width: 768px)')
+const xxl = useMediaQuery('(min-width: 1536px)')
+const columnCount = computed(() => (!md.value ? 1 : xxl.value && (game.value?.players.length ?? 0) > 4 ? 3 : 2))
+function side(index: number) {
+  const n = columnCount.value
+  if (n === 1) return null
+  const col = index % n
+  return col === 0 ? 'left' : col === n - 1 ? 'right' : 'centre'
+}
 
 // ← → an event, Shift + ← → a turn (spec 026, AC-10). Not while typing, on the slider or in a dialog.
 const ignore = (e: KeyboardEvent) => {
@@ -110,7 +120,7 @@ const sidebarOpen = computed({ get: () => sidebar.value === 'open', set: (v: boo
 
         <div v-if="board" ref="boardEl" :class="cn('relative grid gap-3', columns)" data-testid="replay-board">
           <ReplayPlayer
-            v-for="p in game.players" :key="p.seat" :player="p" :seat="board[p.seat]!" :cards="game.cards"
+            v-for="(p, i) in game.players" :key="p.seat" :player="p" :side="side(i)" :seat="board[p.seat]!" :cards="game.cards"
             :active="current?.active === p.seat" :lost-turn="lostTurn(p.seat)" :changes="changed[p.seat]"
             :show-ghosts="settings.deaths.value === 'on'" :show-fresh="settings.graveyard.value === 'on'" :reasons="reasons" :split="split"
           />

@@ -104,4 +104,32 @@ test.describe('Replay zones', () => {
     await expect(lands).toHaveCount(1)
     expect(await zones()).toBe(before)
   })
+
+  test('AC-16: side by side, the board leans toward its centre; a right-hand player\'s life is on the left; one column on a phone', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    const { a, b } = await openReplay(page, api)
+    await turnsAhead(page, 3)
+    const left = replayPlayer(page, a)
+    const right = replayPlayer(page, b)
+    await expect(left).toHaveAttribute('data-side', 'left')
+    await expect(right).toHaveAttribute('data-side', 'right')
+    // Rows and zones: the left player's end at the centre, the right player's start there.
+    const justify = (panel: typeof left, id: string) => panel.getByTestId(id).first().evaluate((el) => getComputedStyle(el).justifyContent)
+    expect(await justify(left, 'row-cards')).toBe('flex-end')
+    expect(await justify(left, 'player-zones')).toBe('flex-end')
+    expect(await justify(right, 'row-cards')).not.toBe('flex-end')
+    // The left player's last land ends near the panel's right edge (layout boxes, not the tapped rotation).
+    const gap = await left.getByTestId('row-cards').last().evaluate((row) => {
+      const last = row.lastElementChild as HTMLElement
+      return row.clientWidth - (last.offsetLeft - row.offsetLeft + last.offsetWidth)
+    })
+    expect(gap).toBeLessThan(20)
+    // Life: right of the name on the left, left of the name on the right.
+    const x = async (panel: typeof left, id: string) => (await panel.getByTestId(id).boundingBox())!.x
+    expect(await x(left, 'player-life')).toBeGreaterThan(await x(left, 'player-commander'))
+    expect(await x(right, 'player-life')).toBeLessThan(await x(right, 'player-commander'))
+    await page.setViewportSize({ width: 390, height: 844 })
+    await expect(left).not.toHaveAttribute('data-side')
+  })
 })

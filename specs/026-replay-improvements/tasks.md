@@ -12,6 +12,7 @@
 - [x] **T5 Autoplay with speed, step unit, pause at combat, follow; settings remembered** (AC-11 to AC-13)
 
 - [x] **T8 Hoverable card names in events; why a ghost died** (AC-14, AC-15)
+- [x] **T9 Mirrored board toward the centre** (AC-16)
 
 ## Tests and finish
 
