@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { GitCompareArrowsIcon } from '@lucide/vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,15 @@ const emit = defineEmits<{ 'update:mine': [mine: boolean]; 'update:query': [quer
 
 const when = (at: string) => new Date(at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 const more = computed(() => (props.runs?.length ?? 0) < props.total)
+
+// Separate runs of a comparison are one row: its lists, the best win rate, the group page (spec 027, AC-19).
+type Group = NonNullable<RunRow['group']>
+const groupStatus = (g: Group) => g.runs.find((r) => r.status === 'playing') ?? g.runs.find((r) => r.status === 'queued') ?? g.runs[0]!
+const groupBest = (g: Group) => {
+  const rates = g.runs.map((r) => r.win_rate).filter((r): r is number => r != null)
+  return rates.length ? Math.max(...rates) : null
+}
+const rowStatus = (run: RunRow) => (run.group ? { ...groupStatus(run.group), cancelling: false, cancelled_by: null } : run)
 </script>
 
 <template>
@@ -37,13 +47,19 @@ const more = computed(() => (props.runs?.length ?? 0) < props.total)
     <ol v-else class="grid grid-cols-1 gap-2">
       <li v-for="run in runs" :key="run.id">
         <RouterLink
-          :to="{ name: 'sim-run', params: { run: run.id } }" :data-status="run.status" data-testid="sim-run-row"
+          :to="run.group ? { name: 'sim-group', params: { group: run.group.id } } : { name: 'sim-run', params: { run: run.id } }"
+          :data-status="rowStatus(run).status" data-testid="sim-run-row"
           class="flex items-center gap-3 rounded-lg border p-2 hover:bg-muted/50"
         >
           <img v-if="run.tested.image" :src="run.tested.image" alt="" class="h-10 w-14 shrink-0 rounded object-cover" />
           <div v-else class="h-10 w-14 shrink-0 rounded bg-muted" />
           <div class="grid min-w-0 flex-1 gap-0.5">
-            <span class="truncate font-medium" data-testid="run-row-deck">{{ run.tested.label }}</span>
+            <span class="flex min-w-0 items-center gap-1.5">
+              <span class="truncate font-medium" data-testid="run-row-deck">{{ run.group ? run.group.runs.map((r) => r.label).join(' / ') : run.tested.label }}</span>
+              <span v-if="run.lists || run.group" class="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" data-testid="run-row-lists">
+                <GitCompareArrowsIcon class="size-3.5" /> {{ run.group ? `${run.group.runs.length} runs` : `${run.lists} lists` }}
+              </span>
+            </span>
             <span class="truncate text-xs text-muted-foreground" data-testid="run-row-opponents">
               vs {{ run.opponents.map((o) => o.commanders.join(' & ') || o.label).join(', ') }}
             </span>
@@ -51,8 +67,8 @@ const more = computed(() => (props.runs?.length ?? 0) < props.total)
           </div>
           <span class="hidden shrink-0 text-xs text-muted-foreground sm:inline">{{ run.user }} · {{ when(run.created_at) }}</span>
           <div class="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-            <Badge :variant="run.status === 'failed' ? 'destructive' : active(run.status) ? 'default' : 'outline'" class="max-w-28 whitespace-normal text-center sm:max-w-none sm:whitespace-nowrap" data-testid="run-row-status">{{ statusLabel(run) }}</Badge>
-            <span class="text-right font-semibold tabular-nums sm:w-12" data-testid="run-row-win-rate">{{ run.win_rate == null ? '' : percent(run.win_rate) }}</span>
+            <Badge :variant="rowStatus(run).status === 'failed' ? 'destructive' : active(rowStatus(run).status) ? 'default' : 'outline'" class="max-w-28 whitespace-normal text-center sm:max-w-none sm:whitespace-nowrap" data-testid="run-row-status">{{ statusLabel(rowStatus(run)) }}</Badge>
+            <span class="text-right font-semibold tabular-nums sm:w-12" data-testid="run-row-win-rate">{{ (run.group ? groupBest(run.group) : run.win_rate) == null ? '' : percent(run.group ? groupBest(run.group) : run.win_rate) }}</span>
           </div>
         </RouterLink>
       </li>

@@ -13,10 +13,10 @@
 
 ## Simulations
 
-- [ ] **T6 A list per seat; seat labels and search** (AC-16)
-- [ ] **T7 Compare versions: one run with results per list; separate runs grouped** (AC-17 to AC-19)
+- [x] **T6 A list per seat; seat labels and search** (AC-16)
+- [x] **T7 Compare versions: one run with results per list; separate runs grouped** (AC-17 to AC-19)
 
 ## Tests and finish
 
-- [ ] **T8 e2e tests for every AC; screenshots at desktop and phone width** (all)
+- [x] **T8 e2e tests for every AC; screenshots at desktop and phone width** (all)
 - [ ] **T9 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**

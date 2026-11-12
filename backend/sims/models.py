@@ -64,9 +64,19 @@ class SimRun(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
+    # Spec 027, AC-18: Compare versions in one run. The tested seat's lists, each [{label, cards}];
+    # `games` counts every list's games. Empty for an ordinary run.
+    variants = models.JSONField(default=list, blank=True)
+    # Spec 027, AC-19: Compare versions as separate runs, started together.
+    group = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         indexes = [models.Index(fields=['status', 'created_at'], name='sim_run_queue')]
+
+    @property
+    def per_variant(self) -> int:
+        """Games each list plays."""
+        return self.games // len(self.variants) if self.variants else self.games
 
 
 class SimSeat(models.Model):
@@ -78,7 +88,7 @@ class SimSeat(models.Model):
 
     run = models.ForeignKey(SimRun, on_delete=models.CASCADE, related_name='seats')
     index = models.PositiveSmallIntegerField()
-    label = models.CharField(max_length=120)
+    label = models.CharField(max_length=200)
     source = models.CharField(max_length=4, choices=Source.choices)
     source_id = models.PositiveIntegerField(null=True, blank=True)
     owner = models.CharField(max_length=150, blank=True)
@@ -111,6 +121,8 @@ class SimGame(models.Model):
     duration_ms = models.PositiveIntegerField(default=0)
     # Gzipped JSON {"steps": [...], "log": [...]} from MTG Vault's Forge runner.
     replay = models.BinaryField(default=bytes)
+    # The tested seat's list in a Compare versions run (index into SimRun.variants).
+    variant = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ['number']

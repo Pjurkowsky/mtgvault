@@ -1103,6 +1103,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sims/decks/{id}/lists/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Spec 027, AC-16: a deck's branches and versions, for a seat's list dropdown. */
+        get: operations["sims_decks_lists_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/groups/{group}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Spec 027, AC-19: the separate runs of a comparison. */
+        get: operations["sims_groups_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sims/opponents/": {
         parameters: {
             query?: never;
@@ -1677,8 +1711,14 @@ export interface components {
              *     * `share` - share
              * @default swap
              */
-            mode?: components["schemas"]["ModeEnum"];
+            mode?: components["schemas"]["BinderMoveModeEnum"];
         };
+        /**
+         * @description * `swap` - swap
+         *     * `share` - share
+         * @enum {string}
+         */
+        BinderMoveModeEnum: "swap" | "share";
         /** @description A pocket: page, row and column, all from 1. */
         BinderOrder: {
             page: number;
@@ -1926,6 +1966,17 @@ export interface components {
             from_zone: (components["schemas"]["ZoneEnum"] | components["schemas"]["NullEnum"]) | null;
             from_quantity?: number;
         };
+        CompareSpec: {
+            lists: components["schemas"]["ListSpec"][];
+            /** @default one */
+            mode?: components["schemas"]["CompareSpecModeEnum"];
+        };
+        /**
+         * @description * `one` - One run
+         *     * `separate` - Separate runs
+         * @enum {string}
+         */
+        CompareSpecModeEnum: "one" | "separate";
         /**
          * @description * `NM` - Near Mint
          *     * `LP` - Lightly Played
@@ -2276,6 +2327,28 @@ export interface components {
             winner_turn: number | null;
             seat_order: number[];
             error: string;
+            /** @description The tested seat's list in a Compare versions run (spec 027) */
+            variant: number;
+        };
+        /** @description Spec 027, AC-19: separate runs started together, side by side. */
+        Group: {
+            /** Format: uuid */
+            id: string;
+            runs: components["schemas"]["Run"][];
+        };
+        GroupMember: {
+            id: number;
+            label: string;
+            status: components["schemas"]["SimRunStatusEnum"];
+            played: number;
+            games: number;
+            /** Format: double */
+            win_rate: number | null;
+        };
+        GroupRow: {
+            /** Format: uuid */
+            id: string;
+            runs: components["schemas"]["GroupMember"][];
         };
         Health: {
             status: string;
@@ -2444,6 +2517,11 @@ export interface components {
             legal: boolean;
             issues: components["schemas"]["Issue"][];
         };
+        /** @description A list of the tested deck: Main when neither is given (spec 027, AC-17). */
+        ListSpec: {
+            branch?: number | null;
+            version?: number | null;
+        };
         /** @description Owner view of a location. Totals come from the view (context['totals']). */
         Location: {
             readonly id: number;
@@ -2536,12 +2614,6 @@ export interface components {
              */
             other_decks?: boolean;
         };
-        /**
-         * @description * `swap` - swap
-         *     * `share` - share
-         * @enum {string}
-         */
-        ModeEnum: "swap" | "share";
         /** @description One amount in every currency. Null = no price. */
         Money: {
             /** Format: double */
@@ -3098,6 +3170,9 @@ export interface components {
             seats: components["schemas"]["Seat"][];
             stats: components["schemas"]["RunStats"];
             results: components["schemas"]["Game"][];
+            variants: components["schemas"]["VariantStats"][];
+            /** Format: uuid */
+            group: string | null;
         };
         RunPage: {
             results: components["schemas"]["RunRow"][];
@@ -3119,6 +3194,8 @@ export interface components {
             created_at: string;
             tested: components["schemas"]["RunRowSeat"];
             opponents: components["schemas"]["RunRowSeat"][];
+            lists: number;
+            group: components["schemas"]["GroupRow"] | null;
         };
         RunRowSeat: {
             label: string;
@@ -3277,6 +3354,8 @@ export interface components {
         SeatSpec: {
             deck?: number | null;
             pool?: number | null;
+            branch?: number | null;
+            version?: number | null;
             /** @default Default */
             profile?: components["schemas"]["ProfileEnum"];
         };
@@ -3339,9 +3418,10 @@ export interface components {
          * @enum {string}
          */
         SourceEnum: "deck" | "pool";
-        /** @description Seat 0 is the tested deck (spec 025, AC-3). */
+        /** @description Seat 0 is the tested deck (spec 025, AC-3); `compare` plays 2 to 4 of its lists (spec 027, AC-17). */
         StartRun: {
             seats: components["schemas"]["SeatSpec"][];
+            compare?: components["schemas"]["CompareSpec"];
             /** @default 10 */
             games?: number;
             /** @default 5 */
@@ -3475,6 +3555,19 @@ export interface components {
             total: components["schemas"]["Money"];
             owned: components["schemas"]["Money"];
             missing: components["schemas"]["Money"];
+        };
+        /** @description Spec 027, AC-18: one list of a Compare versions run. */
+        VariantStats: {
+            index: number;
+            label: string;
+            cards: components["schemas"]["CardRow"][];
+            played: number;
+            finished: number;
+            wins: number;
+            /** Format: double */
+            win_rate: number | null;
+            /** Format: double */
+            avg_win_turn: number | null;
         };
         Version: {
             id: number;
@@ -5628,6 +5721,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeatCheck"][];
+                };
+            };
+        };
+    };
+    sims_decks_lists_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
+    sims_groups_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                group: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Group"];
                 };
             };
         };

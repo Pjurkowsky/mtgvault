@@ -55,12 +55,24 @@ def cancelled(run: SimRun) -> bool:
     return SimRun.objects.filter(pk=run.pk, cancel_requested=True).exists()
 
 
+def variant_of(run: SimRun, number: int) -> tuple[int, int]:
+    """(list index, game index within that list), both 0-based. Each list of a Compare versions
+    run plays the same seat orders and seeds (spec 027, AC-18)."""
+    if not run.variants:
+        return 0, number - 1
+    return (number - 1) // run.per_variant, (number - 1) % run.per_variant
+
+
 def play_game(run: SimRun, seats, number: int) -> bool:
     """Plays game `number` (1-based) and stores it. False when the run was cancelled meanwhile."""
-    order = seat_order(len(seats), number - 1, run.seat_mode, run.id, run.fixed_order)
-    decks = [{'dck': forge.to_dck(seats[i].label, seats[i].cards), 'profile': seats[i].profile} for i in order]
+    variant, game = variant_of(run, number)
+    order = seat_order(len(seats), game, run.seat_mode, run.id, run.fixed_order)
+    lists = {s.index: (s.label, s.cards) for s in seats}
+    if run.variants:
+        lists[0] = (run.variants[variant]['label'], run.variants[variant]['cards'])
+    decks = [{'dck': forge.to_dck(*lists[i]), 'profile': seats[i].profile} for i in order]
     started = time.monotonic()
-    game_id = forge.call('POST', '/games', {'decks': decks, 'timeout': run.minutes * 60, 'seed': run.id * 10_000 + number})['id']
+    game_id = forge.call('POST', '/games', {'decks': decks, 'timeout': run.minutes * 60, 'seed': run.id * 10_000 + game + 1})['id']
     limit = started + run.minutes * 60 + 120
     try:
         while True:
@@ -84,6 +96,7 @@ def play_game(run: SimRun, seats, number: int) -> bool:
     lost_on = {str(order[int(k)]): v for k, v in (result.get('lost_on') or {}).items()}
     SimGame.objects.update_or_create(run=run, number=number, defaults={
         'status': status,
+        'variant': variant,
         'seat_order': order,
         'winner_seat': order[winner] if status == SimGame.Status.WON and winner is not None and winner >= 0 else None,
         'turn': result.get('turn') or 0,

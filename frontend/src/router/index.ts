@@ -27,6 +27,7 @@ export const router = createRouter({
     { path: '/decks', name: 'decks', component: () => import('@/pages/DecksPage.vue'), meta: { requiresAuth: true } },
     { path: '/decks/:id(\\d+)', name: 'deck', component: () => import('@/pages/DeckPage.vue'), meta: { requiresAuth: true } },
     { path: '/simulations', name: 'simulations', component: () => import('@/pages/SimulationsPage.vue'), meta: { requiresAuth: true } },
+    { path: '/simulations/groups/:group', name: 'sim-group', component: () => import('@/pages/SimGroupPage.vue'), meta: { requiresAuth: true } },
     { path: '/simulations/:run(\\d+)', name: 'sim-run', component: () => import('@/pages/SimRunPage.vue'), meta: { requiresAuth: true } },
     { path: '/simulations/:run(\\d+)/games/:number(\\d+)', name: 'sim-game', component: () => import('@/pages/SimGamePage.vue'), meta: { requiresAuth: true } },
     { path: '/wants', name: 'wants', component: () => import('@/pages/WantsPage.vue'), meta: { requiresAuth: true } },

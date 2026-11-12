@@ -23,11 +23,16 @@ class CardRowSerializer(serializers.Serializer):
 class SeatSpecSerializer(serializers.Serializer):
     deck = serializers.IntegerField(required=False, allow_null=True)
     pool = serializers.IntegerField(required=False, allow_null=True)
+    # Spec 027, AC-16: a deck seat plays a branch's list now or a saved version; Main when neither.
+    branch = serializers.IntegerField(required=False, allow_null=True)
+    version = serializers.IntegerField(required=False, allow_null=True)
     profile = serializers.ChoiceField(choices=PROFILES, default='Default')
 
     def validate(self, attrs):
         if bool(attrs.get('deck')) == bool(attrs.get('pool')):
             raise serializers.ValidationError('A seat is a deck or a pool deck.')
+        if (attrs.get('branch') or attrs.get('version')) and not attrs.get('deck'):
+            raise serializers.ValidationError('Only a deck seat picks a list.')
         return attrs
 
 
@@ -35,8 +40,20 @@ class PodSerializer(serializers.Serializer):
     seats = SeatSpecSerializer(many=True)
 
 
+class ListSpecSerializer(serializers.Serializer):
+    """A list of the tested deck: Main when neither is given (spec 027, AC-17)."""
+    branch = serializers.IntegerField(required=False, allow_null=True)
+    version = serializers.IntegerField(required=False, allow_null=True)
+
+
+class CompareSpecSerializer(serializers.Serializer):
+    lists = ListSpecSerializer(many=True)
+    mode = serializers.ChoiceField(choices=[('one', 'One run'), ('separate', 'Separate runs')], default='one')
+
+
 class StartRunSerializer(PodSerializer):
-    """Seat 0 is the tested deck (spec 025, AC-3)."""
+    """Seat 0 is the tested deck (spec 025, AC-3); `compare` plays 2 to 4 of its lists (spec 027, AC-17)."""
+    compare = CompareSpecSerializer(required=False)
     games = serializers.IntegerField(min_value=1, default=10)
     minutes = serializers.IntegerField(min_value=1, default=5)
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices, default=SimRun.SeatMode.ROTATE)
@@ -131,6 +148,7 @@ class GameSerializer(serializers.Serializer):
     winner_turn = serializers.IntegerField(allow_null=True)
     seat_order = serializers.ListField(child=serializers.IntegerField())
     error = serializers.CharField()
+    variant = serializers.IntegerField(help_text="The tested seat's list in a Compare versions run (spec 027)")
 
 
 class SeatStatsSerializer(serializers.Serializer):
@@ -147,6 +165,18 @@ class RunStatsSerializer(serializers.Serializer):
     win_rate = serializers.FloatField(allow_null=True)
     avg_win_turn = serializers.FloatField(allow_null=True)
     seats = SeatStatsSerializer(many=True)
+
+
+class VariantStatsSerializer(serializers.Serializer):
+    """Spec 027, AC-18: one list of a Compare versions run."""
+    index = serializers.IntegerField()
+    label = serializers.CharField()
+    cards = CardRowSerializer(many=True)
+    played = serializers.IntegerField()
+    finished = serializers.IntegerField()
+    wins = serializers.IntegerField()
+    win_rate = serializers.FloatField(allow_null=True)
+    avg_win_turn = serializers.FloatField(allow_null=True)
 
 
 class RunSerializer(serializers.Serializer):
@@ -171,6 +201,9 @@ class RunSerializer(serializers.Serializer):
     seats = SeatSerializer(many=True)
     stats = RunStatsSerializer()
     results = GameSerializer(many=True)
+    # Spec 027: each list of a Compare versions run; the runs started together with it.
+    variants = VariantStatsSerializer(many=True)
+    group = serializers.UUIDField(allow_null=True)
 
 
 class QueueEntrySerializer(serializers.Serializer):
@@ -191,6 +224,26 @@ class RunRowSeatSerializer(serializers.Serializer):
     image = serializers.CharField()
 
 
+class GroupMemberSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    label = serializers.CharField()
+    status = serializers.ChoiceField(choices=SimRun.Status.choices)
+    played = serializers.IntegerField()
+    games = serializers.IntegerField()
+    win_rate = serializers.FloatField(allow_null=True)
+
+
+class GroupRowSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    runs = GroupMemberSerializer(many=True)
+
+
+class GroupSerializer(serializers.Serializer):
+    """Spec 027, AC-19: separate runs started together, side by side."""
+    id = serializers.UUIDField()
+    runs = RunSerializer(many=True)
+
+
 class RunRowSerializer(serializers.Serializer):
     """A run in the list (spec 025, AC-6)."""
     id = serializers.IntegerField()
@@ -205,6 +258,9 @@ class RunRowSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
     tested = RunRowSeatSerializer()
     opponents = RunRowSeatSerializer(many=True)
+    # Spec 027: lists a Compare versions run plays; the separate runs of a comparison, this one first.
+    lists = serializers.IntegerField()
+    group = GroupRowSerializer(allow_null=True)
 
 
 class RunPageSerializer(serializers.Serializer):
@@ -329,19 +385,40 @@ def cancelled_by(run: SimRun) -> str | None:
 def row_data(run: SimRun, user, found: dict) -> dict:
     """A list row; `run` comes with seats and games prefetched."""
     seats = list(run.seats.all())
-    games = [g for g in run.played.all() if g.status != SimGame.Status.FAILED]
-    wins = sum(1 for g in games if g.winner_seat == 0)
+    games = list(run.played.all())
 
-    def seat(s) -> dict:
+    def seat(s, label=None) -> dict:
         names = commanders(s.cards)
-        return {'label': s.label, 'commanders': names, 'image': art(next(iter(names), None), found)}
+        return {'label': label or s.label, 'commanders': names, 'image': art(next(iter(names), None), found)}
 
+    # A Compare versions run shows its best list (spec 027, AC-18).
+    lists = variant_stats(run, games) if run.variants else []
+    best = max(lists, key=lambda v: (v['win_rate'] is not None, v['win_rate'] or 0), default=None)
     return {
         'id': run.id, 'user': run.user.username, 'mine': run.user_id == user.id, 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
-        'played': len(run.played.all()), 'games': run.games, 'win_rate': round(wins / len(games), 4) if games else None,
-        'created_at': run.created_at, 'tested': seat(seats[0]), 'opponents': [seat(s) for s in seats[1:]],
+        'played': len(games), 'games': run.games, 'win_rate': best['win_rate'] if best else win_rate(games),
+        'created_at': run.created_at, 'tested': seat(seats[0], best['label'] if best else None), 'opponents': [seat(s) for s in seats[1:]],
+        'lists': len(run.variants), 'group': None,
     }
+
+
+def win_rate(games: list[SimGame]) -> float | None:
+    finished = [g for g in games if g.status != SimGame.Status.FAILED]
+    return round(sum(1 for g in finished if g.winner_seat == 0) / len(finished), 4) if finished else None
+
+
+def variant_stats(run: SimRun, games: list[SimGame]) -> list[dict]:
+    """The tested seat's results per list (spec 027, AC-18)."""
+    out = []
+    for i, v in enumerate(run.variants):
+        mine = [g for g in games if g.variant == i]
+        finished = [g for g in mine if g.status != SimGame.Status.FAILED]
+        won = [g for g in finished if g.winner_seat == 0]
+        out.append({'index': i, 'label': v['label'], 'cards': v['cards'], 'played': len(mine), 'finished': len(finished),
+                    'wins': len(won), 'win_rate': round(len(won) / len(finished), 4) if finished else None,
+                    'avg_win_turn': average([g.winner_turn for g in won if g.winner_turn])})
+    return out
 
 
 def run_data(run: SimRun, user) -> dict:
@@ -349,7 +426,8 @@ def run_data(run: SimRun, user) -> dict:
     games = list(run.played.defer('replay'))
     found = printings_by_name([n for s in seats for n in commanders(s.cards)])
     return {
-        'id': run.id, 'deck': run.deck_id, 'deck_name': seats[0].label if seats else '', 'user': run.user.username,
+        'id': run.id, 'deck': run.deck_id, 'user': run.user.username,
+        'deck_name': run.deck.name if run.variants and run.deck else seats[0].label if seats else '',
         'mine': user.is_authenticated and run.user_id == user.id, 'can_cancel': can_cancel(user, run), 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
         'games': run.games, 'minutes': run.minutes, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
@@ -359,5 +437,6 @@ def run_data(run: SimRun, user) -> dict:
                    'image': art(next(iter(commanders(s.cards)), None), found), 'cards': s.cards} for s in seats],
         'stats': run_stats(run, games, len(seats)),
         'results': [{'number': g.number, 'status': g.status, 'winner_seat': g.winner_seat, 'turn': g.turn,
-                     'winner_turn': g.winner_turn, 'seat_order': g.seat_order, 'error': g.error} for g in games],
+                     'winner_turn': g.winner_turn, 'seat_order': g.seat_order, 'error': g.error, 'variant': g.variant} for g in games],
+        'variants': variant_stats(run, games), 'group': run.group,
     }

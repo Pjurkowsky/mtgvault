@@ -113,7 +113,8 @@ and let the simulator say which list wins more.
 - AC-15: the fork is named "<deck>" (or "<deck> (2)" when you have one with that
   name); its box, token printings and Simulations runs aren't copied.
 - AC-16: a run keeps its own copy of each list, so deleting a branch or version
-  leaves finished runs as they are.
+  leaves finished runs as they are. The dropdown lists each branch's current list
+  followed by its versions. A list with no commander can't play.
 - AC-17: Compare versions needs the tested seat's deck to have 2 or more lists;
   the total games are lists × games and the time limit is per game, as now.
 - AC-18: a One run's win rate on the Simulations list is its best list's, with

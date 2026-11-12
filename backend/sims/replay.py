@@ -46,6 +46,10 @@ def build(game: SimGame) -> dict:
     data = json.loads(gzip.decompress(bytes(game.replay))) if game.replay else {'steps': [], 'log': []}
     order = game.seat_order
     seats = {s.index: s for s in game.run.seats.all()}
+    if game.run.variants and 0 in seats and game.variant < len(game.run.variants):
+        # The tested seat played this game's list (spec 027, AC-18); not saved.
+        v = game.run.variants[game.variant]
+        seats[0].label, seats[0].cards = v['label'], v['cards']
     boards: list[list[dict]] = []
     turns: list[dict] = []
     own: dict[int, int] = {}

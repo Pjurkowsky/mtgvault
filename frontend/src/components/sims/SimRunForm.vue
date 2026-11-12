@@ -9,7 +9,10 @@ import InfoTip from '@/components/InfoTip.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { PROFILES, SEAT_MODES, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
 import OpponentPicker from './OpponentPicker.vue'
 import SeatTile from './SeatTile.vue'
@@ -18,9 +21,11 @@ import SimSwapStep from './SimSwapStep.vue'
 /** Seats, AI profiles, seat order, games and time limit (spec 024, AC-3 to AC-7; spec 025, AC-3 to AC-5). */
 const emit = defineEmits<{ started: [run: Run] }>()
 
-type Seat = { key: number; pick: Opponent | null; profile: Profile }
+/** A deck seat's list (spec 027, AC-16): `main`, `branch:<id>` or `version:<id>`. */
+type ListOption = { value: string; label: string }
+type Seat = { key: number; pick: Opponent | null; profile: Profile; list: string; lists: ListOption[] }
 let nextKey = 0
-const seat = (pick: Opponent | null = null): Seat => ({ key: nextKey++, pick, profile: 'Default' })
+const seat = (pick: Opponent | null = null): Seat => ({ key: nextKey++, pick, profile: 'Default', list: 'main', lists: [] })
 
 // The first seat is the tested deck; it can move but not go (spec 025, AC-3).
 const seats = ref<Seat[]>([seat(), seat(), seat(), seat()])
@@ -35,8 +40,27 @@ const picking = ref<number | null>(null)
 const pickerOpen = computed({ get: () => picking.value !== null, set: (v) => !v && (picking.value = null) })
 function choose(pick: Opponent) {
   const target = seats.value.find((s) => s.key === picking.value)
-  if (target) target.pick = pick
+  if (target) {
+    target.pick = pick
+    target.list = 'main'
+    target.lists = []
+    if (isTested(target)) compared.value = []
+    if (pick.source === 'deck') void loadLists(target)
+  }
   picking.value = null
+}
+/** Main (current) first, then each branch's list now and every version. */
+async function loadLists(target: Seat) {
+  const id = target.pick!.id
+  const { data } = await api.GET('/api/sims/decks/{id}/lists/', { params: { path: { id } } })
+  const live = seats.value.find((s) => s.key === target.key)
+  if (!data || !live || live.pick?.id !== id) return
+  const options: ListOption[] = [{ value: 'main', label: 'Main (current)' }]
+  for (const b of data.branches) {
+    if (!b.is_main) options.push({ value: `branch:${b.id}`, label: `${b.name} (current)` })
+    for (const v of b.versions) options.push({ value: `version:${v.id}`, label: `${b.name} v${v.number}${v.name ? ` · ${v.name}` : ''}` })
+  }
+  live.lists = options
 }
 function move(i: number, by: number) {
   const list = [...seats.value]
@@ -47,13 +71,30 @@ function move(i: number, by: number) {
 
 const valid = computed(() =>
   seats.value.length >= 2 && seats.value.every((s) => s.pick) && Number.isInteger(games.value) && games.value >= 1
-  && Number.isInteger(minutes.value) && minutes.value >= 1)
-// No upper limit (AC-7); a long run gets a warning.
-const hours = computed(() => (games.value * minutes.value) / 60)
+  && Number.isInteger(minutes.value) && minutes.value >= 1 && (!compareOn.value || compared.value.length >= 2))
+// No upper limit (AC-7); a long run gets a warning. Every compared list plays the set games.
+const hours = computed(() => (games.value * minutes.value * (compareOn.value ? compared.value.length : 1)) / 60)
 // The run's seat 0 is the tested deck; Fixed mode sends the arranged turn order.
 const isTested = (s: Seat) => s.key === testedKey
 const ordered = () => [...seats.value].sort((a, b) => Number(isTested(b)) - Number(isTested(a)))
-const specs = () => ordered().map((s) => ({ ...(s.pick!.source === 'pool' ? { pool: s.pick!.id } : { deck: s.pick!.id }), profile: s.profile }))
+const listSpec = (list: string) => {
+  const [kind, id] = list.split(':')
+  return kind === 'branch' ? { branch: Number(id) } : kind === 'version' ? { version: Number(id) } : {}
+}
+const specs = () => ordered().map((s) => ({ ...(s.pick!.source === 'pool' ? { pool: s.pick!.id } : { deck: s.pick!.id, ...listSpec(s.list) }), profile: s.profile }))
+
+// Compare versions: the tested deck plays 2 to 4 of its lists (spec 027, AC-17 to AC-19).
+const tested = computed(() => seats.value.find(isTested)!)
+const canCompare = computed(() => tested.value.lists.length >= 2)
+const comparing = ref(false)
+const compared = ref<string[]>([])
+const compareMode = ref<'one' | 'separate'>('one')
+const MAX_LISTS = 4
+function toggleList(value: string, on: boolean) {
+  compared.value = on ? [...compared.value, value].slice(-MAX_LISTS) : compared.value.filter((v) => v !== value)
+}
+const compareOn = computed(() => comparing.value && canCompare.value)
+const compareBody = () => (compareOn.value ? { compare: { lists: compared.value.map(listSpec), mode: compareMode.value } } : {})
 const order = () => seats.value.map((s) => ordered().indexOf(s))
 
 const checks = ref<Schemas['SeatCheck'][]>([])
@@ -62,9 +103,13 @@ const swapping = ref(false)
 async function run() {
   if (!valid.value || busy.value) return
   busy.value = true
-  const { data } = await api.POST('/api/sims/check/', { body: { seats: specs() } })
+  const pod = specs()
+  const lists = compareOn.value ? compared.value.map((l) => ({ ...pod[0]!, branch: undefined, version: undefined, ...listSpec(l) })) : [pod[0]!]
+  const { data: found } = await api.POST('/api/sims/check/', { body: { seats: [...lists, ...pod.slice(1)] } })
   busy.value = false
-  if (!data) return toast.error('Could not check the decks.')
+  if (!found) return toast.error('Could not check the decks.')
+  const data = found.slice(lists.length - 1)
+  data[0] = { ...data[0]!, unsupported: found.slice(0, lists.length).flatMap((c) => c.unsupported).filter((c, i, all) => all.findIndex((o) => o.name === c.name) === i) }
   // Every unsupported card needs a swap before the run (AC-11).
   if (data.some((s) => s.unsupported.length)) {
     checks.value = data
@@ -77,7 +122,9 @@ async function run() {
 async function start() {
   busy.value = true
   const { data, error } = await api.POST('/api/sims/runs/', {
-    body: { seats: specs(), games: games.value, minutes: minutes.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}) },
+    body: {
+      seats: specs(), games: games.value, minutes: minutes.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}), ...compareBody(),
+    },
   })
   busy.value = false
   if (!data) return toast.error(Object.values(fieldErrors(error as unknown)).join(' ') || 'Could not start the run.')
@@ -100,6 +147,32 @@ async function start() {
         </div>
         <SeatTile v-if="s.pick" :pick="s.pick" button @click="picking = s.key" />
         <Button v-else variant="outline" class="h-16 border-dashed" @click="picking = s.key">{{ isTested(s) ? 'Choose deck' : 'Choose opponent' }}</Button>
+        <template v-if="isTested(s) && canCompare">
+          <div class="flex items-center gap-2">
+            <Switch id="compare-versions" v-model="comparing" data-testid="compare-versions" />
+            <Label for="compare-versions" class="font-normal">Compare versions</Label>
+            <InfoTip text="Pick 2 to 4 lists of this deck; each plays the same pod, seat orders and seeds" />
+          </div>
+          <template v-if="comparing">
+            <ul class="grid max-h-48 gap-1 overflow-y-auto rounded-md border p-2" data-testid="compare-lists">
+              <li v-for="o in s.lists" :key="o.value" class="flex items-center gap-2 text-sm">
+                <Checkbox
+                  :id="`compare-${o.value}`" :model-value="compared.includes(o.value)"
+                  @update:model-value="(on) => toggleList(o.value, on === true)"
+                />
+                <Label :for="`compare-${o.value}`" class="font-normal">{{ o.label }}</Label>
+              </li>
+            </ul>
+            <ToggleGroup :model-value="compareMode" type="single" variant="outline" size="sm" class="justify-self-start" aria-label="Compare as" @update:model-value="(v) => v && (compareMode = v as 'one' | 'separate')">
+              <ToggleGroupItem value="one" class="px-3">One run</ToggleGroupItem>
+              <ToggleGroupItem value="separate" class="px-3">Separate runs</ToggleGroupItem>
+            </ToggleGroup>
+          </template>
+        </template>
+        <Select v-if="s.lists.length > 1 && !(isTested(s) && compareOn)" v-model="s.list">
+          <SelectTrigger class="w-full" :aria-label="`List, seat ${i + 1}`" data-testid="seat-list"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem v-for="o in s.lists" :key="o.value" :value="o.value">{{ o.label }}</SelectItem></SelectContent>
+        </Select>
         <Select v-model="s.profile">
           <SelectTrigger class="w-full" :aria-label="`AI profile, seat ${i + 1}`"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem v-for="p in PROFILES" :key="p" :value="p">{{ p }}</SelectItem></SelectContent>

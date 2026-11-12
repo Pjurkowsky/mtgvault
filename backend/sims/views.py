@@ -1,6 +1,6 @@
 """Pod simulation API (spec 024)."""
 
-from django.db.models import Prefetch, Q
+from django.db.models import Min, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -10,13 +10,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from decks.models import Deck
+from decks.serializers import BranchesSerializer
 
 from . import forge, replay, services
 from .models import PoolDeck, SimGame, SimRun
 from .serializers import (
-    OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
+    GroupSerializer, OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
     ReplaySerializer, RunPageSerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer,
-    StatusSerializer, SuggestionSerializer, art, row_data, run_data,
+    StatusSerializer, SuggestionSerializer, art, row_data, run_data, win_rate,
 )
 
 LIST_LIMIT = 50
@@ -151,20 +152,33 @@ class RunsView(APIView):
             runs = runs.filter(user=request.user)
         if q := request.query_params.get('q', '').strip():
             runs = runs.filter(search__icontains=q.lower())
+        # Separate runs of a comparison are one row, under their first run (spec 027, AC-19).
+        firsts = SimRun.objects.filter(group__isnull=False).values('group').annotate(first=Min('id')).values('first')
+        runs = runs.filter(Q(group__isnull=True) | Q(pk__in=firsts))
         total = runs.count()
         offset = max(int(request.query_params.get('offset') or 0), 0)
         page = list(runs.select_related('user').prefetch_related(
             'seats', Prefetch('played', queryset=SimGame.objects.defer('replay')),
         ).order_by('-created_at', '-id')[offset:offset + RUN_PAGE])
         found = services.printings_by_name([n for r in page for s in r.seats.all() for n in services.commanders(s.cards)])
-        return Response(RunPageSerializer({'results': [row_data(r, request.user, found) for r in page], 'total': total}).data)
+        rows = [row_data(r, request.user, found) for r in page]
+        groups = {r.group for r in page if r.group}
+        if groups:
+            members: dict = {}
+            for m in (SimRun.objects.filter(group__in=groups).select_related('user')
+                      .prefetch_related('seats', Prefetch('played', queryset=SimGame.objects.defer('replay'))).order_by('id')):
+                members.setdefault(m.group, []).append(m)
+            for run, row in zip(page, rows):
+                if run.group:
+                    row['group'] = {'id': run.group, 'runs': [group_member(m) for m in members.get(run.group, [])]}
+        return Response(RunPageSerializer({'results': rows, 'total': total}).data)
 
     @extend_schema(request=StartRunSerializer, responses={201: RunSerializer})
     def post(self, request):
         data = StartRunSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
-        run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'))
+        run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'), d.get('compare'))
         return Response(RunSerializer(run_data(run, request.user)).data, status=status.HTTP_201_CREATED)
 
 
@@ -227,3 +241,31 @@ class ReplayView(APIView):
         run = services.visible_run(request.user, pk)
         game = get_object_or_404(SimGame.objects.filter(run=run), number=number)
         return Response(ReplaySerializer({'run': run_data(run, request.user), **replay.build(game)}).data)
+
+
+class DeckListsView(APIView):
+    """Spec 027, AC-16: a deck's branches and versions, for a seat's list dropdown."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=BranchesSerializer)
+    def get(self, request, pk):
+        from decks.views import branches_data
+        return Response(BranchesSerializer(branches_data(services.visible_deck(request.user, pk))).data)
+
+
+def group_member(run: SimRun) -> dict:
+    games = list(run.played.all())
+    return {'id': run.id, 'label': run.seats.all()[0].label, 'status': run.status, 'played': len(games), 'games': run.games,
+            'win_rate': win_rate(games)}
+
+
+class GroupView(APIView):
+    """Spec 027, AC-19: the separate runs of a comparison."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=GroupSerializer)
+    def get(self, request, group):
+        runs = list(services.visible_runs(request.user).filter(group=group).select_related('deck__user', 'user', 'cancelled_by').order_by('id'))
+        if not runs:
+            raise NotFound()
+        return Response(GroupSerializer({'id': group, 'runs': [run_data(r, request.user) for r in runs]}).data)

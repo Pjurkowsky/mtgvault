@@ -2319,6 +2319,50 @@ paths:
                 items:
                   $ref: '#/components/schemas/SeatCheck'
           description: ''
+  /api/sims/decks/{id}/lists/:
+    get:
+      operationId: sims_decks_lists_retrieve
+      description: 'Spec 027, AC-16: a deck''s branches and versions, for a seat''s
+        list dropdown.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
+  /api/sims/groups/{group}/:
+    get:
+      operationId: sims_groups_retrieve
+      description: 'Spec 027, AC-19: the separate runs of a comparison.'
+      parameters:
+      - in: path
+        name: group
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+          description: ''
   /api/sims/opponents/:
     get:
       operationId: sims_opponents_retrieve
@@ -3599,7 +3643,7 @@ components:
           description: 'null: back to Unplaced'
         mode:
           allOf:
-          - $ref: '#/components/schemas/ModeEnum'
+          - $ref: '#/components/schemas/BinderMoveModeEnum'
           default: swap
           description: |-
             When the target slot is taken
@@ -3608,6 +3652,14 @@ components:
             * `share` - share
       required:
       - to
+    BinderMoveModeEnum:
+      enum:
+      - swap
+      - share
+      type: string
+      description: |-
+        * `swap` - swap
+        * `share` - share
     BinderOrder:
       type: object
       description: 'A pocket: page, row and column, all from 1.'
@@ -4221,6 +4273,27 @@ components:
       - printing
       - quantity
       - zone
+    CompareSpec:
+      type: object
+      properties:
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListSpec'
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/CompareSpecModeEnum'
+          default: one
+      required:
+      - lists
+    CompareSpecModeEnum:
+      enum:
+      - one
+      - separate
+      type: string
+      description: |-
+        * `one` - One run
+        * `separate` - Separate runs
     ConditionEnum:
       enum:
       - NM
@@ -5070,14 +5143,69 @@ components:
             type: integer
         error:
           type: string
+        variant:
+          type: integer
+          description: The tested seat's list in a Compare versions run (spec 027)
       required:
       - error
       - number
       - seat_order
       - status
       - turn
+      - variant
       - winner_seat
       - winner_turn
+    Group:
+      type: object
+      description: 'Spec 027, AC-19: separate runs started together, side by side.'
+      properties:
+        id:
+          type: string
+          format: uuid
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
+      required:
+      - id
+      - runs
+    GroupMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+        status:
+          $ref: '#/components/schemas/SimRunStatusEnum'
+        played:
+          type: integer
+        games:
+          type: integer
+        win_rate:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - games
+      - id
+      - label
+      - played
+      - status
+      - win_rate
+    GroupRow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMember'
+      required:
+      - id
+      - runs
     Health:
       type: object
       properties:
@@ -5507,6 +5635,17 @@ components:
       required:
       - issues
       - legal
+    ListSpec:
+      type: object
+      description: 'A list of the tested deck: Main when neither is given (spec 027,
+        AC-17).'
+      properties:
+        branch:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+          nullable: true
     Location:
       type: object
       description: Owner view of a location. Totals come from the view (context['totals']).
@@ -5691,14 +5830,6 @@ components:
           type: boolean
           default: false
           description: Also copies this deck lacks that are only in other decks' boxes
-    ModeEnum:
-      enum:
-      - swap
-      - share
-      type: string
-      description: |-
-        * `swap` - swap
-        * `share` - share
     Money:
       type: object
       description: One amount in every currency. Null = no price.
@@ -7063,6 +7194,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Game'
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/VariantStats'
+        group:
+          type: string
+          format: uuid
+          nullable: true
       required:
       - can_cancel
       - cancelled_by
@@ -7074,6 +7213,7 @@ components:
       - finished_at
       - fixed_order
       - games
+      - group
       - id
       - mine
       - minutes
@@ -7085,6 +7225,7 @@ components:
       - stats
       - status
       - user
+      - variants
     RunPage:
       type: object
       properties:
@@ -7131,12 +7272,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RunRowSeat'
+        lists:
+          type: integer
+        group:
+          allOf:
+          - $ref: '#/components/schemas/GroupRow'
+          nullable: true
       required:
       - cancelled_by
       - cancelling
       - created_at
       - games
+      - group
       - id
+      - lists
       - mine
       - opponents
       - played
@@ -7520,6 +7669,12 @@ components:
         pool:
           type: integer
           nullable: true
+        branch:
+          type: integer
+          nullable: true
+        version:
+          type: integer
+          nullable: true
         profile:
           allOf:
           - $ref: '#/components/schemas/ProfileEnum'
@@ -7636,12 +7791,15 @@ components:
         * `pool` - pool
     StartRun:
       type: object
-      description: Seat 0 is the tested deck (spec 025, AC-3).
+      description: Seat 0 is the tested deck (spec 025, AC-3); `compare` plays 2 to
+        4 of its lists (spec 027, AC-17).
       properties:
         seats:
           type: array
           items:
             $ref: '#/components/schemas/SeatSpec'
+        compare:
+          $ref: '#/components/schemas/CompareSpec'
         games:
           type: integer
           minimum: 1
@@ -7956,6 +8114,41 @@ components:
       - missing
       - owned
       - total
+    VariantStats:
+      type: object
+      description: 'Spec 027, AC-18: one list of a Compare versions run.'
+      properties:
+        index:
+          type: integer
+        label:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/CardRow'
+        played:
+          type: integer
+        finished:
+          type: integer
+        wins:
+          type: integer
+        win_rate:
+          type: number
+          format: double
+          nullable: true
+        avg_win_turn:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - avg_win_turn
+      - cards
+      - finished
+      - index
+      - label
+      - played
+      - win_rate
+      - wins
     Version:
       type: object
       properties:

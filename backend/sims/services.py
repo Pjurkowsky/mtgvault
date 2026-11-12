@@ -1,5 +1,6 @@
 """Pods, the opponent pool, sim swaps and runs (spec 024)."""
 
+import uuid
 from collections import Counter
 
 from django.db import transaction
@@ -10,7 +11,8 @@ from rest_framework.exceptions import NotFound, ValidationError
 from cards.edhrec import edhrec_for
 from cards.models import CardInsight, Printing
 from decks import textlist
-from decks.models import Deck, DeckCard
+from decks.models import Deck, DeckBranch, DeckCard, DeckVersion
+from decks.versions import version_cards
 
 from . import forge
 from .models import PoolDeck, SimRun, SimSeat, SimSwap
@@ -37,11 +39,31 @@ def commander_decks(queryset):
     return queryset.filter(format=Deck.Format.COMMANDER, cards__zone=DeckCard.Zone.COMMANDER, cards__branch__is_main=True).distinct()
 
 
-def deck_cards(deck: Deck) -> list[dict]:
-    """Commander and Mainboard cards as a pod list (AC-8: Sideboard and Maybeboard stay out)."""
-    rows = deck.list_cards().filter(zone__in=[DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN]).select_related('printing')
+def deck_cards(deck: Deck, version: DeckVersion | None = None) -> list[dict]:
+    """Commander and Mainboard cards as a pod list (AC-8: Sideboard and Maybeboard stay out).
+    The deck's shown branch, or a saved version (spec 027, AC-16)."""
+    zones = (DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN)
+    rows = ([c for c in version_cards(deck, version) if c.zone in zones] if version is not None
+            else deck.list_cards().filter(zone__in=zones).select_related('printing'))
     return merge([{'name': c.printing.name, 'quantity': c.quantity, 'commander': c.zone == DeckCard.Zone.COMMANDER}
                   for c in rows])
+
+
+def deck_list(deck: Deck, spec: dict) -> tuple[list[dict], str]:
+    """The seat's list and its label: "Deck", "Deck · Branch" or "Deck · Branch v1" (spec 027, AC-16)."""
+    if spec.get('version'):
+        version = DeckVersion.objects.select_related('branch').filter(pk=spec['version'], branch__deck=deck).first()
+        if version is None:
+            raise NotFound('That version is gone.')
+        deck.branch = version.branch
+        return deck_cards(deck, version), f'{deck.name} · {version.branch.name} v{version.number}'
+    if spec.get('branch'):
+        branch = DeckBranch.objects.filter(pk=spec['branch'], deck=deck).first()
+        if branch is None:
+            raise NotFound('That branch is gone.')
+        deck.branch = branch
+        return deck_cards(deck), deck.name if branch.is_main else f'{deck.name} · {branch.name}'
+    return deck_cards(deck), deck.name
 
 
 def merge(cards: list[dict]) -> list[dict]:
@@ -96,8 +118,11 @@ def seat_source(user, spec: dict) -> dict:
     deck = commander_decks(visible_decks(user)).filter(pk=spec.get('deck')).select_related('user').first()
     if deck is None:
         raise NotFound('That deck is not available.')
-    return {'label': deck.name, 'source': SimSeat.Source.DECK, 'source_id': deck.id, 'owner': deck.user.username,
-            'cards': deck_cards(deck), 'swaps': user_swaps(user, deck)}
+    cards, label = deck_list(deck, spec)
+    if not commanders(cards):
+        raise ValidationError({'seats': f'{label} has no commander.'})
+    return {'label': label, 'source': SimSeat.Source.DECK, 'source_id': deck.id, 'owner': deck.user.username,
+            'cards': cards, 'swaps': user_swaps(user, deck)}
 
 
 def unsupported(cards: list[dict], supported: frozenset[str]) -> list[str]:
@@ -226,37 +251,81 @@ def run_search(seats) -> str:
     return '\n'.join(names).lower()
 
 
-def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None) -> SimRun:
+def build_seat(user, spec: dict, supported, check: list[dict]) -> dict:
+    """A seat with swaps applied and Forge's names; refuses unsupported cards (AC-11)."""
+    seat = seat_source(user, spec)
+    cards = apply_swaps(seat['cards'], seat['swaps'])
+    if unsupported(cards, supported):
+        raise ValidationError({'unsupported': check_pod(user, check)})
+    cards = merge([{**c, 'name': forge.forge_name(c['name'], supported)} for c in cards])
+    profile = spec.get('profile') or 'Default'
+    if profile not in PROFILES:
+        raise ValidationError({'profile': f'Unknown AI profile {profile}.'})
+    return {**seat, 'cards': cards, 'profile': profile}
+
+
+def list_specs(tested: dict, compare: dict | None) -> list[dict]:
+    """The tested seat once per list it plays (spec 027, AC-17)."""
+    if not compare:
+        return [tested]
+    lists = compare.get('lists') or []
+    if not tested.get('deck'):
+        raise ValidationError({'compare': 'Compare versions needs one of your or a public deck in the tested seat.'})
+    if not 2 <= len(lists) <= 4:
+        raise ValidationError({'compare': 'Pick 2 to 4 lists.'})
+    keys = [(item.get('branch'), item.get('version')) for item in lists]
+    if len(set(keys)) != len(keys):
+        raise ValidationError({'compare': 'Pick each list once.'})
+    plain = {k: v for k, v in tested.items() if k not in ('branch', 'version')}
+    return [{**plain, **{k: v for k, v in item.items() if k in ('branch', 'version') and v}} for item in lists]
+
+
+def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None,
+              compare: dict | None = None) -> SimRun:
     """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15).
 
-    Seat 0 is the tested deck: a player's deck or a pool deck (spec 025, AC-3).
+    Seat 0 is the tested deck: a player's deck or a pool deck (spec 025, AC-3). With `compare`
+    (spec 027, AC-17 to AC-19) seat 0 plays 2 to 4 lists: in one run, or one run per list.
     """
     if not 2 <= len(seats) <= MAX_SEATS:
         raise ValidationError({'seats': 'A pod has 2 to 6 decks.'})
     if order and sorted(order) != list(range(len(seats))):
         raise ValidationError({'order': 'The order must name every seat once.'})
     supported = forge.supported_names()
-    built = []
-    for spec in seats:
-        seat = seat_source(user, spec)
-        cards = apply_swaps(seat['cards'], seat['swaps'])
-        if unsupported(cards, supported):
-            raise ValidationError({'unsupported': check_pod(user, seats)})
-        cards = merge([{**c, 'name': forge.forge_name(c['name'], supported)} for c in cards])
-        built.append({**seat, 'cards': cards, 'profile': spec.get('profile') or 'Default'})
-    for seat in built:
-        if seat['profile'] not in PROFILES:
-            raise ValidationError({'profile': f"Unknown AI profile {seat['profile']}."})
-    with transaction.atomic():
+    tested = list_specs(seats[0], compare)
+    check = [*tested, *seats[1:]]
+    lists = [build_seat(user, spec, supported, check) for spec in tested]
+    opponents = [build_seat(user, spec, supported, check) for spec in seats[1:]]
+    deck = Deck.objects.get(pk=lists[0]['source_id']) if lists[0]['source'] == SimSeat.Source.DECK else None
+    every = [s['label'] for s in lists]
+
+    def create(first: dict, **extra) -> SimRun:
+        built = [first, *opponents]
         labels = unique_labels([s['label'] for s in built])
-        deck = Deck.objects.get(pk=built[0]['source_id']) if built[0]['source'] == SimSeat.Source.DECK else None
+        search = run_search([{**s, 'label': labels[i]} for i, s in enumerate(built)])
+        # A comparison is found by any of its lists' names.
+        search = '\n'.join([search, *every]).lower() if compare else search
         run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [],
-                                    search=run_search([{**s, 'label': labels[i]} for i, s in enumerate(built)]))
+                                    search=search, **extra)
         SimSeat.objects.bulk_create(
             SimSeat(run=run, index=i, label=labels[i], source=s['source'], source_id=s['source_id'],
                     owner=s['owner'], profile=s['profile'], cards=s['cards'])
             for i, s in enumerate(built))
-    return run
+        return run
+
+    with transaction.atomic():
+        if not compare:
+            return create(lists[0])
+        if compare.get('mode') == 'separate':
+            group = uuid.uuid4()
+            return [create(seat, group=group) for seat in lists][0]
+        # One run: each list plays `games` games; seat 0 holds the first list.
+        others = [s['label'] for s in opponents]
+        variants = [{'label': unique_labels([s['label'], *others])[0], 'cards': s['cards']} for s in lists]
+        run = create(lists[0], variants=variants)
+        run.games = games * len(lists)
+        run.save(update_fields=['games'])
+        return run
 
 
 def can_cancel(user, run: SimRun) -> bool:
