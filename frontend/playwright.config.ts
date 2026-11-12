@@ -7,6 +7,9 @@ const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 5180)
 // Spec 024: a fake Forge service answering from recorded games, and the worker that plays runs.
 const FORGE_PORT = Number(process.env.E2E_FORGE_PORT ?? 8190)
 const SIMS_PORT = Number(process.env.E2E_SIMS_PORT ?? 8191)
+// Spec 029: a second fake Forge, with a key, for the Main Forge tests.
+export const MAIN_FORGE_PORT = Number(process.env.E2E_MAIN_FORGE_PORT ?? 8192)
+export const MAIN_FORGE_KEY = 'secret'
 const REDIS_URL = process.env.E2E_REDIS_URL ?? 'redis://localhost:6379/1'
 export const RATES = { EUR: 4.4, USD: 4.0 }
 /** Fake camera for the scanner tests: Sol Ring on a table (built by e2e/camera.setup.ts). */
@@ -37,7 +40,7 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/performance\.spec\.ts/, /sim-admin\.spec\.ts/, /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/, /\.setup\.ts/],
+      testIgnore: [/performance\.spec\.ts/, /sim-admin\.spec\.ts/, /sim-forge-servers\.spec\.ts/, /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/, /\.setup\.ts/],
     },
     // An admin's Cancel all stops every run, so it runs after the rest (spec 025, AC-14).
     {
@@ -46,12 +49,19 @@ export default defineConfig({
       testMatch: /sim-admin\.spec\.ts/,
       dependencies: ['chromium'],
     },
+    // Main and Fallback Forge settings are server-wide, so they change after the rest (spec 029).
+    {
+      name: 'forge-servers',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /sim-forge-servers\.spec\.ts/,
+      dependencies: ['sim-admin'],
+    },
     // Timing tests run alone after the rest, so parallel tests don't skew them.
     {
       name: 'performance',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /performance\.spec\.ts/,
-      dependencies: ['sim-admin'],
+      dependencies: ['forge-servers'],
     },
     { name: 'camera', testMatch: /camera\.setup\.ts/ },
     // Real recognition models with Chromium's fake camera (spec 003).
@@ -99,6 +109,13 @@ export default defineConfig({
       command: `uv run manage.py fake_forge --port ${FORGE_PORT}`,
       cwd: '../backend',
       url: `http://127.0.0.1:${FORGE_PORT}/health`,
+      env: { DATABASE_URL },
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `uv run manage.py fake_forge --port ${MAIN_FORGE_PORT} --key ${MAIN_FORGE_KEY} --forge-version fake-main`,
+      cwd: '../backend',
+      port: MAIN_FORGE_PORT,
       env: { DATABASE_URL },
       reuseExistingServer: !process.env.CI,
     },

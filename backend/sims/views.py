@@ -1,11 +1,11 @@
-"""Pod simulation API (spec 024)."""
+"""Pod simulation API (specs 024, 029)."""
 
 from django.db.models import Min, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,9 +13,9 @@ from decks.models import Deck
 from decks.serializers import BranchesSerializer
 
 from . import forge, replay, services
-from .models import PoolDeck, SimGame, SimRun
+from .models import ForgeServer, PoolDeck, SimGame, SimRun
 from .serializers import (
-    GroupSerializer, OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
+    ForgeServersSerializer, ForgeTestResultSerializer, ForgeTestSerializer, GroupSerializer, OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
     ReplaySerializer, RunPageSerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer,
     StatusSerializer, SuggestionSerializer, art, row_data, run_data, win_rate,
 )
@@ -29,6 +29,45 @@ class StatusView(APIView):
     @extend_schema(responses=StatusSerializer)
     def get(self, request):
         return Response(StatusSerializer(forge.status()).data)
+
+
+def forge_servers() -> dict:
+    return {s.role: {'url': s.url, 'key': s.key, 'slots': s.slots} for s in ForgeServer.pair()}
+
+
+class ForgeServersView(APIView):
+    """Staff: Main and Fallback Forge (spec 029, AC-7)."""
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(responses=ForgeServersSerializer)
+    def get(self, request):
+        return Response(ForgeServersSerializer(forge_servers()).data)
+
+    @extend_schema(request=ForgeServersSerializer, responses=ForgeServersSerializer)
+    def put(self, request):
+        data = ForgeServersSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        ForgeServer.pair()
+        for role in (ForgeServer.MAIN, ForgeServer.FALLBACK):
+            ForgeServer.objects.filter(role=role).update(**data.validated_data[role])
+        forge.forget_status()
+        return Response(ForgeServersSerializer(forge_servers()).data)
+
+
+class ForgeTestView(APIView):
+    """Staff: ask a Forge for its version, with what is typed (spec 029, AC-8)."""
+    permission_classes = [IsAdminUser]
+
+    @extend_schema(request=ForgeTestSerializer, responses=ForgeTestResultSerializer)
+    def post(self, request):
+        data = ForgeTestSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        try:
+            version = forge.version(forge.Server('test', d['url'].strip(), d['key']), timeout=5)
+        except forge.ForgeError as e:
+            return Response(ForgeTestResultSerializer({'ok': False, 'version': '', 'error': str(e)}).data)
+        return Response(ForgeTestResultSerializer({'ok': True, 'version': version, 'error': ''}).data)
 
 
 def opponent(obj, found) -> dict:
@@ -178,7 +217,8 @@ class RunsView(APIView):
         data = StartRunSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
-        run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'), d.get('compare'))
+        run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'), d.get('compare'),
+                                   d['lookahead'])
         return Response(RunSerializer(run_data(run, request.user)).data, status=status.HTTP_201_CREATED)
 
 

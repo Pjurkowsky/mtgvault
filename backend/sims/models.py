@@ -1,4 +1,4 @@
-"""Pod simulation with Forge (spec 024)."""
+"""Pod simulation with Forge (specs 024, 029)."""
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -34,7 +34,35 @@ class SimSwap(models.Model):
         constraints = [models.UniqueConstraint(fields=['user', 'deck', 'from_name'], name='sim_swap_unique')]
 
 
+class ForgeServer(models.Model):
+    """Main and Fallback Forge (spec 029, AC-7): new games go to Main while it answers."""
+
+    MAIN = 'main'
+    FALLBACK = 'fallback'
+    ROLES = [(MAIN, 'Main'), (FALLBACK, 'Fallback')]
+
+    role = models.CharField(max_length=8, choices=ROLES, unique=True)
+    url = models.CharField(max_length=300, blank=True)
+    # Sent as X-Forge-Key; the container's FORGE_KEY.
+    key = models.CharField(max_length=200, blank=True)
+    # Games at once.
+    slots = models.PositiveSmallIntegerField(default=1)
+
+    @classmethod
+    def pair(cls) -> tuple['ForgeServer', 'ForgeServer']:
+        """Main and Fallback; Fallback starts as the server's FORGE_URL."""
+        main = cls.objects.get_or_create(role=cls.MAIN)[0]
+        fallback = cls.objects.get_or_create(role=cls.FALLBACK, defaults={'url': settings.FORGE_URL})[0]
+        return main, fallback
+
+
 class SimRun(models.Model):
+    class Lookahead(models.TextChoices):
+        OFF = 'off', 'Off'
+        LIGHT = 'light', 'Light'
+        NORMAL = 'normal', 'Normal'
+        MAX = 'max', 'Maximum'
+
     class Status(models.TextChoices):
         QUEUED = 'queued', 'Queued'
         PLAYING = 'playing', 'Playing'
@@ -69,6 +97,8 @@ class SimRun(models.Model):
     variants = models.JSONField(default=list, blank=True)
     # Spec 027, AC-19: Compare versions as separate runs, started together.
     group = models.UUIDField(null=True, blank=True, db_index=True)
+    # Spec 029, AC-3: Forge's look-ahead AI for every game of the run.
+    lookahead = models.CharField(max_length=6, choices=Lookahead.choices, default=Lookahead.NORMAL)
 
     class Meta:
         indexes = [models.Index(fields=['status', 'created_at'], name='sim_run_queue')]
@@ -123,6 +153,9 @@ class SimGame(models.Model):
     replay = models.BinaryField(default=bytes)
     # The tested seat's list in a Compare versions run (index into SimRun.variants).
     variant = models.PositiveSmallIntegerField(default=0)
+    # Spec 029, AC-6: the Forge that played it.
+    forge_version = models.CharField(max_length=40, blank=True)
+    forge_server = models.CharField(max_length=8, choices=ForgeServer.ROLES, blank=True)
 
     class Meta:
         ordering = ['number']

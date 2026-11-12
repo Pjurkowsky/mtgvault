@@ -17,7 +17,7 @@ from decks.versions import version_cards
 from . import forge
 from .models import PoolDeck, SimRun, SimSeat, SimSwap
 
-PROFILES = ('Default', 'Cautious', 'Reckless', 'Experimental')
+PROFILES = ('Default', 'Cautious', 'Reckless', 'Experimental', 'Hard', 'Hardest')
 MAX_SEATS = 6
 SUGGESTIONS = 10
 
@@ -281,7 +281,7 @@ def list_specs(tested: dict, compare: dict | None) -> list[dict]:
 
 
 def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None,
-              compare: dict | None = None) -> SimRun:
+              compare: dict | None = None, lookahead: str = SimRun.Lookahead.NORMAL) -> SimRun:
     """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15).
 
     Seat 0 is the tested deck: a player's deck or a pool deck (spec 025, AC-3). With `compare`
@@ -306,7 +306,7 @@ def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str,
         # A comparison is found by any of its lists' names.
         search = '\n'.join([search, *every]).lower() if compare else search
         run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [],
-                                    search=search, **extra)
+                                    search=search, lookahead=lookahead, **extra)
         SimSeat.objects.bulk_create(
             SimSeat(run=run, index=i, label=labels[i], source=s['source'], source_id=s['source_id'],
                     owner=s['owner'], profile=s['profile'], cards=s['cards'])

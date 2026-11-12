@@ -14,6 +14,35 @@ class StatusSerializer(serializers.Serializer):
     version = serializers.CharField()
 
 
+class ForgeServerSerializer(serializers.Serializer):
+    """Main or Fallback Forge (spec 029, AC-7)."""
+    url = serializers.CharField(max_length=300, allow_blank=True, help_text='e.g. http://192.168.1.20:8790; empty = not used')
+    key = serializers.CharField(max_length=200, allow_blank=True, help_text="The container's FORGE_KEY")
+    slots = serializers.IntegerField(min_value=1, max_value=8, help_text='Games at once')
+
+    def validate_url(self, value):
+        value = value.strip()
+        if value and not value.startswith(('http://', 'https://')):
+            raise serializers.ValidationError('Start with http:// or https://.')
+        return value
+
+
+class ForgeServersSerializer(serializers.Serializer):
+    main = ForgeServerSerializer()
+    fallback = ForgeServerSerializer()
+
+
+class ForgeTestSerializer(serializers.Serializer):
+    url = serializers.CharField(max_length=300)
+    key = serializers.CharField(max_length=200, allow_blank=True, default='')
+
+
+class ForgeTestResultSerializer(serializers.Serializer):
+    ok = serializers.BooleanField()
+    version = serializers.CharField()
+    error = serializers.CharField()
+
+
 class CardRowSerializer(serializers.Serializer):
     name = serializers.CharField()
     quantity = serializers.IntegerField()
@@ -55,7 +84,8 @@ class StartRunSerializer(PodSerializer):
     """Seat 0 is the tested deck (spec 025, AC-3); `compare` plays 2 to 4 of its lists (spec 027, AC-17)."""
     compare = CompareSpecSerializer(required=False)
     games = serializers.IntegerField(min_value=1, default=10)
-    minutes = serializers.IntegerField(min_value=1, default=5)
+    minutes = serializers.IntegerField(min_value=1, default=10)
+    lookahead = serializers.ChoiceField(choices=SimRun.Lookahead.choices, default=SimRun.Lookahead.NORMAL, help_text="Forge's look-ahead AI (spec 029)")
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices, default=SimRun.SeatMode.ROTATE)
     # Fixed mode: seat indexes in turn order; seat 0 is the tested deck.
     order = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
@@ -149,6 +179,8 @@ class GameSerializer(serializers.Serializer):
     seat_order = serializers.ListField(child=serializers.IntegerField())
     error = serializers.CharField()
     variant = serializers.IntegerField(help_text="The tested seat's list in a Compare versions run (spec 027)")
+    forge_version = serializers.CharField(help_text='The Forge version that played it (spec 029)')
+    forge_server = serializers.CharField(help_text='main or fallback; empty before spec 029')
 
 
 class SeatStatsSerializer(serializers.Serializer):
@@ -191,6 +223,7 @@ class RunSerializer(serializers.Serializer):
     cancelled_by = serializers.CharField(allow_null=True, help_text='The admin who cancelled it; null when the runner did (spec 025, AC-15)')
     games = serializers.IntegerField()
     minutes = serializers.IntegerField()
+    lookahead = serializers.ChoiceField(choices=SimRun.Lookahead.choices)
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices)
     fixed_order = serializers.ListField(child=serializers.IntegerField())
     played = serializers.IntegerField()
@@ -430,13 +463,14 @@ def run_data(run: SimRun, user) -> dict:
         'deck_name': run.deck.name if run.variants and run.deck else seats[0].label if seats else '',
         'mine': user.is_authenticated and run.user_id == user.id, 'can_cancel': can_cancel(user, run), 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
-        'games': run.games, 'minutes': run.minutes, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
+        'games': run.games, 'minutes': run.minutes, 'lookahead': run.lookahead, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
         'created_at': run.created_at, 'started_at': run.started_at, 'finished_at': run.finished_at,
         'seats': [{'index': s.index, 'label': s.label, 'owner': s.owner, 'source': s.source, 'source_id': s.source_id,
                    'profile': s.profile, 'commanders': commanders(s.cards),
                    'image': art(next(iter(commanders(s.cards)), None), found), 'cards': s.cards} for s in seats],
         'stats': run_stats(run, games, len(seats)),
         'results': [{'number': g.number, 'status': g.status, 'winner_seat': g.winner_seat, 'turn': g.turn,
-                     'winner_turn': g.winner_turn, 'seat_order': g.seat_order, 'error': g.error, 'variant': g.variant} for g in games],
+                     'winner_turn': g.winner_turn, 'seat_order': g.seat_order, 'error': g.error, 'variant': g.variant,
+                     'forge_version': g.forge_version, 'forge_server': g.forge_server} for g in games],
         'variants': variant_stats(run, games), 'group': run.group,
     }

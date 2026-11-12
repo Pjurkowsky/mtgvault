@@ -1,13 +1,16 @@
-"""MTG Vault's Forge service (spec 024): a small HTTP API around MtgvaultSim.
+"""MTG Vault's Forge service (specs 024, 029): a small HTTP API around MtgvaultSim.
 
-GET  /health          {"version": "2.0.15"}
+With FORGE_KEY set, every request must send it as X-Forge-Key (else 401).
+
+GET  /health          {"version": "2.0.16"}
 GET  /cards           names of every card Forge implements
 GET  /precons         Forge's Commander precons: [{"name", "dck"}]
-POST /games           {"decks": [{"dck", "profile"}], "timeout": s, "seed": n} -> {"id"}
+POST /games           {"decks": [{"dck", "profile"}], "timeout": s, "seed": n, "lookahead": "normal"} -> {"id"}
 GET  /games/<id>      {"status": "playing"} or {"status": "done", "result", "steps"}
 DELETE /games/<id>    stop a game
 """
 
+import hmac
 import json
 import os
 import re
@@ -23,8 +26,10 @@ from pathlib import Path
 FORGE = Path(os.environ.get('FORGE_HOME', '/forge'))
 VERSION = os.environ.get('FORGE_VERSION', '')
 MEMORY = os.environ.get('FORGE_MEMORY', '2g')
+KEY = os.environ.get('FORGE_KEY', '')
 JAR = next(FORGE.glob('forge-gui-desktop-*-jar-with-dependencies.jar'))
-PROFILES = {'Default', 'Cautious', 'Reckless', 'Experimental'}
+PROFILES = {'Default', 'Cautious', 'Reckless', 'Experimental', 'Hard', 'Hardest'}
+LOOKAHEAD = {'off', 'light', 'normal', 'max'}
 GAMES: dict[str, dict] = {}
 LOCK = threading.Lock()
 
@@ -66,6 +71,10 @@ def start(body: dict) -> str:
             '--out', str(folder / 'game.jsonl'), '--timeout', str(int(body.get('timeout') or 300))]
     if body.get('seed') is not None:
         args += ['--seed', str(int(body['seed']))]
+    lookahead = body.get('lookahead') or 'off'
+    if lookahead not in LOOKAHEAD:
+        raise ValueError(f'Unknown look-ahead {lookahead}.')
+    args += ['--lookahead', lookahead]
     for i, deck in enumerate(decks):
         profile = deck.get('profile') or 'Default'
         if profile not in PROFILES:
@@ -116,7 +125,15 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def allowed(self) -> bool:
+        if KEY and not hmac.compare_digest(self.headers.get('X-Forge-Key', ''), KEY):
+            self.send(401, {'error': 'Wrong Forge key.'})
+            return False
+        return True
+
     def do_GET(self):
+        if not self.allowed():
+            return
         if self.path == '/health':
             return self.send(200, {'version': VERSION})
         if self.path == '/cards':
@@ -129,6 +146,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send(404, {'error': 'Not found.'})
 
     def do_POST(self):
+        if not self.allowed():
+            return
         if self.path != '/games':
             return self.send(404, {'error': 'Not found.'})
         try:
@@ -138,6 +157,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(400, {'error': str(e)})
 
     def do_DELETE(self):
+        if not self.allowed():
+            return
         if self.path.startswith('/games/') and stop(self.path.removeprefix('/games/')):
             return self.send(204, {})
         self.send(404, {'error': 'No such game.'})
@@ -147,5 +168,5 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    print(f'Forge {VERSION}: {len(CARDS)} cards, {len(PRECONS)} precons, port 8790', flush=True)
+    print(f'Forge {VERSION}: {len(CARDS)} cards, {len(PRECONS)} precons, port 8790, key {"on" if KEY else "off"}', flush=True)
     ThreadingHTTPServer(('0.0.0.0', 8790), Handler).serve_forever()

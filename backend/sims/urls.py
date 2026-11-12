@@ -4,6 +4,8 @@ from . import views
 
 urlpatterns = [
     path('sims/status/', views.StatusView.as_view(), name='sims-status'),
+    path('sims/forge/', views.ForgeServersView.as_view(), name='sims-forge'),
+    path('sims/forge/test/', views.ForgeTestView.as_view(), name='sims-forge-test'),
     path('sims/opponents/', views.OpponentsView.as_view(), name='sims-opponents'),
     path('sims/pool/', views.PoolView.as_view(), name='sims-pool'),
     path('sims/pool/<int:pk>/', views.PoolDeckView.as_view(), name='sims-pool-deck'),

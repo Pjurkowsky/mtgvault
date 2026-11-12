@@ -1120,6 +1120,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sims/forge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Staff: Main and Fallback Forge (spec 029, AC-7). */
+        get: operations["sims_forge_retrieve"];
+        /** @description Staff: Main and Fallback Forge (spec 029, AC-7). */
+        put: operations["sims_forge_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/forge/test/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Staff: ask a Forge for its version, with what is typed (spec 029, AC-8). */
+        post: operations["sims_forge_test_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sims/groups/{group}/": {
         parameters: {
             query?: never;
@@ -2292,6 +2327,29 @@ export interface components {
          * @enum {string}
          */
         FinishEnum: "nonfoil" | "foil" | "etched";
+        /** @description Main or Fallback Forge (spec 029, AC-7). */
+        ForgeServer: {
+            /** @description e.g. http://192.168.1.20:8790; empty = not used */
+            url: string;
+            /** @description The container's FORGE_KEY */
+            key: string;
+            /** @description Games at once */
+            slots: number;
+        };
+        ForgeServers: {
+            main: components["schemas"]["ForgeServer"];
+            fallback: components["schemas"]["ForgeServer"];
+        };
+        ForgeTest: {
+            url: string;
+            /** @default  */
+            key?: string;
+        };
+        ForgeTestResult: {
+            ok: boolean;
+            version: string;
+            error: string;
+        };
         Fork: {
             branch?: number;
             version?: number;
@@ -2338,6 +2396,10 @@ export interface components {
             error: string;
             /** @description The tested seat's list in a Compare versions run (spec 027) */
             variant: number;
+            /** @description The Forge version that played it (spec 029) */
+            forge_version: string;
+            /** @description main or fallback; empty before spec 029 */
+            forge_server: string;
         };
         /** @description Spec 027, AC-19: separate runs started together, side by side. */
         Group: {
@@ -2588,6 +2650,14 @@ export interface components {
             login: string;
             password: string;
         };
+        /**
+         * @description * `off` - Off
+         *     * `light` - Light
+         *     * `normal` - Normal
+         *     * `max` - Maximum
+         * @enum {string}
+         */
+        LookaheadEnum: "off" | "light" | "normal" | "max";
         MarkOwned: {
             /** @default 1 */
             quantity?: number;
@@ -2977,9 +3047,11 @@ export interface components {
          *     * `Cautious` - Cautious
          *     * `Reckless` - Reckless
          *     * `Experimental` - Experimental
+         *     * `Hard` - Hard
+         *     * `Hardest` - Hardest
          * @enum {string}
          */
-        ProfileEnum: "Default" | "Cautious" | "Reckless" | "Experimental";
+        ProfileEnum: "Default" | "Cautious" | "Reckless" | "Experimental" | "Hard" | "Hardest";
         PublicBinder: {
             rows: number;
             cols: number;
@@ -3166,6 +3238,7 @@ export interface components {
             cancelled_by: string | null;
             games: number;
             minutes: number;
+            lookahead: components["schemas"]["LookaheadEnum"];
             seat_mode: components["schemas"]["SeatModeEnum"];
             fixed_order: number[];
             played: number;
@@ -3433,8 +3506,18 @@ export interface components {
             compare?: components["schemas"]["CompareSpec"];
             /** @default 10 */
             games?: number;
-            /** @default 5 */
+            /** @default 10 */
             minutes?: number;
+            /**
+             * @description Forge's look-ahead AI (spec 029)
+             *
+             *     * `off` - Off
+             *     * `light` - Light
+             *     * `normal` - Normal
+             *     * `max` - Maximum
+             * @default normal
+             */
+            lookahead?: components["schemas"]["LookaheadEnum"];
             /** @default rotate */
             seat_mode?: components["schemas"]["SeatModeEnum"];
             order?: number[];
@@ -5751,6 +5834,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
+    sims_forge_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgeServers"];
+                };
+            };
+        };
+    };
+    sims_forge_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgeServers"];
+                "application/x-www-form-urlencoded": components["schemas"]["ForgeServers"];
+                "multipart/form-data": components["schemas"]["ForgeServers"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgeServers"];
+                };
+            };
+        };
+    };
+    sims_forge_test_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgeTest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ForgeTest"];
+                "multipart/form-data": components["schemas"]["ForgeTest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgeTestResult"];
                 };
             };
         };

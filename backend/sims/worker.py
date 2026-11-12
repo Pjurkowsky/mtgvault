@@ -1,13 +1,18 @@
-"""Plays queued runs one at a time against the Forge service (spec 024, AC-14 to AC-17, AC-22)."""
+"""Plays queued runs against the Forge service (spec 024, AC-14 to AC-17, AC-22).
+
+Spec 029: each new game goes to Main while it answers, otherwise to Fallback, and a Forge
+plays up to its Games at once. Games being played are kept in memory, so after a restart
+the unfinished ones play again."""
 
 import gzip
 import json
 import logging
 import random
+import threading
 import time
 
 from django.conf import settings
-from django.db import DatabaseError, transaction
+from django.db import DatabaseError, connection, transaction
 from django.utils import timezone
 
 from . import forge
@@ -34,18 +39,6 @@ def recover():
     SimRun.objects.filter(status=SimRun.Status.PLAYING).update(status=SimRun.Status.QUEUED)
 
 
-def next_run() -> SimRun | None:
-    with transaction.atomic():
-        run = (SimRun.objects.select_for_update(skip_locked=True)
-               .filter(status=SimRun.Status.QUEUED).order_by('created_at', 'id').first())
-        if run is None:
-            return None
-        run.status = SimRun.Status.PLAYING
-        run.started_at = run.started_at or timezone.now()
-        run.save(update_fields=['status', 'started_at'])
-    return run
-
-
 def own_turns(steps: list[dict], seat: int) -> int:
     """How many turns a runner seat had: its own turn count (spec 024 Terms)."""
     return sum(1 for s in steps if s.get('type') == 'TURN' and s.get('active') == seat)
@@ -63,8 +56,8 @@ def variant_of(run: SimRun, number: int) -> tuple[int, int]:
     return (number - 1) // run.per_variant, (number - 1) % run.per_variant
 
 
-def play_game(run: SimRun, seats, number: int) -> bool:
-    """Plays game `number` (1-based) and stores it. False when the run was cancelled meanwhile."""
+def play_game(run: SimRun, seats, number: int, server: forge.Server, version: str) -> bool:
+    """Plays game `number` (1-based) on `server` and stores it. False when the run was cancelled meanwhile."""
     variant, game = variant_of(run, number)
     order = seat_order(len(seats), game, run.seat_mode, run.id, run.fixed_order)
     lists = {s.index: (s.label, s.cards) for s in seats}
@@ -72,14 +65,15 @@ def play_game(run: SimRun, seats, number: int) -> bool:
         lists[0] = (run.variants[variant]['label'], run.variants[variant]['cards'])
     decks = [{'dck': forge.to_dck(*lists[i]), 'profile': seats[i].profile} for i in order]
     started = time.monotonic()
-    game_id = forge.call('POST', '/games', {'decks': decks, 'timeout': run.minutes * 60, 'seed': run.id * 10_000 + game + 1})['id']
+    body = {'decks': decks, 'timeout': run.minutes * 60, 'seed': run.id * 10_000 + game + 1, 'lookahead': run.lookahead}
+    game_id = forge.call('POST', '/games', body, server=server)['id']
     limit = started + run.minutes * 60 + 120
     try:
         while True:
             time.sleep(settings.SIMS_POLL_SECONDS)
             if cancelled(run):
                 return False
-            found = forge.call('GET', f'/games/{game_id}')
+            found = forge.call('GET', f'/games/{game_id}', server=server)
             if found['status'] == 'done':
                 break
             if time.monotonic() > limit:
@@ -87,7 +81,7 @@ def play_game(run: SimRun, seats, number: int) -> bool:
                 break
     finally:
         try:
-            forge.call('DELETE', f'/games/{game_id}')
+            forge.call('DELETE', f'/games/{game_id}', server=server)
         except forge.ForgeError:
             pass
     result, steps = found['result'], found.get('steps') or []
@@ -97,6 +91,8 @@ def play_game(run: SimRun, seats, number: int) -> bool:
     SimGame.objects.update_or_create(run=run, number=number, defaults={
         'status': status,
         'variant': variant,
+        'forge_version': version,
+        'forge_server': server.role,
         'seat_order': order,
         'winner_seat': order[winner] if status == SimGame.Status.WON and winner is not None and winner >= 0 else None,
         'turn': result.get('turn') or 0,
@@ -109,18 +105,88 @@ def play_game(run: SimRun, seats, number: int) -> bool:
     return True
 
 
-def play(run: SimRun):
-    seats = list(run.seats.all())
-    done = run.played.count()
-    try:
-        for number in range(done + 1, run.games + 1):
-            if cancelled(run) or not play_game(run, seats, number):
-                SimRun.objects.filter(pk=run.pk).update(status=SimRun.Status.CANCELLED, finished_at=timezone.now())
+class Dispatcher:
+    """Starts games on the Forge answering now, up to its Games at once (spec 029, AC-10, AC-11)."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        # (run id, game number) -> role of the Forge playing it
+        self.playing: dict[tuple[int, int], str] = {}
+
+    def busy(self, role: str) -> int:
+        with self.lock:
+            return sum(1 for r in self.playing.values() if r == role)
+
+    def in_flight(self, run_id: int) -> set[int]:
+        with self.lock:
+            return {n for (r, n) in self.playing if r == run_id}
+
+    def tick(self) -> None:
+        self.finish()
+        if not SimRun.objects.filter(status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False).exists():
+            return
+        found = forge.active()
+        if found is None:
+            return
+        server, version = found
+        while self.busy(server.role) < server.slots:
+            claimed = self.claim(server.role)
+            if claimed is None:
                 return
-        SimRun.objects.filter(pk=run.pk).update(status=SimRun.Status.DONE, finished_at=timezone.now())
-    except forge.ForgeError as e:
-        log.warning('Run %s stopped: %s', run.id, e)
-        SimRun.objects.filter(pk=run.pk).update(status=SimRun.Status.FAILED, error=str(e)[:4000], finished_at=timezone.now())
+            threading.Thread(target=self.play, args=(*claimed, server, version), daemon=True).start()
+
+    def claim(self, role: str) -> tuple[int, int] | None:
+        """The oldest run's lowest game not played or playing; the run turns Playing."""
+        runs = (SimRun.objects.filter(status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False)
+                .order_by('created_at', 'id').values_list('id', 'games'))
+        for run_id, games in runs:
+            taken = set(SimGame.objects.filter(run_id=run_id).values_list('number', flat=True)) | self.in_flight(run_id)
+            number = next((n for n in range(1, games + 1) if n not in taken), None)
+            if number is None:
+                continue
+            with transaction.atomic():
+                run = SimRun.objects.select_for_update().filter(
+                    pk=run_id, status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False).first()
+                if run is None:
+                    continue
+                if run.status == SimRun.Status.QUEUED:
+                    run.status = SimRun.Status.PLAYING
+                    run.started_at = run.started_at or timezone.now()
+                    run.save(update_fields=['status', 'started_at'])
+            with self.lock:
+                self.playing[(run_id, number)] = role
+            return run_id, number
+        return None
+
+    def play(self, run_id: int, number: int, server: forge.Server, version: str) -> None:
+        try:
+            run = SimRun.objects.get(pk=run_id)
+            play_game(run, list(run.seats.all()), number, server, version)
+        except forge.ForgeUnreachable as e:
+            # Played again on whichever Forge answers (AC-12).
+            log.warning('Game %s of run %s goes back to the queue: %s', number, run_id, e)
+        except forge.ForgeError as e:
+            log.warning('Run %s stopped: %s', run_id, e)
+            SimRun.objects.filter(pk=run_id, status=SimRun.Status.PLAYING).update(
+                status=SimRun.Status.FAILED, error=str(e)[:4000], finished_at=timezone.now())
+        except Exception as e:
+            log.exception('Game %s of run %s failed', number, run_id)
+            SimRun.objects.filter(pk=run_id, status=SimRun.Status.PLAYING).update(
+                status=SimRun.Status.FAILED, error=str(e)[:4000], finished_at=timezone.now())
+        finally:
+            with self.lock:
+                self.playing.pop((run_id, number), None)
+            connection.close()
+
+    def finish(self) -> None:
+        """Playing runs with nothing in flight: Cancelled when asked, Done when every game is in."""
+        for run in SimRun.objects.filter(status=SimRun.Status.PLAYING).only('id', 'games', 'cancel_requested'):
+            if self.in_flight(run.id):
+                continue
+            if run.cancel_requested:
+                SimRun.objects.filter(pk=run.pk).update(status=SimRun.Status.CANCELLED, finished_at=timezone.now())
+            elif run.played.count() >= run.games:
+                SimRun.objects.filter(pk=run.pk).update(status=SimRun.Status.DONE, finished_at=timezone.now())
 
 
 def loop(stop=lambda: False):
@@ -130,14 +196,10 @@ def loop(stop=lambda: False):
             break
         except DatabaseError:  # not migrated yet
             time.sleep(settings.SIMS_IDLE_SECONDS)
+    dispatcher = Dispatcher()
     while not stop():
         try:
-            run = next_run()
+            dispatcher.tick()
         except DatabaseError:
             log.warning('Could not read the queue', exc_info=True)
-            time.sleep(settings.SIMS_IDLE_SECONDS)
-            continue
-        if run is None:
-            time.sleep(settings.SIMS_IDLE_SECONDS)
-            continue
-        play(run)
+        time.sleep(settings.SIMS_IDLE_SECONDS)

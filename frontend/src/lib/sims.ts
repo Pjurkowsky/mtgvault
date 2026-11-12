@@ -6,10 +6,19 @@ export type Run = Schemas['Run']
 export type Opponent = Schemas['Opponent']
 export type QueueEntry = Schemas['QueueEntry']
 export type RunRow = Schemas['RunRow']
-export type Profile = 'Default' | 'Cautious' | 'Reckless' | 'Experimental'
+export type Profile = 'Default' | 'Cautious' | 'Reckless' | 'Experimental' | 'Hard' | 'Hardest'
+export type Lookahead = Run['lookahead']
 export type SeatMode = 'rotate' | 'random' | 'fixed'
 
-export const PROFILES: Profile[] = ['Default', 'Cautious', 'Reckless', 'Experimental']
+export const PROFILES: Profile[] = ['Default', 'Cautious', 'Reckless', 'Experimental', 'Hard', 'Hardest']
+/** Forge's look-ahead AI (spec 029, AC-3). */
+export const LOOKAHEAD: { value: Lookahead; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'light', label: 'Light' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'max', label: 'Maximum' },
+]
+export const lookaheadLabel = (value: Lookahead) => LOOKAHEAD.find((l) => l.value === value)?.label ?? value
 export const SEAT_MODES: { value: SeatMode; label: string; hint: string }[] = [
   { value: 'rotate', label: 'Rotate', hint: 'Each deck goes first about equally often' },
   { value: 'random', label: 'Random', hint: 'Seats are shuffled every game' },

@@ -2,8 +2,8 @@
 // what happened as JSON lines: a step per game log entry, with the board whenever it changed,
 // then the result. Compiled against an official Forge release; Forge itself is unchanged.
 //
-// java -cp forge.jar:. MtgvaultSim --out game.jsonl --timeout 300 --seed 7 a.dck:Default b.dck:Reckless
-// The first deck goes first; turns follow the order given.
+// java -cp forge.jar:. MtgvaultSim --out game.jsonl --timeout 300 --seed 7 --lookahead normal a.dck:Default b.dck:Reckless
+// The first deck goes first; turns follow the order given. --lookahead is off, light, normal or max (spec 029).
 
 import java.io.File;
 import java.io.FileWriter;
@@ -56,12 +56,14 @@ public class MtgvaultSim {
         String out = null;
         int timeout = 300;
         Long seed = null;
+        String lookahead = "off";
         List<String[]> seats = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--out" -> out = args[++i];
                 case "--timeout" -> timeout = Integer.parseInt(args[++i]);
                 case "--seed" -> seed = Long.parseLong(args[++i]);
+                case "--lookahead" -> lookahead = args[++i];
                 default -> {
                     int colon = args[i].lastIndexOf(':');
                     seats.add(colon > 0 ? new String[] {args[i].substring(0, colon), args[i].substring(colon + 1)} : new String[] {args[i], "Default"});
@@ -69,7 +71,7 @@ public class MtgvaultSim {
             }
         }
         if (out == null || seats.size() < 2) {
-            System.err.println("usage: MtgvaultSim --out file [--timeout s] [--seed n] deck.dck[:Profile] ...");
+            System.err.println("usage: MtgvaultSim --out file [--timeout s] [--seed n] [--lookahead off|light|normal|max] deck.dck[:Profile] ...");
             System.exit(2);
         }
 
@@ -93,6 +95,10 @@ public class MtgvaultSim {
         Match match = new Match(rules, players, "MTG Vault");
         Game game = match.createGame();
         game.setNoGUIUser();
+        // Forge's HostedMatch sets these from its preferences; this runner builds the Match itself (spec 029, AC-3).
+        game.AI_FLAT_MONTE_CARLO = !"off".equals(lookahead);
+        game.AI_FLAT_MONTE_CARLO_LITE = "light".equals(lookahead);
+        game.AI_FLAT_MONTE_CARLO_MAX = "max".equals(lookahead);
 
         try (PrintWriter w = new PrintWriter(new FileWriter(out))) {
             Recorder rec = new Recorder(game, w);

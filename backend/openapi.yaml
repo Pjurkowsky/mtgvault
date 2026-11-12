@@ -2341,6 +2341,75 @@ paths:
               schema:
                 $ref: '#/components/schemas/Branches'
           description: ''
+  /api/sims/forge/:
+    get:
+      operationId: sims_forge_retrieve
+      description: 'Staff: Main and Fallback Forge (spec 029, AC-7).'
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgeServers'
+          description: ''
+    put:
+      operationId: sims_forge_update
+      description: 'Staff: Main and Fallback Forge (spec 029, AC-7).'
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgeServers'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgeServers'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgeServers'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgeServers'
+          description: ''
+  /api/sims/forge/test/:
+    post:
+      operationId: sims_forge_test_create
+      description: 'Staff: ask a Forge for its version, with what is typed (spec 029,
+        AC-8).'
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgeTest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ForgeTest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ForgeTest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgeTestResult'
+          description: ''
   /api/sims/groups/{group}/:
     get:
       operationId: sims_groups_retrieve
@@ -5057,6 +5126,62 @@ components:
         * `nonfoil` - Nonfoil
         * `foil` - Foil
         * `etched` - Etched
+    ForgeServer:
+      type: object
+      description: Main or Fallback Forge (spec 029, AC-7).
+      properties:
+        url:
+          type: string
+          description: e.g. http://192.168.1.20:8790; empty = not used
+          maxLength: 300
+        key:
+          type: string
+          description: The container's FORGE_KEY
+          maxLength: 200
+        slots:
+          type: integer
+          maximum: 8
+          minimum: 1
+          description: Games at once
+      required:
+      - key
+      - slots
+      - url
+    ForgeServers:
+      type: object
+      properties:
+        main:
+          $ref: '#/components/schemas/ForgeServer'
+        fallback:
+          $ref: '#/components/schemas/ForgeServer'
+      required:
+      - fallback
+      - main
+    ForgeTest:
+      type: object
+      properties:
+        url:
+          type: string
+          maxLength: 300
+        key:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - url
+    ForgeTestResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        version:
+          type: string
+        error:
+          type: string
+      required:
+      - error
+      - ok
+      - version
     Fork:
       type: object
       properties:
@@ -5161,8 +5286,16 @@ components:
         variant:
           type: integer
           description: The tested seat's list in a Compare versions run (spec 027)
+        forge_version:
+          type: string
+          description: The Forge version that played it (spec 029)
+        forge_server:
+          type: string
+          description: main or fallback; empty before spec 029
       required:
       - error
+      - forge_server
+      - forge_version
       - number
       - seat_order
       - status
@@ -5789,6 +5922,18 @@ components:
       required:
       - login
       - password
+    LookaheadEnum:
+      enum:
+      - 'off'
+      - light
+      - normal
+      - max
+      type: string
+      description: |-
+        * `off` - Off
+        * `light` - Light
+        * `normal` - Normal
+        * `max` - Maximum
     MarkOwned:
       type: object
       properties:
@@ -6656,12 +6801,16 @@ components:
       - Cautious
       - Reckless
       - Experimental
+      - Hard
+      - Hardest
       type: string
       description: |-
         * `Default` - Default
         * `Cautious` - Cautious
         * `Reckless` - Reckless
         * `Experimental` - Experimental
+        * `Hard` - Hard
+        * `Hardest` - Hardest
     PublicBinder:
       type: object
       properties:
@@ -7178,6 +7327,8 @@ components:
           type: integer
         minutes:
           type: integer
+        lookahead:
+          $ref: '#/components/schemas/LookaheadEnum'
         seat_mode:
           $ref: '#/components/schemas/SeatModeEnum'
         fixed_order:
@@ -7230,6 +7381,7 @@ components:
       - games
       - group
       - id
+      - lookahead
       - mine
       - minutes
       - played
@@ -7822,7 +7974,18 @@ components:
         minutes:
           type: integer
           minimum: 1
-          default: 5
+          default: 10
+        lookahead:
+          allOf:
+          - $ref: '#/components/schemas/LookaheadEnum'
+          default: normal
+          description: |-
+            Forge's look-ahead AI (spec 029)
+
+            * `off` - Off
+            * `light` - Light
+            * `normal` - Normal
+            * `max` - Maximum
         seat_mode:
           allOf:
           - $ref: '#/components/schemas/SeatModeEnum'

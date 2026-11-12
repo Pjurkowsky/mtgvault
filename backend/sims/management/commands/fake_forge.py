@@ -1,6 +1,9 @@
 """A stand-in for the Forge service in e2e tests (spec 024): the same API, answered from
 fixtures recorded with the real runner. Games take about a second.
 
+Spec 029: `--key` makes it refuse requests without X-Forge-Key, `--forge-version` sets what /health
+reports, and POST /_down {"seconds": n} makes it answer 503 for n seconds (a Forge that stopped).
+
 The fixtures were recorded with spec 026's runner: game-2 is "Krenko Forest" against
 "Piper Forest" (seed 2), game-4 four Forge precons (seed 7)."""
 
@@ -20,6 +23,8 @@ LOCK = threading.Lock()
 GAME_SECONDS = 1.0
 # A deck named "Hangs" plays this long, so a run can be seen playing and cancelled.
 HANG_SECONDS = 8.0
+OPTIONS = {'key': '', 'version': 'fake'}
+DOWN = {'until': 0.0}
 
 
 def load(name):
@@ -107,9 +112,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def refused(self) -> bool:
+        if time.monotonic() < DOWN['until']:
+            self.send(503, {'error': 'Forge is down.'})
+            return True
+        if OPTIONS['key'] and self.headers.get('X-Forge-Key') != OPTIONS['key']:
+            self.send(401, {'error': 'Wrong Forge key.'})
+            return True
+        return False
+
     def do_GET(self):
+        if self.refused():
+            return
         if self.path == '/health':
-            return self.send(200, {'version': 'fake'})
+            return self.send(200, {'version': OPTIONS['version']})
         if self.path == '/cards':
             return self.send(200, load('cards.json'))
         if self.path == '/precons':
@@ -126,6 +142,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers.get('Content-Length') or 0)) or b'{}')
+        if self.path == '/_down':
+            DOWN['until'] = time.monotonic() + float(body.get('seconds') or 0)
+            return self.send(200, {})
+        if self.refused():
+            return
         decks = body.get('decks') or []
         if len(decks) < 2:
             return self.send(400, {'error': 'At least two decks are needed.'})
@@ -136,6 +157,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send(201, {'id': game_id})
 
     def do_DELETE(self):
+        if self.refused():
+            return
         with LOCK:
             found = GAMES.pop(self.path.removeprefix('/games/'), None)
         self.send(204 if found else 404, {})
@@ -149,7 +172,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--port', type=int, default=8790)
+        parser.add_argument('--key', default='')
+        parser.add_argument('--forge-version', default='fake')
 
     def handle(self, *args, **options):
-        self.stdout.write(f"Fake Forge on port {options['port']}")
+        OPTIONS.update(key=options['key'], version=options['forge_version'])
+        self.stdout.write(f"Fake Forge {OPTIONS['version']} on port {options['port']}")
         ThreadingHTTPServer(('127.0.0.1', options['port']), Handler).serve_forever()

@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { z } from 'zod'
 import { fieldErrors } from '@/api/client'
 import InfoTip from '@/components/InfoTip.vue'
+import ForgeServersCard from '@/components/settings/ForgeServersCard.vue'
 import ScannerSourceCard from '@/components/settings/ScannerSourceCard.vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -131,6 +132,7 @@ const changePassword = handleSubmit(async (body) => {
     </Card>
 
     <ScannerSourceCard v-if="auth.user.is_staff" />
+    <ForgeServersCard v-if="auth.user.is_staff" />
 
     <Card>
       <CardHeader>

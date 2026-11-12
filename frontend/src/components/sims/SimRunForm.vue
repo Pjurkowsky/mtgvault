@@ -13,12 +13,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { PROFILES, SEAT_MODES, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
+import { usePreference } from '@/composables/usePreference'
+import { LOOKAHEAD, PROFILES, SEAT_MODES, type Lookahead, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
 import OpponentPicker from './OpponentPicker.vue'
 import SeatTile from './SeatTile.vue'
 import SimSwapStep from './SimSwapStep.vue'
 
-/** Seats, AI profiles, seat order, games and time limit (spec 024, AC-3 to AC-7; spec 025, AC-3 to AC-5). */
+/** Seats, AI profiles, seat order, games, time limit and look-ahead (spec 024, AC-3 to AC-7; spec 025, AC-3 to AC-5; spec 029, AC-3). */
 const emit = defineEmits<{ started: [run: Run] }>()
 
 /** A deck seat's list (spec 027, AC-16): `main`, `branch:<id>` or `version:<id>`. */
@@ -32,7 +33,9 @@ const seats = ref<Seat[]>([seat(), seat(), seat(), seat()])
 const testedKey = seats.value[0]!.key
 const MAX = 6
 const games = ref(10)
-const minutes = ref(5)
+const minutes = ref(10)
+// Spec 029, AC-3: remembered in this browser.
+const lookahead = usePreference<Lookahead>('sims.lookahead', 'normal', LOOKAHEAD.map((l) => l.value))
 const mode = ref<SeatMode>('rotate')
 const busy = ref(false)
 
@@ -123,7 +126,7 @@ async function start() {
   busy.value = true
   const { data, error } = await api.POST('/api/sims/runs/', {
     body: {
-      seats: specs(), games: games.value, minutes: minutes.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}), ...compareBody(),
+      seats: specs(), games: games.value, minutes: minutes.value, lookahead: lookahead.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}), ...compareBody(),
     },
   })
   busy.value = false
@@ -196,6 +199,16 @@ async function start() {
       <div class="grid gap-1.5">
         <Label for="sim-minutes" class="flex items-center gap-1">Time limit (min) <InfoTip text="A game that reaches the limit is a draw" /></Label>
         <Input id="sim-minutes" v-model.number="minutes" type="number" min="1" step="1" class="w-24" />
+      </div>
+      <div class="grid gap-1.5">
+        <Label for="sim-lookahead" class="flex items-center gap-1">
+          Look-ahead
+          <InfoTip text="Forge's AI tries its best few plays a few moves ahead before choosing. Light is quickest, Maximum plays best and also looks ahead on attacks; stronger is slower" />
+        </Label>
+        <Select v-model="lookahead">
+          <SelectTrigger id="sim-lookahead" class="w-32" aria-label="Look-ahead"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem v-for="l in LOOKAHEAD" :key="l.value" :value="l.value">{{ l.label }}</SelectItem></SelectContent>
+        </Select>
       </div>
       <Button :disabled="!valid || busy" @click="run"><PlayIcon /> Run</Button>
     </div>

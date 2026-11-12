@@ -4,12 +4,14 @@ import { ChevronRightIcon, CircleStopIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import DestructiveButton from '@/components/DestructiveButton.vue'
+import InfoTip from '@/components/InfoTip.vue'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useConfirm } from '@/composables/useConfirm'
-import { SEAT_MODES, active, percent, statusLabel, type Run } from '@/lib/sims'
+import { SEAT_MODES, active, lookaheadLabel, percent, statusLabel, type Run } from '@/lib/sims'
 import { cn } from '@/lib/utils'
 
 /** One run: status, the pod, stats and games (spec 024, AC-15 to AC-22; spec 025, AC-8, AC-13, AC-15). */
@@ -26,6 +28,15 @@ const seatLabel = (g: Run['results'][number], i: number | null) =>
 const lists = computed(() => props.run.variants)
 const best = computed(() => Math.max(...lists.value.map((v) => v.win_rate ?? -1)))
 const turns = (n: number | null | undefined) => (n == null ? '–' : String(n))
+/** "Forge 2.0.16 · Look-ahead Normal": the versions its games played on (spec 029, AC-5). */
+const forgeInfo = computed(() => {
+  const versions = [...new Set(props.run.results.map((g) => g.forge_version).filter(Boolean))]
+  const look = `Look-ahead ${lookaheadLabel(props.run.lookahead)}`
+  return versions.length ? `Forge ${versions.join(', ')} · ${look}` : look
+})
+/** "Main · Forge 2.0.16" (AC-6). */
+const gameForge = (g: Run['results'][number]) =>
+  [g.forge_server && (g.forge_server === 'main' ? 'Main' : 'Fallback'), g.forge_version && `Forge ${g.forge_version}`].filter(Boolean).join(' · ')
 const gameRoute = (number: number) => ({ name: 'sim-game', params: { run: props.run.id, number } })
 
 async function cancel() {
@@ -52,6 +63,7 @@ async function remove() {
         <template v-if="lists.length">{{ lists.length }} lists × {{ run.games / lists.length }} {{ run.games / lists.length === 1 ? 'game' : 'games' }}</template>
         <template v-else>{{ run.games }} {{ run.games === 1 ? 'game' : 'games' }}</template>, {{ run.minutes }} min each · {{ SEAT_MODES.find((m) => m.value === run.seat_mode)?.label }}
       </span>
+      <span data-testid="run-forge"><InfoTip :text="forgeInfo" /></span>
       <span class="ml-auto" />
       <span v-if="run.stats.finished && !lists.length" class="font-semibold" data-testid="run-win-rate">Win rate {{ percent(run.stats.win_rate) }}</span>
       <Button v-if="run.can_cancel && active(run.status) && !run.cancelling" size="sm" variant="outline" @click="cancel"><CircleStopIcon /> Cancel</Button>
@@ -121,7 +133,12 @@ async function remove() {
 
     <ol v-if="run.results.length" class="grid gap-1 text-sm" data-testid="run-games">
       <li v-for="g in run.results" :key="g.number" class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-1 hover:bg-muted/50" data-testid="run-game">
-        <span class="w-16 text-muted-foreground">Game {{ g.number }}</span>
+        <Tooltip :disabled="!gameForge(g)">
+          <TooltipTrigger as-child>
+            <span class="w-16 text-muted-foreground" data-testid="game-number">Game {{ g.number }}</span>
+          </TooltipTrigger>
+          <TooltipContent>{{ gameForge(g) }}</TooltipContent>
+        </Tooltip>
         <span class="font-medium" data-testid="game-result">
           <template v-if="g.status === 'won'">{{ seatLabel(g, g.winner_seat) }} won on turn {{ g.winner_turn }}</template>
           <template v-else-if="g.status === 'draw'">Draw on game turn {{ g.turn }}</template>

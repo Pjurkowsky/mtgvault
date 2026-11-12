@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1
-# MTG Vault's Forge service (spec 024): an official Forge release, MTG Vault's game runner
+# MTG Vault's Forge service (specs 024, 029): an official Forge release, MTG Vault's game runner
 # compiled against it, and a small HTTP API. Forge is GPL-3: https://github.com/Card-Forge/forge
 #   docker build -t mtgvault-forge docker/forge
+# FORGE_KEY, when set, is a password every request must send as X-Forge-Key (spec 029).
 
-ARG FORGE_VERSION=2.0.15
+ARG FORGE_VERSION=2.0.16
 
 FROM eclipse-temurin:17-jdk AS build
 ARG FORGE_VERSION
@@ -28,5 +29,5 @@ LABEL org.opencontainers.image.source="https://github.com/pjurkowsky/mtgvault" \
       org.opencontainers.image.description="Forge ${FORGE_VERSION} for MTG Vault pod simulation" \
       org.opencontainers.image.licenses="GPL-3.0-only"
 EXPOSE 8790
-HEALTHCHECK --interval=30s --timeout=5s CMD python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8790/health')"
+HEALTHCHECK --interval=30s --timeout=5s CMD python3 -c "import os, urllib.request; urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8790/health', headers={'X-Forge-Key': os.environ.get('FORGE_KEY', '')}))"
 CMD ["python3", "/opt/mtgvault/server.py"]
