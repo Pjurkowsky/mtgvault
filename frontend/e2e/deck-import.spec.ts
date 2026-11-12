@@ -92,7 +92,7 @@ test.describe('Deck import, export and public decks', () => {
 
     await expect(page).toHaveURL(new RegExp(`/u/${user.username}/decks/${deck.id}$`))
     await expect(page.getByTestId('deck-name')).toHaveText('Shared')
-    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', /Combos/, 'Stats', 'Simulate']) // Combos: spec 022, AC-6; Simulate: spec 024, AC-1
+    await expect(page.getByRole('tab')).toHaveText(['Deck', 'Swaps', 'Combos', 'Stats', 'Simulate']) // Combos: spec 022, AC-6; Simulate: spec 024, AC-1
     await expect(page.getByTestId('deck-box')).toHaveAttribute('href', `/u/${user.username}/locations/${deck.location}`)
     await expect(page.getByRole('button', { name: 'Add card' })).toHaveCount(0)
     await expect(deckRow(page, 'Forest').getByTestId('ownership')).toHaveAttribute('data-state', 'in_box')

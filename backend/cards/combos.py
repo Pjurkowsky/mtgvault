@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from django.db import transaction
-from django.db.models import Count, F
+from django.db.models import Count
 from django.utils import timezone
 
 from collection.models import CollectionItem
@@ -120,14 +120,6 @@ def _flush(combos: list[Combo], cards: list[ComboCard]) -> int:
 def _finish(run: SyncRun, status: str, rows: int, error: str = '') -> None:
     run.status, run.rows, run.error, run.finished_at = status, rows, error, timezone.now()
     run.save(update_fields=['status', 'rows', 'error', 'finished_at'])
-
-
-def count_in_deck(oracles: set) -> int:
-    """How many combos the deck holds in full (the Combos tab's count, AC-6)."""
-    if not oracles:
-        return 0
-    return (ComboCard.objects.filter(oracle_id__in=oracles).values('combo_id', 'combo__card_count')
-            .annotate(n=Count('id')).filter(n=F('combo__card_count')).count())
 
 
 def deck_combos(oracles: set, identity: set[str] | None, viewer_id: int | None) -> dict:

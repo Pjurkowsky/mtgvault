@@ -49,7 +49,7 @@ commander is played in. The app gets a dark theme.
 ### Combos
 
 - **AC-6** The deck page has a Combos tab, for the owner and for visitors of a
-  public deck. The tab shows the number of combos in the deck.
+  public deck. The tab label has no count; each group shows its own.
 - **AC-7** **In deck** lists every combo whose cards are all counted cards of
   the deck, infinite or not.
 - **AC-8** **Could build** lists infinite and win combos that use at least one

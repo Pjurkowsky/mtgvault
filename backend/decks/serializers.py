@@ -164,7 +164,6 @@ class DeckDetailSerializer(DeckSummarySerializer):
     tokens = DeckTokenSerializer(many=True, help_text='Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015)')
     legality = LegalitySerializer()
     stats = StatsSerializer()
-    combo_count = serializers.IntegerField(help_text='Combos fully in the counted cards (spec 022, AC-6)')
     salt = DeckSaltSerializer()
 
 

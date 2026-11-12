@@ -13,9 +13,8 @@ test.describe('Deck combos', () => {
   test('AC-6, AC-7, AC-9, AC-11: the Combos tab lists the combos in the deck', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const deck = await api.deck('Goblins', 'commander', { text: KRENKO })
-    expect(deck.combo_count).toBe(1)
     await page.goto(`/decks/${deck.id}`)
-    await expect(page.getByTestId('combos-tab')).toHaveText('Combos 1')
+    await expect(page.getByTestId('combos-tab')).toHaveText('Combos') // no count on the tab (spec 022, AC-6, changed)
     await page.getByTestId('combos-tab').click()
     await expect(page).toHaveURL(/tab=combos/)
 

@@ -1771,8 +1771,6 @@ export interface components {
             tokens: components["schemas"]["DeckToken"][];
             legality: components["schemas"]["Legality"];
             stats: components["schemas"]["Stats"];
-            /** @description Combos fully in the counted cards (spec 022, AC-6) */
-            combo_count: number;
             salt: components["schemas"]["DeckSalt"];
         };
         DeckImportPreview: {

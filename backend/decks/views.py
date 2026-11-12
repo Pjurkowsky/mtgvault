@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from cards.combos import count_in_deck, deck_combos
+from cards.combos import deck_combos
 from cards.pricing import CURRENCIES, price, prices_in_all, prices_updated_at
 from cards.tokens import deck_tokens, kind, tokens_by_id
 from cards.views import price_context
@@ -108,7 +108,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
             'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx),
-            'combo_count': count_in_deck(counted(cards)), 'salt': deck_salt(cards)}
+            'salt': deck_salt(cards)}
 
 
 def counted(cards) -> set:

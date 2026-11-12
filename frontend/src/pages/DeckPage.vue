@@ -332,9 +332,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       <TabsList>
         <TabsTrigger value="deck">Deck</TabsTrigger>
         <TabsTrigger value="swaps">Swaps</TabsTrigger>
-        <TabsTrigger value="combos" data-testid="combos-tab">
-          Combos <span v-if="deck.combo_count" class="text-muted-foreground tabular-nums">{{ deck.combo_count }}</span>
-        </TabsTrigger>
+        <TabsTrigger value="combos" data-testid="combos-tab">Combos</TabsTrigger>
         <TabsTrigger value="stats">Stats</TabsTrigger>
         <TabsTrigger v-if="canSimulate" value="simulate">Simulate</TabsTrigger>
       </TabsList>

@@ -3764,14 +3764,10 @@ components:
           $ref: '#/components/schemas/Legality'
         stats:
           $ref: '#/components/schemas/Stats'
-        combo_count:
-          type: integer
-          description: Combos fully in the counted cards (spec 022, AC-6)
         salt:
           $ref: '#/components/schemas/DeckSalt'
       required:
       - cards
-      - combo_count
       - counts
       - currency
       - format
