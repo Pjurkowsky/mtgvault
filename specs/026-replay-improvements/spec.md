@@ -45,6 +45,9 @@ autoplay, on a board that stays still while cards come and go.
 - **AC-6** During combat, an arrow runs from each attacking creature to the
   player or planeswalker it attacks, and from each blocking creature to the
   creature it blocks, on every screen size.
+- **AC-19** During combat, each attacked player shows the damage coming at them
+  next to their life: the total power of the creatures attacking them that
+  aren't blocked (before blocks, every attacker).
 - **AC-7** With **Show deaths on the board** on, a creature or other permanent
   that left the battlefield for a graveyard at this step stays in its place,
   faded with a skull, for this step only.
@@ -97,6 +100,8 @@ autoplay, on a board that stays still while cards come and go.
   a token shows its token image.
 - AC-6: an attack on a planeswalker points at that card; arrows redraw when
   the window is resized or the sidebar opens.
+- AC-19: a planeswalker's incoming damage isn't shown; trample, first strike and
+  damage prevention aren't counted (the life change after damage shows the result).
 - AC-7: "this step" is the step where the card left; a card exiled or bounced
   just disappears.
 - AC-9: the sidebar starts open on a screen 1280 px or wider and closed on smaller ones.

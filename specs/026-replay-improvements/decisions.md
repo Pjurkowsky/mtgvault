@@ -82,3 +82,4 @@ Depends on: 024-pod-simulation, 025-simulations-page
 19. Counters: two +1/+1 counters show as **+2/+2**.
 20. Controls like a **movie player**: double arrows for turns, single arrows for
     events, Play in the middle.
+21. When attackers are declared, show **how much damage goes to each player**.

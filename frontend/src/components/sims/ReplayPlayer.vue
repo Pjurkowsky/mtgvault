@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { HeartIcon } from '@lucide/vue'
+import { HeartIcon, SwordsIcon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import { showFullscreen } from '@/composables/useFullscreen'
 import type { Changes, Segment } from '@/lib/replay'
@@ -20,6 +20,8 @@ const props = defineProps<{
   reasons?: Map<number, string[]>; split?: (text: string) => Segment[]
   /** Its column on a wide board: cards lean toward the centre, mirrored (AC-16). */
   side?: 'left' | 'centre' | 'right' | null
+  /** Unblocked attacking power coming at this player, in combat (AC-19). */
+  incoming?: number
 }>()
 const align = computed(() => (props.side === 'left' ? 'justify-end text-right' : props.side === 'centre' ? 'justify-center text-center' : ''))
 const ROWS = [{ key: 'creature', label: 'Creatures' }, { key: 'other', label: 'Other' }, { key: 'land', label: 'Lands' }] as const
@@ -60,7 +62,13 @@ const zone = computed(() => zones.value.find((z) => z.key === opened.value))
           · {{ player.profile }}
         </span>
       </div>
-      <span :class="cn('flex items-center gap-1 text-lg font-semibold tabular-nums', side === 'right' ? 'mr-auto' : 'ml-auto')" data-testid="player-life"><HeartIcon class="size-4 text-destructive" />{{ seat.life }}</span>
+      <div :class="cn('flex items-center gap-2', side === 'right' ? 'mr-auto flex-row-reverse' : 'ml-auto')">
+        <span
+          v-if="incoming != null" class="flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-sm font-semibold text-destructive tabular-nums"
+          :title="`${incoming} combat damage coming`" data-testid="player-incoming"
+        ><SwordsIcon class="size-4" />{{ incoming }}</span>
+        <span class="flex items-center gap-1 text-lg font-semibold tabular-nums" data-testid="player-life"><HeartIcon class="size-4 text-destructive" />{{ seat.life }}</span>
+      </div>
     </header>
     <p v-if="seat.lost" :class="cn('text-sm font-medium', align)" data-testid="player-lost">Lost on turn {{ lostTurn ?? '?' }}</p>
     <div v-for="row in rows" :key="row.key" class="grid gap-1" :data-testid="`row-${row.key}`">

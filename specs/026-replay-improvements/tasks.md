@@ -14,6 +14,7 @@
 - [x] **T8 Hoverable card names in events; why a ghost died** (AC-14, AC-15)
 - [x] **T9 Mirrored board toward the centre** (AC-16)
 - [x] **T10 P/T counters add up; movie-player controls** (AC-17, AC-18)
+- [x] **T11 Incoming combat damage per player** (AC-19)
 
 ## Tests and finish
 

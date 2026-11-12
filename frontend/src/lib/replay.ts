@@ -75,3 +75,21 @@ export function counterLabel(type: string, n: number): string {
   if (pt) return `${pt[1]}${Number(pt[2]) * n}/${pt[3]}${Number(pt[4]) * n}`
   return n > 1 ? `${n} ${type}` : type
 }
+
+/**
+ * Damage coming at each player in combat: the power of the creatures attacking them that
+ * aren't blocked, by seat; only seats being attacked (spec 026, AC-19).
+ */
+export function incomingDamage(board: Board | null): Map<number, number> {
+  const out = new Map<number, number>()
+  if (!board) return out
+  const blocked = new Set(board.flatMap((s) => s.battlefield.flatMap((c) => c.blocking ?? [])))
+  for (const seat of board) {
+    for (const c of seat.battlefield) {
+      const target = c.attacking?.seat
+      if (target == null) continue
+      out.set(target, (out.get(target) ?? 0) + (blocked.has(c.id) ? 0 : Math.max(0, c.power ?? 0)))
+    }
+  }
+  return out
+}

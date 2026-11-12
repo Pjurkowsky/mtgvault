@@ -112,4 +112,26 @@ test.describe('Replay combat', () => {
       'Llanowar Elves (141) deals 1 damage to Llanowar Elves (37).',
     ])
   })
+
+  test('AC-19: attacked players show the unblocked damage coming at them', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    const { a, b } = await openReplay(page, api)
+    const events = replayEvents(page)
+    const incoming = (name: string) => replayPlayer(page, name).getByTestId('player-incoming')
+    // Game turn 3: one 1/1 attacks Piper, then gets blocked.
+    await turnsAhead(page, 3)
+    await events.first().click()
+    await expect(incoming(b)).toHaveCount(0)
+    await events.nth(1).click()
+    await expect(incoming(b)).toHaveText('1')
+    await expect(incoming(a)).toHaveCount(0)
+    await events.nth(2).click()
+    await expect(incoming(b)).toHaveText('0')
+    // Game turn 14: three unblocked 4/3s at Krenko.
+    await turnsAhead(page, 11)
+    await events.nth(1).click()
+    await expect(events.nth(1)).toContainText('to attack')
+    await expect(incoming(a)).toHaveText('12')
+  })
 })
