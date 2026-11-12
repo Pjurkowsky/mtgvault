@@ -75,6 +75,13 @@ uv run manage.py runserver    # http://localhost:8000
 | `GET /api/catalog/tokens/<id>/printings/` | public | Every printing of that token's kind, newest first, with prices (spec 021) |
 | `GET`/`POST /api/decks/<id>/optimize/` | bearer | Cheapest printings for the cards the deck lacks (Missing, In other decks); POST `cards` switches those deck cards (spec 013) |
 | `POST /api/decks/<id>/want-missing/` | bearer | A deck's missing cards (or `card`) onto the want list for the deck, up to the missing count |
+| `?branch=<id>` on the deck detail, cards, import, export, missing, optimize, tokens, combos, insights and want-missing routes | | The branch they work on; Main when missing. Card routes work on the card's branch (spec 027) |
+| `GET/POST /api/decks/<id>/branches/`, `PATCH/DELETE .../branches/<bid>/` | bearer | Branches with their versions / new branch (`from_branch` or `from_version`) / rename or `is_main` / delete (not Main) |
+| `POST /api/decks/<id>/branches/<bid>/versions/` | bearer | Save the branch's list as a version (`name`, `note`) |
+| `GET/DELETE /api/decks/<id>/versions/<vid>/`, `POST .../restore/` | bearer | A version as a read-only deck / delete / restore (saves "Before restoring vN" first); combos and insights take `?version=` |
+| `GET /api/decks/<id>/compare/?a=…&b=…` | bearer | Added, removed, quantity changed and moved cards from list `a` to `b` (`branch:<id>` or `version:<id>`) |
+| `POST /api/decks/<id>/fork/` | bearer | Copy your own or a public deck with every branch and version (`branch` or `version` becomes Main); private, `forked_from` set |
+| `GET /api/users/<username>/decks/<id>/branches/`, `.../versions/<vid>/`, `.../compare/` | public | The same, read only, for a public deck |
 | `GET /api/users/<username>/wants/` | public | A public want list, without decks; 404 when private |
 | `GET /api/scanner/bundle/` | bearer | Installed recognition model: version, constants, file URLs |
 | `GET /api/scanner/bundles/<version>/<file>` | public | Model files (immutable) |
@@ -95,6 +102,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/sims/pool/`, `PATCH, DELETE /api/sims/pool/{id}/` | auth | Add to, rename in and remove from the shared opponent pool |
 | `POST /api/sims/check/`, `GET /api/sims/suggest/` | auth | A pod's unsupported cards; suggested swaps |
 | `PUT /api/sims/swaps/` | auth | Save swaps for a deck or pool deck |
+| `GET /api/sims/decks/{id}/lists/` | auth | A deck's branches and versions, for a seat's list (spec 027) |
+| `GET /api/sims/groups/{uuid}/` | auth | The separate runs of a Compare versions, side by side (spec 027) |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
 
@@ -208,6 +217,16 @@ that land in a deck box join its decklist's Mainboard when the list has fewer
 copies (`decks.services.fill_from_box`, called from `save_item` and
 `edit_item`); taking cards out never changes the list.
 
+Branches and versions (spec 027): every deck card belongs to a `DeckBranch`;
+each deck has exactly one Main (a partial unique constraint; a `post_save`
+signal creates it). `deck.branch` is Main unless a view sets it from
+`?branch=`, and `deck.list_cards()` gives that branch's cards. Everything
+outside the deck page (wants, collection counts, scanning, the box, deck tiles,
+simulations by default) reads Main. A `DeckVersion` freezes a branch's list as
+JSON (oracle id, printing, zone, quantity, categories, swap pairs by
+position); `decks/versions.py` saves, restores, branches from, compares
+(by card and zone) and forks (`Deck.forked_from`, every branch and version).
+
 - `cards/tokens.py`: tokens a printing or a deck makes. The sync keeps tokens,
   emblems and markers in `Token` (never searchable, with set name, finishes
   and prices) and each printing's `token_ids` from Scryfall's `all_parts`
@@ -260,7 +279,7 @@ of the collection. Every write goes through `wants/services.py`:
 `collection.filters.apply_filters(..., finish_field='price_finish',
 collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
-## Pod simulation (specs 024, 025)
+## Pod simulation (specs 024, 025, 027)
 
 App `sims`. A tested Commander deck plays AI games against 1 to 5 opponents in
 [Forge](https://github.com/Card-Forge/forge), which runs as its own service
@@ -293,6 +312,14 @@ hides the feature.
   in `sims/fixtures/forge/`. Decks named Hangs, Broken and Stalls play slowly,
   fail and draw; a deck named Unrecorded plays a game without hands, libraries
   and combat, like those recorded before spec 026.
+- Spec 027: a deck seat may name a `branch` or `version`; its label becomes
+  "Deck · Branch v1". A start with `compare: {lists, mode}` plays 2 to 4 lists
+  of the tested deck. `one`: a single run with `SimRun.variants` (label and
+  cards per list) and `games` = lists × games; game n plays list
+  `(n-1) // per_variant` with that list's game index for seat order and seed,
+  so every list meets the same orders and seeds (`SimGame.variant`). `separate`:
+  one run per list sharing `SimRun.group`; the runs list shows a group as one
+  row under its first run.
 
 ## Scanner
 

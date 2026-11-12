@@ -44,9 +44,12 @@ src/
                           CardSearch, ItemFields), the deck section of the card
                           dialog, import/export, deck box, scan target, stats
                           (StatBars, DeckSalt, DeckThemes), Combos tab (DeckCombos,
-                          ComboRow), legality, GroupHeading, ManaCost
+                          ComboRow), legality, GroupHeading, ManaCost; versions (spec 027):
+                          DeckVersionsPanel (branches and versions on the right edge, like
+                          Unplaced), BranchNameDialog, SaveVersionDialog, DeckCompareDialog
   components/DestructiveButton.vue  outlined red button with a trash icon
-  lib/decks.ts            formats, zones, ownership states, grouping and sorting
+  lib/decks.ts            formats, zones, ownership states, grouping and sorting; onBranch /
+                          shownList, the branch or version a deck request works on
   lib/deckFilter.ts       deck search and filters, kept in the URL
   lib/deckStats.ts        Stats tab numbers and chart data, computed in the browser
   lib/categories.ts       category suggestions, loaded once
@@ -59,14 +62,16 @@ src/
   composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
-  components/sims/        simulations (specs 024, 025): SimQueue (admin cancel), SimRunForm
-                          (seats with the tested deck, AI profiles, seat order), OpponentPicker
+  components/sims/        simulations (specs 024, 025, 027): SimQueue (admin cancel), SimRunForm
+                          (seats with the tested deck, a list per deck seat, Compare versions,
+                          AI profiles, seat order), OpponentPicker
                           (pool, my decks, public), SimSwapStep (unsupported cards), SimRunList
                           (All / Mine, search), SimRunCard (stats, games); replay pieces
                           (spec 026): ReplayPlayer (rows, zones), ReplayCard, ReplayZoneDialog,
                           ReplayArrows (combat), ReplaySidebar (events, settings), ReplayEvents
   pages/SimulationsPage.vue  /simulations: queue, run form, runs
-  pages/SimRunPage.vue    one run's results
+  pages/SimRunPage.vue    one run's results (each list side by side in a Compare versions run)
+  pages/SimGroupPage.vue  separate runs of a Compare versions, side by side
   pages/SimGamePage.vue   a game's replay: turn stepper, Play, boards, events sidebar, Log tab
   composables/useReplayPlayer.ts  stepping by event or turn, autoplay, remembered settings
   lib/replay.ts           deaths and new graveyard cards, from the board before

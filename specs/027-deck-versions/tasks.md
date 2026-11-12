@@ -19,4 +19,4 @@
 ## Tests and finish
 
 - [x] **T8 e2e tests for every AC; screenshots at desktop and phone width** (all)
-- [ ] **T9 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**
+- [x] **T9 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**

@@ -1,6 +1,6 @@
 # Spec 027: Deck versions
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 005-deck-improvements, 024-pod-simulation, 025-simulations-page
 
 ## Goal

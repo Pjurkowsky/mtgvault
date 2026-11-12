@@ -87,6 +87,10 @@ by event (← →) or turn (Shift + ← →), or press Play with a speed, pause 
 combat and follow one player. Games played with a Forge image older than spec
 026 show hand and library counts only.
 
+A seat can play any branch or saved version of a deck (the versions panel on a
+deck's page), and **Compare versions** plays 2 to 4 of them against the same
+pod, in one run or as separate runs, to see which list wins more.
+
 ### Settings
 
 | Variable | Default | |
