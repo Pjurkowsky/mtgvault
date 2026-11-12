@@ -1,6 +1,6 @@
 # Spec 025: Simulations page
 
-Status: Draft
+Status: Done
 Depends on: 024-pod-simulation
 
 ## Goal

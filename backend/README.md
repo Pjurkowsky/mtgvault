@@ -85,14 +85,15 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
 | `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |
 | `GET /api/sims/status/` | public | Whether Forge is reachable, and its version |
-| `GET, POST /api/decks/{id}/sims/` | read / auth | A deck's runs; start a run (seats, games, minutes, seat order) |
-| `GET, DELETE /api/sims/runs/{id}/` | read / runner | One run; delete it |
-| `POST /api/sims/runs/{id}/cancel/` | runner | Cancel a queued or playing run |
-| `GET /api/sims/runs/{id}/games/{n}/` | read | A game's replay: turns, boards, card images, log |
-| `GET /api/sims/queue/` | public | Queued and playing runs |
-| `GET /api/sims/opponents/` | public | Pool, my and public Commander decks |
+| `GET, POST /api/sims/runs/` | auth | Runs the user can see (`mine`, `q`, `offset`; 20 a page); start a run, seat 0 the tested deck |
+| `GET, DELETE /api/sims/runs/{id}/` | auth / runner | One run; delete it |
+| `POST /api/sims/runs/{id}/cancel/` | runner or staff | Cancel a queued or playing run |
+| `GET /api/sims/runs/{id}/games/{n}/` | auth | A game's replay: turns, boards, card images, log |
+| `GET /api/sims/queue/` | auth | Queued and playing runs; "Private deck" for runs the user can't see |
+| `POST /api/sims/queue/cancel/` | staff | Cancel every queued and playing run |
+| `GET /api/sims/opponents/` | auth | Pool, my and public Commander decks |
 | `POST /api/sims/pool/`, `PATCH, DELETE /api/sims/pool/{id}/` | auth | Add to, rename in and remove from the shared opponent pool |
-| `POST /api/sims/check/`, `GET /api/sims/suggest/` | public | A pod's unsupported cards; suggested swaps |
+| `POST /api/sims/check/`, `GET /api/sims/suggest/` | auth | A pod's unsupported cards; suggested swaps |
 | `PUT /api/sims/swaps/` | auth | Save swaps for a deck or pool deck |
 | `/api/docs/` | public | Swagger UI |
 | `/admin/` | staff | Django admin |
@@ -259,9 +260,9 @@ of the collection. Every write goes through `wants/services.py`:
 `collection.filters.apply_filters(..., finish_field='price_finish',
 collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
-## Pod simulation (spec 024)
+## Pod simulation (specs 024, 025)
 
-App `sims`. A Commander deck plays AI games against 1 to 5 opponents in
+App `sims`. A tested Commander deck plays AI games against 1 to 5 opponents in
 [Forge](https://github.com/Card-Forge/forge), which runs as its own service
 (`docker/forge`: Forge's release, our runner `MtgvaultSim.java` compiled against
 it, and `server.py`, an HTTP API on port 8790). `FORGE_URL` points at it; empty
@@ -278,6 +279,11 @@ hides the feature.
   left Playing by a restart goes back to the queue. Each game keeps its replay
   as gzipped JSON; `sims/replay.py` turns it into turns, boards and card images.
 - Seat order per game: Rotate, Random (seeded by run and game) or Fixed.
+- Who sees a run (`services.visible_runs`): every logged-in user, except runs
+  whose tested deck is private (owner only); staff see all. `SimRun.deck` is
+  null when the tested deck is a pool deck. Staff can cancel any run;
+  `cancelled_by` records who did. `SimRun.search` holds every seat's deck and
+  commander names for the run search.
 - Turn numbers: a game's win turn is the winner's own turn count; Forge's game
   turn counts every player's turn.
 - Tests use `manage.py fake_forge`, which answers like Forge from recorded games

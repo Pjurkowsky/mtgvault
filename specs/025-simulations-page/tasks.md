@@ -13,4 +13,4 @@
 ## Tests and finish
 
 - [x] **T5 Move spec 024's sim tests to the page; sim-page.spec.ts and sim-admin.spec.ts; screenshots** (all)
-- [ ] **T6 Full suite (2 workers), READMEs, spec status; push**
+- [x] **T6 Full suite (2 workers), READMEs, spec status; push**

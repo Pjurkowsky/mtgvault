@@ -30,6 +30,8 @@ services:
     image: ghcr.io/pjurkowsky/mtgvault-forge:${FORGE_IMAGE_VERSION:-latest}
     profiles: [forge]
     restart: unless-stopped
+    # Cores Forge may use; 0 is no limit.
+    cpus: ${FORGE_CPUS:-0}
 
   postgres:
     image: postgres:18

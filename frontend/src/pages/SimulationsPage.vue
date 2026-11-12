@@ -17,7 +17,9 @@ const forge = useForge()
 // All / Mine and the search live in the URL (spec 025, assumption on AC-7).
 const mine = computed(() => route.query.mine === '1')
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
-const setMine = (on: boolean) => router.replace({ query: { ...route.query, mine: on ? '1' : undefined } })
+
+// Takes the box's search too, in case its debounce hasn't written it yet.
+const setMine = (on: boolean) => router.replace({ query: { ...route.query, mine: on ? '1' : undefined, q: query.value.trim() || undefined } })
 watchDebounced(query, (q) => router.replace({ query: { ...route.query, q: q.trim() || undefined } }), { debounce: 250 })
 
 const runs = ref<RunRow[] | null>(null)

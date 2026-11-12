@@ -66,7 +66,7 @@ folder installs at once and the daily sync keeps following the folder; choose
 
 ### Pod simulation (optional)
 
-The Simulate tab on a Commander deck plays AI games with
+**Simulations** in the top bar plays Commander decks against each other with
 [Forge](https://github.com/Card-Forge/forge). It needs the separate
 `ghcr.io/pjurkowsky/mtgvault-forge` image. With compose, set
 `FORGE_URL=http://forge:8790` in `.env`, then:
@@ -77,8 +77,9 @@ docker compose --profile forge up -d
 
 All-in-one: run the Forge image next to it on a shared Docker network and set
 `FORGE_URL` to its address. One game runs at a time and uses about 1 GB of
-memory; a 4-player game takes about a minute. Without `FORGE_URL`, or while Forge is
-down, the Simulate tab is hidden.
+memory; a 4-player game takes about a minute. `FORGE_CPUS=3` caps Forge at three
+cores, so the rest of the server stays responsive. Without `FORGE_URL`, or while
+Forge is down, Simulations is hidden.
 
 ### Settings
 
@@ -218,6 +219,8 @@ network the first time.
 
 The simulation tests use `manage.py fake_forge`, which replays recorded Forge
 games from `backend/sims/fixtures/forge/`, so they need neither Forge nor Java.
+`sim-admin.spec.ts` runs after the other tests (its own project), since an
+admin's Cancel all stops every run.
 
 The tests load a fixed card sample (`backend/cards/fixtures/`) with fixed
 exchange rates, so they need no network. Timing tests (`performance.spec.ts`)
