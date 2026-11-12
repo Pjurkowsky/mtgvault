@@ -22,15 +22,16 @@ autoplay, on a board that stays still while cards come and go.
 
 - **AC-1** Each player's panel ends with Hand, Library, Graveyard and Exile, each
   with its count, always at the bottom of the panel.
-- **AC-2** Clicking one opens its cards as small images. The library lists its
-  top card first.
+- **AC-2** Clicking one opens its cards as images in a dialog that fills most of
+  the screen, with S / M / L card sizes (remembered). The library lists its top
+  card first.
 - **AC-3** In an older game, Hand and Library show their counts and opening them
   says the cards weren't recorded for this game.
 
 ### Cards
 
 - **AC-4** Clicking any card, on the battlefield, in a zone or a commander,
-  shows its large image full screen.
+  shows its large image full screen. Closing it leaves an open zone dialog open.
 - **AC-5** Each battlefield row (Creatures, Other, Lands) keeps room for one line
   of cards while empty, so the first card entering doesn't move anything.
 
@@ -75,7 +76,7 @@ autoplay, on a board that stays still while cards come and go.
 
 ## Assumptions (filled in during writing, not grilled)
 
-- AC-2: the lists open in a dialog, so a 90-card library has room; a hidden
+- AC-2: a hidden
   face-down card shows as "Face-down card".
 - AC-4: the large image is the card's newest printing, as the board shows;
   a token shows its token image.

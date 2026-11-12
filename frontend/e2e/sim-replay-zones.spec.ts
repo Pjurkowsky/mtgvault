@@ -33,6 +33,23 @@ test.describe('Replay zones', () => {
     await expect(page.getByTestId('fullscreen')).toHaveAccessibleName('Giant Growth')
     await page.keyboard.press('Escape')
     await expect(page.getByTestId('fullscreen')).toBeHidden()
+    await expect(hand).toBeVisible()
+    // Clicking the preview closes only the preview, not the hand.
+    await hand.getByRole('button', { name: 'Giant Growth' }).click()
+    await page.getByTestId('fullscreen').click()
+    await expect(page.getByTestId('fullscreen')).toBeHidden()
+    await expect(hand).toBeVisible()
+    // The dialog is nearly full screen, with S / M / L card sizes, remembered.
+    const dialog = (await page.getByTestId('zone-hand-dialog').boundingBox())!
+    expect(dialog.width).toBeGreaterThan(1200)
+    await expect(hand).toHaveAttribute('data-size', 'md')
+    await page.getByRole('radio', { name: 'Large cards' }).or(page.getByRole('button', { name: 'Large cards' })).click()
+    await expect(hand).toHaveAttribute('data-size', 'lg')
+    await page.keyboard.press('Escape')
+    await krenko.getByTestId('player-graveyard').click()
+    await page.keyboard.press('Escape')
+    await krenko.getByTestId('player-hand').click()
+    await expect(hand).toHaveAttribute('data-size', 'lg')
     await page.keyboard.press('Escape')
     await krenko.getByTestId('player-library').click()
     const library = page.getByTestId('zone-library-list')
