@@ -2,6 +2,7 @@
 
 Status: Done
 Depends on: 004-decks, 008-self-hosting, 022-deck-insights
+Followed by: 025-simulations-page (the Simulate tab moves to a Simulations page)
 
 ## Goal
 
