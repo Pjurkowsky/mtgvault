@@ -106,7 +106,7 @@ def apply_filters(items, params: dict, currency: str, rates: dict, *, finish_fie
         items = items.filter(condition__in=conditions)
     if deck := params.get('deck'):
         from decks.models import DeckCard  # decks depends on collection
-        items = items.filter(printing__oracle_id__in=DeckCard.objects.filter(deck_id=deck).values('oracle_id'))
+        items = items.filter(printing__oracle_id__in=DeckCard.objects.filter(deck_id=deck, branch__is_main=True).values('oracle_id'))
     # The cart is only ever shown on its own; everything else is the collection (spec 003, AC-18).
     location = params.get('location')
     items = items.filter(in_cart=location == 'cart')

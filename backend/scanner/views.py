@@ -188,7 +188,7 @@ class ScanView(APIView):
             from decks.services import add_card
             from decks.views import own_deck, preferred_finish
             deck = own_deck(request, target['deck'])
-            existed = deck.cards.filter(oracle_id=printing.oracle_id, zone='main').exists()
+            existed = deck.list_cards().filter(oracle_id=printing.oracle_id, zone='main').exists()
             card = add_card(deck, printing, 1, 'main')
             card_price = price(card.printing, preferred_finish(card.printing), ctx['currency'], ctx['rates'])
             return Response(ScanResultSerializer({

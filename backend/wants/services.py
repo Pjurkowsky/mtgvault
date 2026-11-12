@@ -118,7 +118,7 @@ def want_missing(deck, card=None) -> int:
     from decks.legality import COUNTED
     from decks.ownership import deck_ownership
 
-    cards = list(deck.cards.select_related('printing'))
+    cards = list(deck.list_cards().select_related('printing'))
     ownership = deck_ownership(deck, cards)
     targets = [card] if card is not None else [c for c in cards if c.zone in COUNTED]
     missing: dict = {}

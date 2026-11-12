@@ -34,12 +34,12 @@ def visible_deck(user, pk) -> Deck:
 
 def commander_decks(queryset):
     """Commander decks with a commander (AC-4)."""
-    return queryset.filter(format=Deck.Format.COMMANDER, cards__zone=DeckCard.Zone.COMMANDER).distinct()
+    return queryset.filter(format=Deck.Format.COMMANDER, cards__zone=DeckCard.Zone.COMMANDER, cards__branch__is_main=True).distinct()
 
 
 def deck_cards(deck: Deck) -> list[dict]:
     """Commander and Mainboard cards as a pod list (AC-8: Sideboard and Maybeboard stay out)."""
-    rows = deck.cards.filter(zone__in=[DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN]).select_related('printing')
+    rows = deck.list_cards().filter(zone__in=[DeckCard.Zone.COMMANDER, DeckCard.Zone.MAIN]).select_related('printing')
     return merge([{'name': c.printing.name, 'quantity': c.quantity, 'commander': c.zone == DeckCard.Zone.COMMANDER}
                   for c in rows])
 

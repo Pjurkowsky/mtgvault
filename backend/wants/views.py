@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Case, CharField, Count, F, Sum, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -166,18 +166,23 @@ class PublicWantListView(APIView):
 class WantMissingView(APIView):
     """A deck's missing cards onto the want list, for the deck (AC-15, AC-16)."""
 
-    @extend_schema(request=WantMissingRequestSerializer, responses=want_missing_result_serializer())
+    @extend_schema(parameters=[OpenApiParameter('branch', int, description='Branch id; Main when missing')], request=WantMissingRequestSerializer, responses=want_missing_result_serializer())
     def post(self, request, pk):
         from decks.models import Deck
         from decks.serializers import DeckDetailSerializer
         from decks.views import build
 
         deck = get_object_or_404(Deck, user=request.user, pk=pk)
+        from decks.views import pick_branch  # spec 027: the shown branch's missing cards
+        pick_branch(request, deck)
         data = WantMissingRequestSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         card = None
         if 'card' in data.validated_data:
             card = get_object_or_404(deck.cards.select_related('printing'), pk=data.validated_data['card'])
+            deck.branch = card.branch
         added = services.want_missing(deck, card)
+        branch = deck.branch
         deck = Deck.objects.select_related('location', 'user').get(pk=deck.pk)
+        deck.branch = branch
         return Response({'added': added, 'deck': DeckDetailSerializer(build(deck, price_context(request))).data})

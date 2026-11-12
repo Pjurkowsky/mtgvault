@@ -1596,6 +1596,11 @@ export interface components {
             item_id: number;
             quantity: number;
         };
+        BranchRef: {
+            id: number;
+            name: string;
+            is_main: boolean;
+        };
         BulkChanges: {
             condition?: components["schemas"]["ConditionEnum"];
             language?: components["schemas"]["LanguageEnum"];
@@ -1794,6 +1799,10 @@ export interface components {
             value: number | null;
             values: components["schemas"]["Money"];
             username: string;
+            /** @description The branch shown (spec 027) */
+            branch: components["schemas"]["BranchRef"];
+            forked_from: components["schemas"]["ForkedFrom"] | null;
+            fork_count: number;
             currency: string;
             cards: components["schemas"]["DeckCard"][];
             /** @description Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015) */
@@ -2016,6 +2025,13 @@ export interface components {
          * @enum {string}
          */
         FinishEnum: "nonfoil" | "foil" | "etched";
+        /** @description Spec 027, AC-15: the deck a fork came from; `public` says whether a link can open it. */
+        ForkedFrom: {
+            id: number;
+            name: string;
+            username: string;
+            public: boolean;
+        };
         /**
          * @description * `commander` - Commander
          *     * `brawl` - Brawl
@@ -3651,7 +3667,10 @@ export interface operations {
     };
     decks_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3726,7 +3745,10 @@ export interface operations {
     };
     decks_cards_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3908,7 +3930,10 @@ export interface operations {
     };
     decks_combos_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -3956,6 +3981,8 @@ export interface operations {
     decks_export_retrieve: {
         parameters: {
             query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
                 /** @description Write categories as #tags (spec 014, AC-4) */
                 categories?: boolean;
                 /** @description Write set and number (spec 014, AC-3) */
@@ -3983,7 +4010,10 @@ export interface operations {
     };
     decks_import_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4010,7 +4040,10 @@ export interface operations {
     };
     decks_insights_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4032,6 +4065,8 @@ export interface operations {
     decks_missing_retrieve: {
         parameters: {
             query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
                 color?: string[];
                 condition?: string[];
                 deck?: string;
@@ -4068,7 +4103,10 @@ export interface operations {
     };
     decks_missing_export_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4095,7 +4133,10 @@ export interface operations {
     };
     decks_optimize_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4116,7 +4157,10 @@ export interface operations {
     };
     decks_optimize_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4170,7 +4214,10 @@ export interface operations {
     };
     decks_token_printing_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4197,7 +4244,10 @@ export interface operations {
     };
     decks_want_missing_create: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -5481,7 +5531,10 @@ export interface operations {
     };
     users_decks_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -5503,7 +5556,10 @@ export interface operations {
     };
     users_decks_combos_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -5525,7 +5581,10 @@ export interface operations {
     };
     users_decks_insights_retrieve: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;

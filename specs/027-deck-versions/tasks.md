@@ -2,7 +2,7 @@
 
 ## Branches
 
-- [ ] **T1 Branch and version models, migration to Main, Main everywhere else, branch parameter on the deck API** (AC-5, AC-6)
+- [x] **T1 Branch and version models, migration to Main, Main everywhere else, branch parameter on the deck API** (AC-5, AC-6)
 - [ ] **T2 Versions panel; switch, new, rename, make Main, delete branches; Main-only tools** (AC-1 to AC-5)
 
 ## Versions

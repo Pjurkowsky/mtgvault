@@ -33,7 +33,7 @@ def add_card(deck: Deck, printing, quantity: int = 1, zone: str = DeckCard.Zone.
     """
     check_zone(deck, zone)
     card, created = DeckCard.objects.select_for_update().get_or_create(
-        deck=deck, oracle_id=printing.oracle_id, zone=zone,
+        deck=deck, branch=deck.branch, oracle_id=printing.oracle_id, zone=zone,
         defaults={'printing': printing, 'quantity': min(quantity, MAX_QUANTITY),
                   'categories': merge_categories(categories) if categories else auto_categories(printing.oracle_id)},
     )
@@ -95,7 +95,7 @@ def fit_zone(deck: Deck, zone: str) -> str:
 
 @transaction.atomic
 def set_format(deck: Deck, deck_format: str):
-    """Change the format; cards in zones the new format lacks move to the Mainboard."""
+    """Change the format; cards in zones the new format lacks move to the Mainboard, in every branch."""
     deck.format = deck_format
     deck.save(update_fields=['format'])
     for card in list(deck.cards.all()):
@@ -142,7 +142,7 @@ def move_zone(card: DeckCard, zone: str) -> DeckCard:
     if zone == card.zone:
         return card
     check_zone(card.deck, zone)
-    target = DeckCard.objects.select_for_update().filter(deck=card.deck, oracle_id=card.oracle_id, zone=zone).first()
+    target = DeckCard.objects.select_for_update().filter(branch_id=card.branch_id, oracle_id=card.oracle_id, zone=zone).first()
     if target is None:
         card.zone = zone
         card.save(update_fields=['zone'])
@@ -160,9 +160,9 @@ def move_zone(card: DeckCard, zone: str) -> DeckCard:
 
 
 def maybe_card(deck: Deck, printing) -> DeckCard:
-    """The deck's Maybeboard entry for this card, added at `printing` if it has none."""
-    card = DeckCard.objects.filter(deck=deck, oracle_id=printing.oracle_id, zone=DeckCard.Zone.MAYBE).first()
-    return card or DeckCard.objects.create(deck=deck, printing=printing, oracle_id=printing.oracle_id,
+    """The branch's Maybeboard entry for this card, added at `printing` if it has none."""
+    card = DeckCard.objects.filter(branch=deck.branch, oracle_id=printing.oracle_id, zone=DeckCard.Zone.MAYBE).first()
+    return card or DeckCard.objects.create(deck=deck, branch=deck.branch, printing=printing, oracle_id=printing.oracle_id,
                                            zone=DeckCard.Zone.MAYBE, quantity=1,
                                            categories=auto_categories(printing.oracle_id))
 
@@ -189,7 +189,9 @@ def propose_swap(card: DeckCard, printing) -> DeckCard:
         raise ValidationError({'detail': 'Maybeboard cards cannot be swapped out.'})
     if printing.oracle_id == card.oracle_id:
         raise ValidationError({'printing': ['Pick a different card.']})
-    candidate = maybe_card(card.deck, printing)
+    deck = card.deck
+    deck.branch = card.branch
+    candidate = maybe_card(deck, printing)
     add_pair(card, candidate)
     return candidate
 
@@ -199,7 +201,7 @@ def _one_copy_into(card: DeckCard, zone: str) -> DeckCard:
     card.quantity -= 1
     card.save(update_fields=['quantity'])
     target, created = DeckCard.objects.get_or_create(
-        deck=card.deck, oracle_id=card.oracle_id, zone=zone,
+        deck_id=card.deck_id, branch_id=card.branch_id, oracle_id=card.oracle_id, zone=zone,
         defaults={'printing': card.printing, 'quantity': 1, 'categories': card.categories},
     )
     if not created:
@@ -259,7 +261,7 @@ def fill_from_box(location_id: int, oracle_id=None):
         return
     listed = {
         r['oracle_id']: r['n']
-        for r in deck.cards.filter(oracle_id__in=in_box, zone__in=COUNTED_ZONES).values('oracle_id').annotate(n=Sum('quantity'))
+        for r in deck.list_cards().filter(oracle_id__in=in_box, zone__in=COUNTED_ZONES).values('oracle_id').annotate(n=Sum('quantity'))
     }
     for oracle, count in in_box.items():
         short = count - listed.get(oracle, 0)

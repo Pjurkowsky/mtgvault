@@ -311,6 +311,11 @@ paths:
     get:
       operationId: decks_retrieve
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -392,6 +397,11 @@ paths:
     post:
       operationId: decks_cards_create
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -621,6 +631,11 @@ paths:
     get:
       operationId: decks_combos_retrieve
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -669,6 +684,11 @@ paths:
       operationId: decks_export_retrieve
       parameters:
       - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
+      - in: query
         name: categories
         schema:
           type: boolean
@@ -706,6 +726,11 @@ paths:
     post:
       operationId: decks_import_create
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -740,6 +765,11 @@ paths:
       description: 'Spec 022, AC-14, AC-15: fetches missing salt scores, so the page
         asks after loading.'
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -760,6 +790,11 @@ paths:
     get:
       operationId: decks_missing_retrieve
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: query
         name: color
         schema:
@@ -852,6 +887,11 @@ paths:
     post:
       operationId: decks_missing_export_create
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -884,6 +924,11 @@ paths:
       operationId: decks_optimize_retrieve
       description: Cheapest printings for the cards this deck lacks (spec 013).
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -904,6 +949,11 @@ paths:
       operationId: decks_optimize_create
       description: Cheapest printings for the cards this deck lacks (spec 013).
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -971,6 +1021,11 @@ paths:
       operationId: decks_token_printing_create
       description: 'Spec 021, AC-10: the printing a deck shows for a kind of token.'
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -1005,6 +1060,11 @@ paths:
       description: A deck's missing cards onto the want list, for the deck (AC-15,
         AC-16).
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -2349,6 +2409,11 @@ paths:
       description: 'AC-28: everything but where your cards are. Private and missing
         decks look the same.'
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -2375,6 +2440,11 @@ paths:
     get:
       operationId: users_decks_combos_retrieve
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -2401,6 +2471,11 @@ paths:
     get:
       operationId: users_decks_insights_retrieve
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -3353,6 +3428,19 @@ components:
       required:
       - item_id
       - quantity
+    BranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        is_main:
+          type: boolean
+      required:
+      - id
+      - is_main
+      - name
     BulkChanges:
       type: object
       properties:
@@ -3791,6 +3879,16 @@ components:
           $ref: '#/components/schemas/Money'
         username:
           type: string
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/BranchRef'
+          description: The branch shown (spec 027)
+        forked_from:
+          allOf:
+          - $ref: '#/components/schemas/ForkedFrom'
+          nullable: true
+        fork_count:
+          type: integer
         currency:
           type: string
         cards:
@@ -3810,9 +3908,12 @@ components:
         salt:
           $ref: '#/components/schemas/DeckSalt'
       required:
+      - branch
       - cards
       - counts
       - currency
+      - fork_count
+      - forked_from
       - format
       - id
       - image
@@ -4342,6 +4443,24 @@ components:
         * `nonfoil` - Nonfoil
         * `foil` - Foil
         * `etched` - Etched
+    ForkedFrom:
+      type: object
+      description: 'Spec 027, AC-15: the deck a fork came from; `public` says whether
+        a link can open it.'
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        public:
+          type: boolean
+      required:
+      - id
+      - name
+      - public
+      - username
     FormatEnum:
       enum:
       - commander

@@ -157,8 +157,25 @@ class DeckInsightsSerializer(serializers.Serializer):
     themes = DeckThemeSerializer(many=True, help_text="The commander's most played EDHREC themes (spec 022, AC-15)")
 
 
+class BranchRefSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    is_main = serializers.BooleanField()
+
+
+class ForkedFromSerializer(serializers.Serializer):
+    """Spec 027, AC-15: the deck a fork came from; `public` says whether a link can open it."""
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    username = serializers.CharField()
+    public = serializers.BooleanField()
+
+
 class DeckDetailSerializer(DeckSummarySerializer):
     username = serializers.CharField()
+    branch = BranchRefSerializer(help_text='The branch shown (spec 027)')
+    forked_from = ForkedFromSerializer(allow_null=True)
+    fork_count = serializers.IntegerField()
     currency = serializers.CharField()
     cards = DeckCardSerializer(many=True)
     tokens = DeckTokenSerializer(many=True, help_text='Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015)')

@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models import Case, F, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -24,7 +24,7 @@ from collection.views import browse_params, selected_items
 from . import services, stats, textlist
 from .insights import deck_insights, deck_salt
 from .legality import COUNTED, FORMATS, issues
-from .models import Deck, DeckCard
+from .models import Deck, DeckBranch, DeckCard
 from .optimize import cheapest_changes
 from .ownership import deck_ownership
 from .serializers import (
@@ -54,14 +54,32 @@ from .serializers import (
 )
 
 PAGE_DEFAULT, PAGE_MAX = 60, 200
+# Spec 027: which branch a deck request works on; Main when missing.
+BRANCH = OpenApiParameter('branch', int, description='Branch id; Main when missing')
 
 
 def preferred_finish(printing) -> str:
     return 'nonfoil' if 'nonfoil' in printing.finishes else (printing.finishes or ['nonfoil'])[0]
 
 
+def pick_branch(request, deck) -> Deck:
+    """Spec 027: the branch named by `?branch=` (Main when missing); it must be this deck's."""
+    branch_id = request.query_params.get('branch')
+    if branch_id:
+        if not str(branch_id).isdigit():
+            raise Http404('No such branch.')
+        deck.branch = get_object_or_404(DeckBranch, pk=branch_id, deck=deck)
+    return deck
+
+
+def on_card_branch(deck, card) -> Deck:
+    """A card's edits work on the branch it is in."""
+    deck.branch = card.branch
+    return deck
+
+
 def deck_cards(deck):
-    return list(deck.cards.select_related('printing__set').prefetch_related('swaps_for').order_by('printing__name'))
+    return list(deck.list_cards().select_related('printing__set').prefetch_related('swaps_for').order_by('printing__name'))
 
 
 def build(deck, ctx, detail=True, public=False) -> dict:
@@ -105,7 +123,11 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'swap_for': sorted(o.id for o in c.swaps_for.all()),
             'categories': c.categories,
         })
+    source = deck.forked_from
     return {**data, 'username': deck.user.username, 'currency': ctx['currency'], 'cards': out_cards,
+            'branch': {'id': deck.branch.id, 'name': deck.branch.name, 'is_main': deck.branch.is_main},
+            'forked_from': {'id': source.id, 'name': source.name, 'username': source.user.username, 'public': source.is_public} if source else None,
+            'fork_count': deck.forks.count(),
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
             'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx),
             'salt': deck_salt(cards)}
@@ -126,35 +148,35 @@ def combos_response(deck, viewer_id):
 
 
 class DeckCombosView(APIView):
-    @extend_schema(responses=DeckCombosSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckCombosSerializer)
     def get(self, request, pk):
-        return combos_response(own_deck(request, pk), request.user.id)
+        return combos_response(pick_branch(request, own_deck(request, pk)), request.user.id)
 
 
 class DeckInsightsView(APIView):
     """Spec 022, AC-14, AC-15: fetches missing salt scores, so the page asks after loading."""
 
-    @extend_schema(responses=DeckInsightsSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckInsightsSerializer)
     def get(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
 
 
 class PublicDeckInsightsView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(responses=DeckInsightsSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckInsightsSerializer)
     def get(self, request, username, pk):
-        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        deck = pick_branch(request, get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True))
         return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
 
 
 class PublicDeckCombosView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(responses=DeckCombosSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckCombosSerializer)
     def get(self, request, username, pk):
-        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        deck = pick_branch(request, get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True))
         return combos_response(deck, None)  # visitors see no ownership (AC-9)
 
 
@@ -163,7 +185,9 @@ def own_deck(request, pk) -> Deck:
 
 
 def detail_response(request, deck, code=status.HTTP_200_OK):
+    branch = deck.branch
     deck = Deck.objects.select_related('location', 'user').get(pk=deck.pk)
+    deck.branch = branch
     return Response(DeckDetailSerializer(build(deck, price_context(request))).data, status=code)
 
 
@@ -198,9 +222,9 @@ class DeckListView(APIView):
 
 
 class DeckDetailView(APIView):
-    @extend_schema(responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckDetailSerializer)
     def get(self, request, pk):
-        return detail_response(request, own_deck(request, pk))
+        return detail_response(request, pick_branch(request, own_deck(request, pk)))
 
     @extend_schema(request=DeckWriteSerializer(partial=True), responses=DeckDetailSerializer)
     def patch(self, request, pk):
@@ -226,9 +250,9 @@ class DeckDeleteView(APIView):
 
 
 class DeckCardsView(APIView):
-    @extend_schema(request=DeckCardWriteSerializer, responses={201: DeckDetailSerializer})
+    @extend_schema(parameters=[BRANCH], request=DeckCardWriteSerializer, responses={201: DeckDetailSerializer})
     def post(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = DeckCardWriteSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         services.add_card(deck, **data.validated_data)
@@ -238,7 +262,8 @@ class DeckCardsView(APIView):
 class DeckCardDetailView(APIView):
     def get_card(self, request, pk, card_id):
         deck = own_deck(request, pk)
-        return deck, get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        card = get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        return on_card_branch(deck, card), card
 
     @extend_schema(request=DeckCardEditSerializer, responses=DeckDetailSerializer)
     def patch(self, request, pk, card_id):
@@ -282,6 +307,7 @@ class MarkOwnedView(APIView):
     def post(self, request, pk, card_id):
         deck = own_deck(request, pk)
         card = get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        on_card_branch(deck, card)
         data = MarkOwnedSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
@@ -315,6 +341,7 @@ class ProposeSwapView(APIView):
     def post(self, request, pk, card_id):
         deck = own_deck(request, pk)
         card = get_object_or_404(DeckCard, pk=card_id, deck=deck)
+        on_card_branch(deck, card)
         data = SwapProposalSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         services.propose_swap(card, data.validated_data['printing'])
@@ -330,7 +357,8 @@ class ApplySwapView(APIView):
         data = ApplySwapSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         candidate = get_object_or_404(DeckCard.objects.select_related('printing'), pk=card_id, deck=deck)
-        services.apply_swap(candidate, get_object_or_404(DeckCard, pk=data.validated_data['out'], deck=deck))
+        on_card_branch(deck, candidate)
+        services.apply_swap(candidate, get_object_or_404(DeckCard, pk=data.validated_data['out'], branch=candidate.branch))
         return detail_response(request, deck)
 
 
@@ -344,9 +372,10 @@ class PairsView(APIView):
         data.is_valid(raise_exception=True)
         d = data.validated_data
         out = get_object_or_404(DeckCard, pk=d['out'], deck=deck)
+        on_card_branch(deck, out)
         with transaction.atomic():
             if 'card' in d:
-                candidate = get_object_or_404(DeckCard, pk=d['card'], deck=deck)
+                candidate = get_object_or_404(DeckCard, pk=d['card'], branch=out.branch)
             else:
                 if d['printing'].oracle_id == out.oracle_id:
                     raise ValidationError({'printing': ['Pick a different card.']})
@@ -359,9 +388,9 @@ class PairsView(APIView):
 class TokenPrintingView(APIView):
     """Spec 021, AC-10: the printing a deck shows for a kind of token."""
 
-    @extend_schema(request=TokenPrintingChoiceSerializer, responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], request=TokenPrintingChoiceSerializer, responses=DeckDetailSerializer)
     def post(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = TokenPrintingChoiceSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
@@ -383,7 +412,8 @@ class UnpairView(APIView):
     def delete(self, request, pk, card_id, out_id):
         deck = own_deck(request, pk)
         candidate = get_object_or_404(DeckCard, pk=card_id, deck=deck)
-        services.unpair(candidate, get_object_or_404(DeckCard, pk=out_id, deck=deck))
+        on_card_branch(deck, candidate)
+        services.unpair(candidate, get_object_or_404(DeckCard, pk=out_id, branch=candidate.branch))
         return detail_response(request, deck)
 
 
@@ -430,9 +460,9 @@ class DeckImportPreviewView(APIView):
 
 
 class DeckImportView(APIView):
-    @extend_schema(request=DeckTextSerializer, responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], request=DeckTextSerializer, responses=DeckDetailSerializer)
     def post(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = DeckTextSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         import_text(deck, data.validated_data['text'])
@@ -440,9 +470,9 @@ class DeckImportView(APIView):
 
 
 class DeckExportView(APIView):
-    @extend_schema(parameters=[DeckExportParamsSerializer], responses=ExportResultSerializer)
+    @extend_schema(parameters=[BRANCH, DeckExportParamsSerializer], responses=ExportResultSerializer)
     def get(self, request, pk):
-        cards = deck_cards(own_deck(request, pk))
+        cards = deck_cards(pick_branch(request, own_deck(request, pk)))
         params = DeckExportParamsSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
         d = params.validated_data
@@ -456,7 +486,7 @@ def missing_rows(deck, params, ctx, other_decks=False):
     With `other_decks`, also the copies found only in other decks' boxes (spec 014, AC-5)."""
     all_cards = deck_cards(deck)
     own = deck_ownership(deck, all_cards)
-    cards = DeckCard.objects.filter(deck=deck, zone__in=COUNTED).annotate(
+    cards = DeckCard.objects.filter(branch=deck.branch, zone__in=COUNTED).annotate(
         finish=Case(
             When(printing__finishes__contains=['nonfoil'], then=Value('nonfoil')),
             When(printing__finishes__contains=['foil'], then=Value('foil')),
@@ -477,9 +507,9 @@ def missing_rows(deck, params, ctx, other_decks=False):
 
 
 class MissingView(APIView):
-    @extend_schema(parameters=browse_params(), responses=PublicItemPageSerializer)
+    @extend_schema(parameters=[*browse_params(), BRANCH], responses=PublicItemPageSerializer)
     def get(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         params = ItemFilterSerializer(data=request.query_params)
         params.is_valid(raise_exception=True)
         ctx = price_context(request)
@@ -499,9 +529,9 @@ class MissingView(APIView):
 
 
 class MissingExportView(APIView):
-    @extend_schema(request=MissingExportSerializer, responses=ExportResultSerializer)
+    @extend_schema(parameters=[BRANCH], request=MissingExportSerializer, responses=ExportResultSerializer)
     def post(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = MissingExportSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
@@ -528,28 +558,28 @@ class PublicDeckDetailView(APIView):
 
     permission_classes = [AllowAny]
 
-    @extend_schema(responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], responses=DeckDetailSerializer)
     def get(self, request, username, pk):
         deck = Deck.objects.select_related('location', 'user').filter(
             pk=pk, user__username__iexact=username, is_public=True).first()
         if deck is None:
             raise Http404('Not found.')
-        return Response(DeckDetailSerializer(build(deck, price_context(request), public=True)).data)
+        return Response(DeckDetailSerializer(build(pick_branch(request, deck), price_context(request), public=True)).data)
 
 
 class OptimizeView(APIView):
     """Cheapest printings for the cards this deck lacks (spec 013)."""
 
-    @extend_schema(responses=OptimizePreviewSerializer)
+    @extend_schema(parameters=[BRANCH], responses=OptimizePreviewSerializer)
     def get(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         ctx = price_context(request)
         changes = cheapest_changes(deck, deck_cards(deck), ctx['currency'], ctx['rates'])
         return Response(OptimizePreviewSerializer({'changes': changes}).data)
 
-    @extend_schema(request=OptimizeApplySerializer, responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], request=OptimizeApplySerializer, responses=DeckDetailSerializer)
     def post(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = OptimizeApplySerializer(data=request.data)
         data.is_valid(raise_exception=True)
         ctx = price_context(request)

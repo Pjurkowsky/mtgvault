@@ -35,7 +35,7 @@ def opponent(obj, found) -> dict:
         names = services.commanders(obj.cards)
         return {'id': obj.id, 'source': 'pool', 'name': obj.name, 'commanders': names, 'image': art(next(iter(names), None), found),
                 'owner': obj.added_by.username if obj.added_by else 'Forge', 'precon': obj.precon}
-    names = [c.printing.name for c in obj.cards.all() if c.zone == 'commander']
+    names = [c.printing.name for c in obj.cards.all() if c.zone == 'commander' and c.branch.is_main]
     return {'id': obj.id, 'source': 'deck', 'name': obj.name, 'commanders': names, 'image': art(next(iter(names), None), found),
             'owner': obj.user.username, 'precon': False}
 
@@ -49,15 +49,15 @@ class OpponentsView(APIView):
         services.ensure_precons()
         q = request.query_params.get('q', '').strip()
         pool = PoolDeck.objects.select_related('added_by').order_by('precon', 'name')
-        decks = services.commander_decks(Deck.objects.all()).select_related('user').prefetch_related('cards__printing').order_by('name')
+        decks = services.commander_decks(Deck.objects.all()).select_related('user').prefetch_related('cards__printing', 'cards__branch').order_by('name')
         if q:
             pool = pool.filter(Q(name__icontains=q) | Q(cards__icontains=q))
-            decks = decks.filter(Q(name__icontains=q) | Q(cards__zone='commander', cards__printing__name__icontains=q)).distinct()
+            decks = decks.filter(Q(name__icontains=q) | Q(cards__zone='commander', cards__branch__is_main=True, cards__printing__name__icontains=q)).distinct()
         user = request.user
         mine = list(decks.filter(user=user)[:LIST_LIMIT]) if user.is_authenticated else []
         public = list((decks.exclude(user=user) if user.is_authenticated else decks).filter(is_public=True)[:LIST_LIMIT])
         pool = list(pool[:LIST_LIMIT])
-        names = [n for p in pool for n in services.commanders(p.cards)] + [c.printing.name for d in mine + public for c in d.cards.all() if c.zone == 'commander']
+        names = [n for p in pool for n in services.commanders(p.cards)] + [c.printing.name for d in mine + public for c in d.cards.all() if c.zone == 'commander' and c.branch.is_main]
         found = services.printings_by_name(names)
         return Response(OpponentsSerializer({
             'pool': [opponent(p, found) for p in pool],
