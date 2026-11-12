@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from cards.models import Printing
 from collection.models import Location
@@ -109,7 +110,8 @@ class DeckCard(models.Model):
     zone = models.CharField(max_length=10, choices=Zone.choices, default=Zone.MAIN)
     quantity = models.PositiveSmallIntegerField(default=1)
     # Deck cards this Maybeboard card is proposed to replace (spec 005 AC-9, spec 021 AC-13).
-    swaps_for = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='candidates')
+    swaps_for = models.ManyToManyField('self', symmetrical=False, blank=True, related_name='candidates',
+                                       through='DeckSwap', through_fields=('candidate', 'out'))
     # Your own names for the card in this deck; the first is the primary one (spec 006, AC-12).
     categories = ArrayField(models.CharField(max_length=40), default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -126,3 +128,14 @@ def give_main_branch(sender, instance, created, raw=False, **kwargs):
     """Every deck has a Main branch from the start (spec 027)."""
     if created and not raw and not getattr(instance, '_no_main', False):
         instance.branch = DeckBranch.objects.create(deck=instance, name='Main', is_main=True)
+
+
+class DeckSwap(models.Model):
+    """A Maybeboard card proposed to replace a deck card, and when (spec 028). Pairs proposed
+    before spec 028 have no date."""
+    candidate = models.ForeignKey(DeckCard, on_delete=models.CASCADE, related_name='swap_rows')
+    out = models.ForeignKey(DeckCard, on_delete=models.CASCADE, related_name='candidate_rows')
+    created_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['candidate', 'out'], name='deck_swap_unique')]

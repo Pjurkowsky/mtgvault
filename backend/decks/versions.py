@@ -6,21 +6,28 @@ DeckCard rows again. Lists are compared by card (oracle id) and zone.
 
 from django.db import transaction
 from django.db.models import Max
+from django.utils.dateparse import parse_datetime
 from rest_framework.exceptions import ValidationError
 
 from cards.models import Printing
 
-from .models import Deck, DeckBranch, DeckCard, DeckVersion
+from .models import Deck, DeckBranch, DeckCard, DeckSwap, DeckVersion
 
 
 def snapshot(branch: DeckBranch) -> list[dict]:
-    """The branch's list as plain data; swap pairs point at positions in the list."""
-    cards = list(branch.cards.prefetch_related('swaps_for').order_by('zone', 'id'))
+    """The branch's list as plain data; swap pairs point at positions in the list, with the
+    date each was proposed (spec 028, AC-5)."""
+    cards = list(branch.cards.prefetch_related('swap_rows').order_by('zone', 'id'))
     index = {c.id: i for i, c in enumerate(cards)}
-    return [{
-        'oracle_id': str(c.oracle_id), 'printing': str(c.printing_id), 'zone': c.zone, 'quantity': c.quantity,
-        'categories': c.categories, 'swaps_for': sorted(index[o.id] for o in c.swaps_for.all() if o.id in index),
-    } for c in cards]
+    out = []
+    for c in cards:
+        rows = sorted((index[r.out_id], r.created_at) for r in c.swap_rows.all() if r.out_id in index)
+        out.append({
+            'oracle_id': str(c.oracle_id), 'printing': str(c.printing_id), 'zone': c.zone, 'quantity': c.quantity,
+            'categories': c.categories, 'swaps_for': [i for i, _ in rows],
+            'swap_dates': {str(i): at.isoformat() for i, at in rows if at},
+        })
+    return out
 
 
 def write_list(branch: DeckBranch, cards: list[dict]):
@@ -30,9 +37,10 @@ def write_list(branch: DeckBranch, cards: list[dict]):
         deck_id=branch.deck_id, branch=branch, printing_id=c['printing'], oracle_id=c['oracle_id'], zone=c['zone'],
         quantity=c['quantity'], categories=c.get('categories') or [],
     ) for c in cards])
-    for row, c in zip(rows, cards):
-        if c.get('swaps_for'):
-            row.swaps_for.add(*[rows[i] for i in c['swaps_for'] if i < len(rows)])
+    dates = lambda c, i: parse_datetime(c.get('swap_dates', {}).get(str(i)) or '')  # noqa: E731
+    DeckSwap.objects.bulk_create([
+        DeckSwap(candidate=row, out=rows[i], created_at=dates(c, i))
+        for row, c in zip(rows, cards) for i in c.get('swaps_for') or [] if i < len(rows) and rows[i] is not row])
 
 
 def check_name(deck: Deck, name: str, exclude: int | None = None) -> str:
@@ -109,6 +117,7 @@ def version_cards(deck: Deck, version: DeckVersion) -> list[DeckCard]:
         card = DeckCard(id=-(i + 1), deck=deck, branch=version.branch, printing=printing, oracle_id=printing.oracle_id,
                         zone=c['zone'], quantity=c['quantity'], categories=c.get('categories') or [])
         card.swap_ids = [-(j + 1) for j in c.get('swaps_for', [])]
+        card.swap_dates = {-(int(j) + 1): parse_datetime(at) for j, at in c.get('swap_dates', {}).items()}
         cards.append(card)
     return sorted(cards, key=lambda c: c.printing.name)
 

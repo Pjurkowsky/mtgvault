@@ -60,6 +60,9 @@ class DeckCardSerializer(serializers.Serializer):
     prices = MoneySerializer()
     ownership = OwnershipSerializer()
     swap_for = serializers.ListField(child=serializers.IntegerField(), help_text='Deck cards this Maybeboard card could replace (spec 021, AC-13)')
+    swap_dates = serializers.DictField(child=serializers.DateTimeField(allow_null=True),
+                                       help_text='Deck card id -> when this card was proposed for it; null before spec 028')
+    added_at = serializers.DateTimeField(allow_null=True, help_text='When the card joined the list; null in a saved version')
     categories = serializers.ListField(child=serializers.CharField(), help_text='Your names for the card; the first is primary')
 
 

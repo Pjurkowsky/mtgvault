@@ -2019,6 +2019,15 @@ export interface components {
             ownership: components["schemas"]["Ownership"];
             /** @description Deck cards this Maybeboard card could replace (spec 021, AC-13) */
             swap_for: number[];
+            /** @description Deck card id -> when this card was proposed for it; null before spec 028 */
+            swap_dates: {
+                [key: string]: string | null;
+            };
+            /**
+             * Format: date-time
+             * @description When the card joined the list; null in a saved version
+             */
+            added_at: string | null;
             /** @description Your names for the card; the first is primary */
             categories: string[];
         };

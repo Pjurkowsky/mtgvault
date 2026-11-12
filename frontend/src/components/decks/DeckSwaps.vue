@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ArrowLeftRightIcon, ChevronDownIcon, Link2OffIcon, PlusIcon } from '@lucide/vue'
+import { ArrowDownWideNarrowIcon, ArrowLeftRightIcon, ArrowUpNarrowWideIcon, ChevronDownIcon, Link2OffIcon, PlusIcon } from '@lucide/vue'
 import CardPreview from '@/components/CardPreview.vue'
 import IconButton from '@/components/IconButton.vue'
 import Price from '@/components/Price.vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { usePreference } from '@/composables/usePreference'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 import type { DeckCard, DeckDetail } from '@/lib/decks'
@@ -26,15 +28,47 @@ const emit = defineEmits<{
   propose: [into: DeckCard | null]
 }>()
 
-const byName = (a: DeckCard, b: DeckCard) => a.printing.name.localeCompare(b.printing.name)
-const unpaired = computed(() => props.deck.cards.filter((c) => c.zone === 'maybe' && !c.swap_for.length).sort(byName))
-const groups = computed(() =>
-  props.deck.cards
+// Sort by name or by date, either way; remembered for all decks (spec 028, AC-1 to AC-3).
+type SortKey = 'name' | 'date'
+type Direction = 'asc' | 'desc'
+const sortKey = usePreference<SortKey>('deck.swapSort', 'name', ['name', 'date'])
+const direction = usePreference<Direction>('deck.swapDir', 'asc', ['asc', 'desc'])
+/** Date starts newest first, Name A→Z. */
+function setSort(key: SortKey) {
+  sortKey.value = key
+  direction.value = key === 'date' ? 'desc' : 'asc'
+}
+const flip = () => (direction.value = direction.value === 'asc' ? 'desc' : 'asc')
+
+const time = (iso: string | null | undefined) => (iso ? Date.parse(iso) : null)
+/** Undated (swaps from before spec 028) count as the oldest, in name order among themselves. */
+function order<T>(items: T[], date: (item: T) => number | null, name: (item: T) => string): T[] {
+  const sign = direction.value === 'asc' ? 1 : -1
+  return [...items].sort((a, b) => {
+    if (sortKey.value === 'name') return sign * name(a).localeCompare(name(b))
+    const [x, y] = [date(a), date(b)]
+    if (x === y || (x === null && y === null)) return name(a).localeCompare(name(b))
+    if (x === null) return -sign
+    if (y === null) return sign
+    return sign * (x - y)
+  })
+}
+const proposed = (candidate: DeckCard, out: DeckCard) => time(candidate.swap_dates[String(out.id)])
+const unpaired = computed(() =>
+  order(props.deck.cards.filter((c) => c.zone === 'maybe' && !c.swap_for.length), (c) => time(c.added_at), (c) => c.printing.name))
+const groups = computed(() => {
+  const list = props.deck.cards
     .filter((card) => card.zone !== 'maybe')
-    .map((card) => ({ card, candidates: props.deck.cards.filter((c) => c.swap_for.includes(card.id)).sort(byName) }))
+    .map((card) => {
+      const candidates = order(props.deck.cards.filter((c) => c.swap_for.includes(card.id)), (c) => proposed(c, card), (c) => c.printing.name)
+      const dates = candidates.map((c) => proposed(c, card)).filter((d): d is number => d !== null)
+      return { card, candidates, newest: dates.length ? Math.max(...dates) : null }
+    })
     .filter((g) => g.candidates.length)
-    .sort((a, b) => byName(a.card, b.card)),
-)
+  return order(list, (g) => g.newest, (g) => g.card.printing.name)
+})
+const DAY = { dateStyle: 'medium' } as const
+const day = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString(undefined, DAY) : null)
 
 // Folded sections, remembered per deck in this browser (spec 006 AC-11, spec 021 AC-12).
 type Fold = number | 'unpaired'
@@ -74,7 +108,22 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
 
 <template>
   <div class="grid gap-4" data-testid="deck-swaps">
-    <Button v-if="!readonly" variant="outline" class="justify-self-end" @click="emit('propose', null)"><PlusIcon /> Propose swap</Button>
+    <div class="flex flex-wrap items-center justify-end gap-2">
+      <Select :model-value="sortKey" @update:model-value="(v) => setSort(v as SortKey)">
+        <SelectTrigger class="w-28" aria-label="Sort swaps" data-testid="swap-sort"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="name">Name</SelectItem>
+          <SelectItem value="date">Date</SelectItem>
+        </SelectContent>
+      </Select>
+      <IconButton
+        :label="sortKey === 'date' ? (direction === 'desc' ? 'Newest first' : 'Oldest first') : direction === 'asc' ? 'A to Z' : 'Z to A'"
+        variant="outline" data-testid="swap-direction" :data-direction="direction" @click="flip"
+      >
+        <ArrowDownWideNarrowIcon v-if="direction === 'desc'" /><ArrowUpNarrowWideIcon v-else />
+      </IconButton>
+      <Button v-if="!readonly" variant="outline" @click="emit('propose', null)"><PlusIcon /> Propose swap</Button>
+    </div>
 
     <section v-if="unpaired.length" class="rounded-lg border" data-testid="swap-unpaired">
       <button
@@ -88,7 +137,12 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
         <li v-for="c in unpaired" :key="c.id" :class="ROW" data-testid="unpaired-card">
           <span class="hidden sm:block" />
           <div class="grid justify-items-center">
-            <Button v-if="!readonly" size="sm" variant="outline" @click="emit('propose', c)"><ArrowLeftRightIcon /> Pair with…</Button>
+            <Tooltip v-if="!readonly" :disabled="!day(c.added_at)">
+              <TooltipTrigger as-child>
+                <Button size="sm" variant="outline" data-testid="pair-with" @click="emit('propose', c)"><ArrowLeftRightIcon /> Pair with…</Button>
+              </TooltipTrigger>
+              <TooltipContent>Added {{ day(c.added_at) }}</TooltipContent>
+            </Tooltip>
           </div>
           <div class="flex min-w-0 items-center gap-3">
             <CardPreview :image="c.printing.image_normal" :back="c.printing.image_back_normal" :name="c.printing.name">
@@ -126,8 +180,16 @@ const ROW = 'grid items-center gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_9rem_minmax
         >
           <template v-for="(side, i) in [card, c]" :key="side.id">
             <div v-if="i === 1" class="grid justify-items-center gap-1 text-center text-xs text-muted-foreground">
-              <Button v-if="!readonly" size="sm" :disabled="blocked(c)" @click="emit('apply', c, card)"><ArrowLeftRightIcon /> Swap</Button>
-              <ArrowLeftRightIcon v-else class="size-5" />
+              <!-- When it was proposed (AC-4); a span, so a disabled button still shows it -->
+              <Tooltip :disabled="!day(c.swap_dates[String(card.id)])">
+                <TooltipTrigger as-child>
+                  <span class="inline-flex" :tabindex="readonly || blocked(c) ? 0 : undefined" data-testid="swap-when">
+                    <Button v-if="!readonly" size="sm" :disabled="blocked(c)" @click="emit('apply', c, card)"><ArrowLeftRightIcon /> Swap</Button>
+                    <ArrowLeftRightIcon v-else class="size-5" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Proposed {{ day(c.swap_dates[String(card.id)]) }}</TooltipContent>
+              </Tooltip>
               <Tooltip v-if="blocked(c)">
                 <TooltipTrigger as-child>
                   <Badge variant="outline" class="border-amber-500/60 text-amber-700 dark:text-amber-400 dark:text-amber-400" tabindex="0" data-testid="in-deck">In deck</Badge>

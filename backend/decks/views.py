@@ -87,7 +87,7 @@ def on_card_branch(deck, card) -> Deck:
 
 
 def deck_cards(deck):
-    return list(deck.list_cards().select_related('printing__set').prefetch_related('swaps_for').order_by('printing__name'))
+    return list(deck.list_cards().select_related('printing__set').prefetch_related('swap_rows').order_by('printing__name'))
 
 
 def build(deck, ctx, detail=True, public=False, cards=None, version=None) -> dict:
@@ -129,7 +129,11 @@ def build(deck, ctx, detail=True, public=False, cards=None, version=None) -> dic
             'price': price(c.printing, finish, ctx['currency'], ctx['rates']),
             'prices': prices_in_all(c.printing, finish, ctx['rates']),
             'ownership': ownership,
-            'swap_for': sorted(c.swap_ids if hasattr(c, 'swap_ids') else (o.id for o in c.swaps_for.all())),
+            'swap_for': sorted(c.swap_ids if hasattr(c, 'swap_ids') else (r.out_id for r in c.swap_rows.all())),
+            # Spec 028: when each swap was proposed (null before spec 028) and when the card was added.
+            'swap_dates': {str(k): v for k, v in (c.swap_dates.items() if hasattr(c, 'swap_dates')
+                                                  else ((r.out_id, r.created_at) for r in c.swap_rows.all()))},
+            'added_at': c.created_at,
             'categories': c.categories,
         })
     source = deck.forked_from

@@ -1,7 +1,7 @@
 # Spec 028: Sort swaps by date
 
 Status: Draft
-Depends on: 005-deck-improvements, 021-deck-binder-polish, 027-deck-versions
+Depends on: 005-deck-improvements, 021-deck-and-layout-polish, 027-deck-versions
 
 ## Goal
 
@@ -46,3 +46,4 @@ proposed, not only by name.
 - AC-2: ties (same date) fall back to name order. Name descending is Z→A for
   sections, proposals and unpaired cards alike.
 - AC-5: versions saved before this change restore their swaps without dates.
+  A saved version keeps no added dates, so its unpaired cards sort as undated.

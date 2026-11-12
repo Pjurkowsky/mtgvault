@@ -4384,12 +4384,26 @@ components:
           items:
             type: integer
           description: Deck cards this Maybeboard card could replace (spec 021, AC-13)
+        swap_dates:
+          type: object
+          additionalProperties:
+            type: string
+            format: date-time
+            nullable: true
+          description: Deck card id -> when this card was proposed for it; null before
+            spec 028
+        added_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the card joined the list; null in a saved version
         categories:
           type: array
           items:
             type: string
           description: Your names for the card; the first is primary
       required:
+      - added_at
       - categories
       - id
       - ownership
@@ -4397,6 +4411,7 @@ components:
       - prices
       - printing
       - quantity
+      - swap_dates
       - swap_for
       - zone
     DeckCardWrite:

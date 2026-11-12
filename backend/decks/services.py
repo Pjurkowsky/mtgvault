@@ -12,7 +12,7 @@ from cards.tags import CATEGORIES, auto_categories
 from collection.services import MAX_QUANTITY, Copies, edit_item, save_item
 
 from .legality import FORMATS
-from .models import Deck, DeckCard
+from .models import Deck, DeckCard, DeckSwap
 
 
 def check_zone(deck: Deck, zone: str):
@@ -152,11 +152,19 @@ def move_zone(card: DeckCard, zone: str) -> DeckCard:
     target.quantity = min(target.quantity + card.quantity, MAX_QUANTITY)
     target.categories = merge_categories(target.categories, card.categories)
     target.save(update_fields=['quantity', 'categories'])
+    # Pairs move over with their dates (spec 028, AC-5).
     if zone != DeckCard.Zone.MAYBE:
-        target.candidates.add(*card.candidates.all())
-    target.swaps_for.add(*card.swaps_for.all())
+        repair(card.candidate_rows.all(), out=target)
+    repair(card.swap_rows.all(), candidate=target)
     card.delete()
     return target
+
+
+def repair(rows, candidate: DeckCard | None = None, out: DeckCard | None = None):
+    """Copy pair rows with one side replaced, keeping their dates; pairs that exist already stay."""
+    pairs = [(candidate.id if candidate else r.candidate_id, out.id if out else r.out_id, r.created_at) for r in rows]
+    DeckSwap.objects.bulk_create([DeckSwap(candidate_id=c, out_id=o, created_at=at) for c, o, at in pairs if c != o],
+                                 ignore_conflicts=True)
 
 
 def maybe_card(deck: Deck, printing) -> DeckCard:
@@ -228,7 +236,7 @@ def apply_swap(candidate: DeckCard, out: DeckCard) -> DeckCard:
         old_card = _one_copy_into(out, DeckCard.Zone.MAYBE)
     else:
         # The other candidates were alternatives for that slot: they now pair with the new card.
-        new_card.candidates.add(*out.candidates.exclude(oracle_id=new_card.oracle_id))
+        repair(out.candidate_rows.exclude(candidate__oracle_id=new_card.oracle_id), out=new_card)
         old_card = move_zone(out, DeckCard.Zone.MAYBE)
     old_card.swaps_for.add(new_card)
     return new_card
