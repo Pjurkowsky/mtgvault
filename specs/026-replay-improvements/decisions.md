@@ -68,3 +68,11 @@ Depends on: 024-pod-simulation, 025-simulations-page
     still goes everywhere.
 14. **Play / Pause next to the turn buttons**; speed, step unit, pause at combat,
     follow and the death options in a settings section of the sidebar.
+
+## After building
+
+15. The zone dialogs fill most of the screen with S / M / L card sizes; closing a
+    full-screen card leaves the dialog open (bug).
+16. Card names in events are **hoverable**, each showing its card.
+17. Hovering a ghost shows the card and **what hit it this turn**: the events
+    naming it, the last three, else "Put into the graveyard".

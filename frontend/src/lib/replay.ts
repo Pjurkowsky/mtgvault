@@ -31,3 +31,40 @@ export function changes(before: Board | null, now: Board | null): Changes[] {
     return { ghosts, newGraveyard: new Set(seat.graveyard.filter((c) => !was.has(c.id)).map((c) => c.id)) }
   })
 }
+
+/** A piece of an event's text: plain, or a card name (spec 026, AC-14). */
+export type Segment = { text: string; card?: string }
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Splits event texts into plain text and card names. Player (deck) names are matched first, so
+ * "Krenko Forest" isn't read as the card Forest. A card's game id, "Forest (72)", stays with its name.
+ */
+export function eventSplitter(cards: string[], players: string[]) {
+  const all = [...players.map((p) => ({ p, card: false })), ...cards.map((p) => ({ p, card: true }))]
+    .filter((x) => x.p.length > 1)
+    .sort((a, b) => b.p.length - a.p.length)
+  if (!all.length) return (text: string): Segment[] => [{ text }]
+  const isCard = new Map(all.map((x) => [x.p, x.card] as const))
+  const re = new RegExp(`(?<![\\w'])(${all.map((x) => escape(x.p)).join('|')})(?![\\w'])( \\(\\d+\\))?`, 'g')
+  return (text: string): Segment[] => {
+    const out: Segment[] = []
+    let last = 0
+    for (const m of text.matchAll(re)) {
+      if (m.index > last) out.push({ text: text.slice(last, m.index) })
+      out.push(isCard.get(m[1]!) ? { text: m[0], card: m[1] } : { text: m[0] })
+      last = m.index + m[0].length
+    }
+    if (last < text.length) out.push({ text: text.slice(last) })
+    return out
+  }
+}
+
+/**
+ * Why a card died: the turn's events up to now that name it by its game id, the last three,
+ * without its own move to the graveyard (spec 026, AC-15). Empty when nothing named it.
+ */
+export function deathReason(events: { text: string; type: string }[], id: number): string[] {
+  const tag = `(${id})`
+  return events.filter((e) => e.text.includes(tag) && !(e.type === 'ZONE_CHANGE' && e.text.includes('put into Graveyard'))).slice(-3).map((e) => e.text)
+}

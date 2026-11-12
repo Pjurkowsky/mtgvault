@@ -84,4 +84,32 @@ test.describe('Replay combat', () => {
     await page.getByRole('switch', { name: 'Highlight new graveyard cards' }).click()
     await expect(piper.getByTestId('player-graveyard')).not.toHaveAttribute('data-fresh')
   })
+
+  test('AC-14, AC-15: card names in events show their card; a ghost says why it died', async ({ page, request }) => {
+    const { api } = await signUpAndLogIn(page, request)
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    const { b } = await openReplay(page, api)
+    await turnsAhead(page, 3)
+    const events = replayEvents(page)
+
+    // AC-14: "<deck> assigned Llanowar Elves (37) to attack <deck>." names one card, not the decks.
+    const names = events.nth(1).getByTestId('event-card')
+    await expect(names).toHaveText(['Llanowar Elves (37)'])
+    await names.first().hover()
+    await expect(page.getByTestId('card-preview')).toHaveAccessibleName('Llanowar Elves')
+    await names.first().click()
+    await expect(page.getByTestId('fullscreen')).toHaveAccessibleName('Llanowar Elves')
+    await page.keyboard.press('Escape')
+    await expect(events.nth(5).getByTestId('event-card')).toHaveText(['Llanowar Elves (37)', 'Llanowar Elves (141)'])
+
+    // AC-15: the blocker that died, with the last three events naming it.
+    await events.nth(7).click()
+    await page.mouse.move(0, 0)
+    await replayPlayer(page, b).getByTestId('board-ghost').hover()
+    await expect(page.getByTestId('death-reason').getByRole('listitem')).toHaveText([
+      `${b} assigned Llanowar Elves (141) to block Llanowar Elves (37).`,
+      'Llanowar Elves (37) deals 4 damage to Llanowar Elves (141).',
+      'Llanowar Elves (141) deals 1 damage to Llanowar Elves (37).',
+    ])
+  })
 })

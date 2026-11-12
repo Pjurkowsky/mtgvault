@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { HeartIcon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import { showFullscreen } from '@/composables/useFullscreen'
-import type { Changes } from '@/lib/replay'
+import type { Changes, Segment } from '@/lib/replay'
 import { cn } from '@/lib/utils'
 import ReplayCard from './ReplayCard.vue'
 import ReplayZoneDialog from './ReplayZoneDialog.vue'
@@ -16,6 +16,8 @@ import ReplayZoneDialog from './ReplayZoneDialog.vue'
 const props = defineProps<{
   player: Schemas['ReplayPlayer']; seat: Schemas['BoardSeat']; cards: Record<string, Schemas['CardImage']>
   active: boolean; lostTurn: number | null; changes?: Changes; showGhosts?: boolean; showFresh?: boolean
+  /** Why each ghost died, by card id (AC-15). */
+  reasons?: Map<number, string[]>; split?: (text: string) => Segment[]
 }>()
 const ROWS = [{ key: 'creature', label: 'Creatures' }, { key: 'other', label: 'Other' }, { key: 'land', label: 'Lands' }] as const
 const rows = computed(() => ROWS.map((r) => {
@@ -61,7 +63,9 @@ const zone = computed(() => zones.value.find((z) => z.key === opened.value))
       <span class="text-xs text-muted-foreground">{{ row.label }} <span class="tabular-nums">{{ row.count }}</span></span>
       <!-- Room for one line of cards, empty or not (AC-5) -->
       <div class="flex min-h-[4.9rem] flex-wrap items-center gap-1" data-testid="row-cards">
-        <ReplayCard v-for="c in row.cards" :key="c.card.id" :card="c.card" :image="cards[c.card.name]" :ghost="c.ghost" />
+        <ReplayCard v-for="c in row.cards" :key="c.card.id" :card="c.card" :image="cards[c.card.name]" :ghost="c.ghost"
+          :reason="c.ghost ? reasons?.get(c.card.id) : undefined" :split="split" :images="cards"
+        />
       </div>
     </div>
     <footer class="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs text-muted-foreground" data-testid="player-zones">

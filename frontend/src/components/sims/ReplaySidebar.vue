@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { SPEEDS, type useReplayPlayer } from '@/composables/useReplayPlayer'
+import type { Segment } from '@/lib/replay'
 import ReplayEvents from './ReplayEvents.vue'
 
 /**
@@ -17,6 +18,7 @@ import ReplayEvents from './ReplayEvents.vue'
  */
 const props = defineProps<{
   player: ReturnType<typeof useReplayPlayer>; events: Schemas['ReplayEvent'][]; players: Schemas['ReplayPlayer'][]; title: string
+  split: (text: string) => Segment[]; images: Record<string, Schemas['CardImage']>
 }>()
 
 const shown = defineModel<boolean>('open', { required: true })
@@ -43,7 +45,7 @@ const graveyard = on(s.graveyard)
           <IconButton label="Next event" variant="outline" :disabled="!player.hasNextEvent.value" @click="player.next()"><StepForwardIcon /></IconButton>
           <span class="ml-1 truncate text-sm font-medium" data-testid="sidebar-turn">{{ title }}</span>
         </div>
-        <ReplayEvents class="min-h-0 flex-1 overflow-y-auto p-2" :events="events" :selected="player.cursor.value.event" @select="player.select" />
+        <ReplayEvents class="min-h-0 flex-1 overflow-y-auto p-2" :events="events" :selected="player.cursor.value.event" :split="split" :images="images" @select="player.select" />
         <div class="grid gap-3 border-t p-3 text-sm" data-testid="replay-settings">
           <div class="grid gap-1.5">
             <Label id="replay-speed">Speed</Label>

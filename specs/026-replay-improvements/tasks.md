@@ -11,6 +11,8 @@
 - [x] **T4 Combat arrows, deaths on the board, new graveyard cards** (AC-6 to AC-8)
 - [x] **T5 Autoplay with speed, step unit, pause at combat, follow; settings remembered** (AC-11 to AC-13)
 
+- [x] **T8 Hoverable card names in events; why a ghost died** (AC-14, AC-15)
+
 ## Tests and finish
 
 - [x] **T6 Update spec 024's replay tests; sim-replay-zones, -combat, -play specs; screenshots** (all)

@@ -46,6 +46,10 @@ autoplay, on a board that stays still while cards come and go.
 - **AC-8** With **Highlight new graveyard cards** on, cards that reached a
   graveyard at this step are highlighted in its list, and its count is marked.
 
+- **AC-15** Hovering a card that died (AC-7) shows the card and why: this turn's
+  events that name it, the last three, for example "Blasphemous Act (157) deals
+  13 damage to Pilgrim's Eye (232)." With none: "Put into the graveyard".
+
 ### Events and stepping
 
 - **AC-9** The turn's events sit in a sidebar on the window's right edge, like
@@ -54,6 +58,8 @@ autoplay, on a board that stays still while cards come and go.
 - **AC-10** The sidebar has Previous and Next event buttons that run across
   turns. **← →** step one event, **Shift + ← →** a whole turn. The current event
   is highlighted and scrolled into view.
+- **AC-14** Card names in the events are underlined: hovering one shows the card,
+  clicking shows it full screen.
 
 ### Autoplay
 
@@ -89,6 +95,10 @@ autoplay, on a board that stays still while cards come and go.
   of the board; the board doesn't move sideways.
 - AC-10: stepping past a turn's last event goes to the next turn's first event;
   a turn without events counts as one step.
+- AC-14: names are matched against the game's cards, after the players' deck
+  names, so "Krenko Forest" isn't read as Forest.
+- AC-15: the card names in the reason are bold, not hoverable (it already sits in
+  a hover preview).
 - AC-11: Play at the end starts again from the first step; any manual step,
   turn change or the slider pauses autoplay.
 - AC-12: Pause at combat stops on the step where attackers are declared;

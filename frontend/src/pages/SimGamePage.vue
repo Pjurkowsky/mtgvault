@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePreference } from '@/composables/usePreference'
 import { useReplayPlayer } from '@/composables/useReplayPlayer'
-import { changes } from '@/lib/replay'
+import { changes, deathReason, eventSplitter } from '@/lib/replay'
 import { cn } from '@/lib/utils'
 
 /** A finished game, turn by turn (spec 024, AC-23 to AC-28; spec 025, AC-9), event by event and on autoplay (spec 026). */
@@ -38,6 +38,13 @@ const back = computed(() => ({ name: 'sim-run', params: { run: route.params.run 
 
 const current = computed(() => game.value?.turns[cursor.value.turn] ?? null)
 const changed = computed(() => changes(player.previousBoard.value, board.value))
+// Card names in events (AC-14), and why each ghost died: this turn's events naming it so far (AC-15).
+const split = computed(() => eventSplitter(Object.keys(game.value?.cards ?? {}), game.value?.players.map((p) => p.label) ?? []))
+const reasons = computed(() => {
+  const events = current.value?.events ?? []
+  const upTo = events.slice(0, (cursor.value.event ?? events.length - 1) + 1)
+  return new Map(changed.value.flatMap((c) => c.ghosts.map((g) => [g.card.id, deathReason(upTo, g.card.id)] as const)))
+})
 const label = (seat: number | null | undefined) => (seat == null ? '' : game.value?.players[seat]?.label ?? '')
 const turnTitle = computed(() => (current.value && current.value.number > 0 ? `Turn ${current.value.own_turn} · ${label(current.value.active)}` : 'Before the game'))
 const result = computed(() => {
@@ -105,11 +112,11 @@ const sidebarOpen = computed({ get: () => sidebar.value === 'open', set: (v: boo
           <ReplayPlayer
             v-for="p in game.players" :key="p.seat" :player="p" :seat="board[p.seat]!" :cards="game.cards"
             :active="current?.active === p.seat" :lost-turn="lostTurn(p.seat)" :changes="changed[p.seat]"
-            :show-ghosts="settings.deaths.value === 'on'" :show-fresh="settings.graveyard.value === 'on'"
+            :show-ghosts="settings.deaths.value === 'on'" :show-fresh="settings.graveyard.value === 'on'" :reasons="reasons" :split="split"
           />
           <ReplayArrows :board="board" :container="boardEl" />
         </div>
-        <ReplaySidebar v-model:open="sidebarOpen" :player="player" :events="current?.events ?? []" :players="game.players" :title="turnTitle" />
+        <ReplaySidebar v-model:open="sidebarOpen" :player="player" :events="current?.events ?? []" :players="game.players" :title="turnTitle" :split="split" :images="game.cards" />
       </TabsContent>
 
       <TabsContent value="log" class="pt-2">

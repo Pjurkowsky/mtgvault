@@ -4,14 +4,20 @@ import { SkullIcon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import CardPreview from '@/components/CardPreview.vue'
 import { showFullscreen } from '@/composables/useFullscreen'
+import type { Segment } from '@/lib/replay'
 import { cn } from '@/lib/utils'
+import ReplayEventText from './ReplayEventText.vue'
 
 /**
  * A card on the battlefield: image (or its name), sideways when tapped, with P/T and counters (spec 024, AC-25).
  * Spec 026: a click shows it full screen (AC-4); attackers and blockers are marked (AC-6); a card that
- * just died stays faded with a skull (AC-7).
+ * just died stays faded with a skull (AC-7); its preview says why (AC-15).
  */
-const props = defineProps<{ card: Schemas['BoardCard']; image?: Schemas['CardImage']; ghost?: boolean }>()
+const props = defineProps<{
+  card: Schemas['BoardCard']; image?: Schemas['CardImage']; ghost?: boolean
+  /** Why a ghost died: the turn's events naming it (AC-15). */
+  reason?: string[]; split?: (text: string) => Segment[]; images?: Record<string, Schemas['CardImage']>
+}>()
 const counters = computed(() => Object.entries(props.card.counters ?? {}))
 const open = () => showFullscreen(props.image?.image_normal, props.card.name)
 </script>
@@ -37,5 +43,15 @@ const open = () => showFullscreen(props.image?.image_normal, props.card.name)
       <span v-for="([type, n], i) in counters" :key="type" class="absolute left-0 rounded-r-sm bg-primary px-1 text-[0.55rem] text-primary-foreground" :style="{ top: `${i * 0.9}rem` }" data-testid="board-counter">{{ n }} {{ type }}</span>
       <SkullIcon v-if="ghost" class="absolute inset-0 m-auto size-7 rounded-full bg-background/80 p-1 text-foreground" aria-hidden="true" />
     </div>
+    <template v-if="ghost" #caption>
+      <p class="font-semibold">Died</p>
+      <ul v-if="reason?.length" class="grid gap-1" data-testid="death-reason">
+        <li v-for="(line, i) in reason" :key="i">
+          <ReplayEventText v-if="split" :text="line" :split="split" :images="images ?? {}" plain />
+          <template v-else>{{ line }}</template>
+        </li>
+      </ul>
+      <p v-else data-testid="death-reason">Put into the graveyard</p>
+    </template>
   </CardPreview>
 </template>
