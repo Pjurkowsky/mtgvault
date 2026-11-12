@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { cardDialog, logOut, signUpAndLogIn } from './helpers'
+import { cardDialog, closeCardDialog, logOut, signUpAndLogIn } from './helpers'
 
 // Spec 022: combos from Commander Spellbook's dataset (AC-6 to AC-11).
 // The fixture holds real combos: Dockside Extortionist + Cloudstone Curio (red),
@@ -57,6 +57,14 @@ test.describe('Deck combos', () => {
     await expect(skirk.getByTestId('combo-owned')).toHaveText('In collection')
     // Goblin Warchief isn't in the catalog fixture, so it can't be added.
     await expect(krenko.getByRole('button', { name: 'Add Goblin Warchief to the Maybeboard' })).toHaveCount(0)
+
+    // A card not in the deck opens its card dialog too, without the deck section (AC-10).
+    await expect(krenko.getByRole('button', { name: 'Open Goblin Warchief' })).toBeDisabled()
+    await krenko.getByRole('button', { name: 'Open Skirk Prospector' }).click()
+    await expect(cardDialog(page)).toContainText('Skirk Prospector')
+    await expect(cardDialog(page).getByTestId('owned')).toHaveText('You own 1')
+    await expect(cardDialog(page).getByTestId('deck-section')).toHaveCount(0)
+    await closeCardDialog(page)
 
     // Out of the commander's colours: Dockside + Temur Sabertooth (RG), Krenko + Intruder Alarm (UR).
     await expect(withCards(page, 'could-build', 'Temur Sabertooth')).toHaveCount(0)

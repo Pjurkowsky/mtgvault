@@ -10,7 +10,7 @@ import ComboRow from './ComboRow.vue'
 
 /** Combos in the deck and infinite ones it could build (spec 022, AC-6 to AC-11). */
 const props = defineProps<{ deck: DeckDetail; username: string | null; editable: boolean }>()
-const emit = defineEmits<{ open: [card: DeckCard]; changed: [deck: DeckDetail] }>()
+const emit = defineEmits<{ open: [card: DeckCard]; preview: [oracleId: string, printingId: string]; changed: [deck: DeckDetail] }>()
 
 const PAGE = 20
 const combos = ref<Schemas['DeckCombos'] | null>(null)
@@ -36,8 +36,11 @@ const groups = computed(() => [
 ])
 
 function open(card: Schemas['ComboCard']) {
-  const found = props.deck.cards.find((c) => c.printing.oracle_id === card.oracle_id && c.zone !== 'maybe')
+  // A counted copy first, then a Maybeboard one; a card not in the deck opens on its own.
+  const copies = props.deck.cards.filter((c) => c.printing.oracle_id === card.oracle_id)
+  const found = copies.find((c) => c.zone !== 'maybe') ?? copies[0]
   if (found) emit('open', found)
+  else if (card.printing) emit('preview', card.oracle_id, card.printing)
 }
 
 async function add(card: Schemas['ComboCard']) {

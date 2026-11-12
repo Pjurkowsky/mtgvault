@@ -16,7 +16,11 @@ import DeckSection from './DeckSection.vue'
  * A deck card: the collection's card dialog with the deck section (spec 005, AC-3, AC-4).
  * Edits of your copies reuse the collection's edit and add dialogs.
  */
-const props = defineProps<{ deck: DeckDetail; card: DeckCard | null; readonly?: boolean }>()
+const props = defineProps<{
+  deck: DeckDetail; card: DeckCard | null; readonly?: boolean
+  /** A card not in the deck, opened from the Combos tab (spec 022, AC-10). */
+  preview?: { oracleId: string; printingId: string } | null
+}>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ changed: [deck: DeckDetail] }>()
 const confirm = useConfirm()
@@ -125,8 +129,8 @@ async function deleteCopy(itemId: number) {
 
 <template>
   <CardDetailDialog
-    v-model:open="open" :row="null" :oracle-id="card?.printing.oracle_id" :printing-id="card?.printing.id"
-    :currency="deck.currency" :readonly="readonly" :want-deck="deck.id" choose-printing @choose-printing="choosePrinting"
+    v-model:open="open" :row="null" :oracle-id="card?.printing.oracle_id ?? preview?.oracleId" :printing-id="card?.printing.id ?? preview?.printingId"
+    :currency="deck.currency" :readonly="readonly" :want-deck="deck.id" :choose-printing="!!card" @choose-printing="choosePrinting"
     :swappable="!readonly && !!card && card.zone !== 'maybe'"
     :price="card ? { value: card.price, values: card.prices } : null"
     @add="addToDeck" @changed="refresh" @propose-swap="proposeSwap"

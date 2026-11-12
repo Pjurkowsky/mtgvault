@@ -139,8 +139,16 @@ const clearFilters = () => router.replace({ query: { ...route.query, ...clearedQ
 
 const cardOpen = ref(false)
 const openCard = ref<DeckCard | null>(null)
+const outside = ref<{ oracleId: string; printingId: string } | null>(null)
 function showCard(card: DeckCard) {
   openCard.value = card
+  outside.value = null
+  cardOpen.value = true
+}
+/** A combo card that isn't in the deck (spec 022, AC-10). */
+function showPreview(oracleId: string, printingId: string) {
+  openCard.value = null
+  outside.value = { oracleId, printingId }
   cardOpen.value = true
 }
 const confirm = useConfirm()
@@ -384,7 +392,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
       </TabsContent>
 
       <TabsContent value="combos" class="pt-2">
-        <DeckCombos :deck="deck" :username="username" :editable="isOwner" @open="showCard" @changed="changed" />
+        <DeckCombos :deck="deck" :username="username" :editable="isOwner" @open="showCard" @preview="showPreview" @changed="changed" />
       </TabsContent>
 
       <TabsContent value="stats" class="grid gap-4 pt-2">
@@ -398,7 +406,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
     </Tabs>
 
     <CategoryDialog v-if="isOwner" v-model:open="categoriesOpen" :deck="deck" :card="openCard" @changed="changed" />
-    <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :readonly="!isOwner" @changed="changed" />
+    <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :preview="outside" :readonly="!isOwner" @changed="changed" />
     <template v-if="isOwner">
       <DeckAddDialog v-model:open="addOpen" :deck="deck" @changed="changed" />
       <ScanTargetDialog

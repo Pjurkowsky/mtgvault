@@ -31,7 +31,7 @@ const steps = computed(() => props.combo.description.split('\n').map((s) => s.tr
       <li v-for="card in combo.cards" :key="card.oracle_id" class="grid w-24 content-start gap-1" :data-missing="!card.in_deck || undefined" data-testid="combo-card">
         <button
           type="button" class="rounded-[4.75%/3.5%] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-default"
-          :disabled="!card.in_deck" :aria-label="card.in_deck ? `Open ${card.name}` : card.name" @click="emit('open', card)"
+          :disabled="!card.in_deck && !card.printing" :aria-label="`Open ${card.name}`" @click="emit('open', card)"
         >
           <img :src="card.image" :alt="card.name" :class="['aspect-[488/680] w-full rounded-[4.75%/3.5%] bg-muted', !card.in_deck && 'opacity-40']" loading="lazy" />
         </button>

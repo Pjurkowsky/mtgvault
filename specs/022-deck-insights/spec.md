@@ -63,7 +63,9 @@ commander is played in. The app gets a dark theme.
   opens its prerequisites and steps, and any extra pieces it needs ("a
   creature with power 3 or more").
 - **AC-10** For the owner, a missing card has an Add button that puts it in
-  the Maybeboard. Clicking a deck card opens its card dialog.
+  the Maybeboard. Clicking any combo card opens its card dialog; one not in the
+  deck opens without the deck section, so the owner can add it to the deck or
+  the want list from there.
 - **AC-11** Combo data comes from Commander Spellbook's dataset, synced daily.
   The tab credits Commander Spellbook with a link. With nothing to show a
   group says "No combos."
