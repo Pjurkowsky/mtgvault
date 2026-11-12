@@ -8,7 +8,7 @@ import Price from '@/components/Price.vue'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import type { DeckDetail } from '@/lib/decks'
+import { onBranch, type DeckDetail } from '@/lib/decks'
 
 type Change = Schemas['OptimizeChange']
 
@@ -44,7 +44,7 @@ const label = (p: Change['printing']) => `${p.set_code.toUpperCase()} #${p.colle
 async function apply() {
   busy.value = true
   const cards = [...ticked.value]
-  const { data, error } = await api.POST('/api/decks/{id}/optimize/', { params: { path: { id: props.deck.id } }, body: { cards } })
+  const { data, error } = await api.POST('/api/decks/{id}/optimize/', { params: { path: { id: props.deck.id }, query: onBranch(props.deck) }, body: { cards } })
   busy.value = false
   if (!data) return toast.error(Object.values(fieldErrors(error as unknown)).join(' ') || 'Could not change the printings.')
   toast.success(`Changed ${cards.length} ${cards.length === 1 ? 'printing' : 'printings'}.`)

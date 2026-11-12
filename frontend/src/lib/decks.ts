@@ -3,6 +3,11 @@ import type { Schemas } from '@/api/client'
 
 export type DeckDetail = Schemas['DeckDetail']
 export type DeckCard = Schemas['DeckCard']
+
+/** Spec 027: deck requests work on the branch shown. */
+export const onBranch = (deck: DeckDetail) => ({ branch: deck.branch.id })
+/** The list shown: a saved version (read only) or the branch now. */
+export const shownList = (deck: DeckDetail) => (deck.version ? { version: deck.version.id } : onBranch(deck))
 export type DeckSummary = Schemas['DeckSummary']
 export type Zone = 'commander' | 'main' | 'side' | 'maybe'
 export type OwnState = 'in_box' | 'owned' | 'other_decks' | 'missing'

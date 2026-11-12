@@ -5,7 +5,7 @@ import { api, type Schemas } from '@/api/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { DeckCard, DeckDetail } from '@/lib/decks'
+import { onBranch, shownList, type DeckCard, type DeckDetail } from '@/lib/decks'
 import ComboRow from './ComboRow.vue'
 
 /** Combos in the deck and infinite ones it could build (spec 022, AC-6 to AC-11). */
@@ -18,13 +18,13 @@ const failed = ref(false)
 const shown = ref(PAGE)
 
 // Reload when the counted cards change, not on every edit (categories, printings).
-const signature = computed(() =>
+const signature = computed(() => JSON.stringify(shownList(props.deck)) +
   props.deck.cards.filter((c) => c.zone !== 'maybe').map((c) => c.printing.oracle_id).sort().join())
 async function load() {
   failed.value = false
   const { data } = props.username
-    ? await api.GET('/api/users/{username}/decks/{id}/combos/', { params: { path: { username: props.username, id: props.deck.id } } })
-    : await api.GET('/api/decks/{id}/combos/', { params: { path: { id: props.deck.id } } })
+    ? await api.GET('/api/users/{username}/decks/{id}/combos/', { params: { path: { username: props.username, id: props.deck.id }, query: shownList(props.deck) } })
+    : await api.GET('/api/decks/{id}/combos/', { params: { path: { id: props.deck.id }, query: shownList(props.deck) } })
   combos.value = data ?? null
   failed.value = !data
 }
@@ -45,7 +45,7 @@ function open(card: Schemas['ComboCard']) {
 
 async function add(card: Schemas['ComboCard']) {
   const { data } = await api.POST('/api/decks/{id}/cards/', {
-    params: { path: { id: props.deck.id } }, body: { printing: card.printing!, zone: 'maybe' },
+    params: { path: { id: props.deck.id }, query: onBranch(props.deck) }, body: { printing: card.printing!, zone: 'maybe' },
   })
   if (!data) return toast.error(`Could not add ${card.name}.`)
   toast.success(`Added ${card.name} to the Maybeboard.`)

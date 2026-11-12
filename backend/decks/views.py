@@ -252,9 +252,9 @@ class DeckDetailView(APIView):
     def get(self, request, pk):
         return detail_response(request, pick_branch(request, own_deck(request, pk)))
 
-    @extend_schema(request=DeckWriteSerializer(partial=True), responses=DeckDetailSerializer)
+    @extend_schema(parameters=[BRANCH], request=DeckWriteSerializer(partial=True), responses=DeckDetailSerializer)
     def patch(self, request, pk):
-        deck = own_deck(request, pk)
+        deck = pick_branch(request, own_deck(request, pk))
         data = DeckWriteSerializer(deck, data=request.data, partial=True)
         data.is_valid(raise_exception=True)
         new_format = data.validated_data.pop('format', None)
@@ -697,7 +697,7 @@ class BranchDetailView(APIView):
             versions.make_main(branch)
         return Response(BranchesSerializer(branches_data(deck)).data)
 
-    @extend_schema(request=None, responses=BranchesSerializer)
+    @extend_schema(request=None, responses={200: BranchesSerializer})
     def delete(self, request, pk, branch_id):
         deck = own_deck(request, pk)
         versions.delete_branch(get_object_or_404(DeckBranch, pk=branch_id, deck=deck))
@@ -729,7 +729,7 @@ class VersionDetailView(APIView):
         """AC-8: the version as a deck, read only."""
         return version_response(request, own_deck(request, pk), version_id)
 
-    @extend_schema(request=None, responses=BranchesSerializer)
+    @extend_schema(request=None, responses={200: BranchesSerializer})
     def delete(self, request, pk, version_id):
         """AC-11"""
         deck = own_deck(request, pk)

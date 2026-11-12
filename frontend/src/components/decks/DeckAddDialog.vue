@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { Finish } from '@/lib/cards'
-import { ZONE_LABELS, zonesForCard, type DeckDetail, type Zone } from '@/lib/decks'
+import { onBranch, ZONE_LABELS, zonesForCard, type DeckDetail, type Zone } from '@/lib/decks'
 import { useAuthStore } from '@/stores/auth'
 import { useLocationsStore } from '@/stores/locations'
 
@@ -98,7 +98,7 @@ async function add() {
   errors.value = {}
   // The decklist first: copies landing in the deck box then find the card already listed (spec 004, AC-29).
   const added = await api.POST('/api/decks/{id}/cards/', {
-    params: { path: { id: props.deck.id } },
+    params: { path: { id: props.deck.id }, query: onBranch(props.deck) },
     body: { printing: printing.value.id, quantity: quantity.value, zone: zone.value },
   })
   if (!added.data) {
@@ -116,7 +116,7 @@ async function add() {
       },
     })
     if (!owned.data) toast.error(Object.values(fieldErrors(owned.error as unknown)).join(' ') || 'Could not add the copies.')
-    const fresh = await api.GET('/api/decks/{id}/', { params: { path: { id: props.deck.id } } })
+    const fresh = await api.GET('/api/decks/{id}/', { params: { path: { id: props.deck.id }, query: onBranch(props.deck) } })
     deck = fresh.data ?? deck
     void locations.load()
   }

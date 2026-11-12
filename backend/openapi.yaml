@@ -335,6 +335,11 @@ paths:
     patch:
       operationId: decks_partial_update
       parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -500,8 +505,12 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
   /api/decks/{id}/branches/{branch_id}/versions/:
     post:
       operationId: decks_branches_versions_create
@@ -1321,8 +1330,12 @@ paths:
       security:
       - jwtAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
   /api/decks/{id}/versions/{version_id}/restore/:
     post:
       operationId: decks_versions_restore_create

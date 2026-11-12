@@ -8,7 +8,7 @@ import CardDetailDialog from '@/components/collection/CardDetailDialog.vue'
 import EditItemDialog from '@/components/collection/EditItemDialog.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { refreshSuggestions } from '@/lib/categories'
-import { ZONE_LABELS, type DeckCard, type DeckDetail, type Zone } from '@/lib/decks'
+import { onBranch, ZONE_LABELS, type DeckCard, type DeckDetail, type Zone } from '@/lib/decks'
 import DeckAddDialog from './DeckAddDialog.vue'
 import DeckSection from './DeckSection.vue'
 
@@ -27,7 +27,7 @@ const confirm = useConfirm()
 const busy = ref(false)
 
 async function refresh() {
-  const { data } = await api.GET('/api/decks/{id}/', { params: { path: { id: props.deck.id } } })
+  const { data } = await api.GET('/api/decks/{id}/', { params: { path: { id: props.deck.id }, query: onBranch(props.deck) } })
   if (data) emit('changed', data)
 }
 

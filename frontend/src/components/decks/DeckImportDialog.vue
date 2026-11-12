@@ -5,7 +5,7 @@ import { api, type Schemas } from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import type { DeckDetail } from '@/lib/decks'
+import { onBranch, type DeckDetail } from '@/lib/decks'
 import ImportPreview from './ImportPreview.vue'
 
 /** Add a pasted list to a deck after a preview (spec 004, AC-25, AC-26). */
@@ -26,7 +26,7 @@ async function next() {
     busy.value = false
     return
   }
-  const { data } = await api.POST('/api/decks/{id}/import/', { params: { path: { id: props.deck.id } }, body: { text: text.value } })
+  const { data } = await api.POST('/api/decks/{id}/import/', { params: { path: { id: props.deck.id }, query: onBranch(props.deck) }, body: { text: text.value } })
   busy.value = false
   if (!data) return toast.error('Could not import.')
   toast.success(`Added ${preview.value.cards} cards.`)

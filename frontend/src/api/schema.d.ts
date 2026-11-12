@@ -3933,7 +3933,10 @@ export interface operations {
     };
     decks_partial_update: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+            };
             header?: never;
             path: {
                 id: number;
@@ -4045,12 +4048,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
             };
         };
     };
@@ -4700,12 +4704,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description No response body */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
             };
         };
     };

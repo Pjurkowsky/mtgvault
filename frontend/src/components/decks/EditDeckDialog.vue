@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { FORMATS, type DeckDetail } from '@/lib/decks'
+import { onBranch, FORMATS, type DeckDetail } from '@/lib/decks'
 
 /** Rename, change format or visibility (spec 004, AC-7). */
 const props = defineProps<{ deck: DeckDetail }>()
@@ -28,7 +28,7 @@ watch(open, (isOpen) => {
 
 async function save() {
   const { data, error } = await api.PATCH('/api/decks/{id}/', {
-    params: { path: { id: props.deck.id } }, body: { name: name.value, format: format.value as never, is_public: isPublic.value },
+    params: { path: { id: props.deck.id }, query: onBranch(props.deck) }, body: { name: name.value, format: format.value as never, is_public: isPublic.value },
   })
   if (error || !data) return (errors.value = fieldErrors(error))
   toast.success('Saved.')

@@ -106,7 +106,8 @@ and let the simulator say which list wins more.
 - AC-7: versions save the list only; a version of an empty branch is allowed.
   No limit on how many.
 - AC-8: Back returns to the version's branch.
-- AC-12: picking the same list on both sides shows "No changes".
+- AC-12: picking the same list on both sides shows "No changes". Compare from the
+  panel's header starts with the shown branch's newest version, or Main when it has none.
 - AC-13: cards are matched by card (oracle id) and zone; a printing change alone
   isn't a change.
 - AC-15: the fork is named "<deck>" (or "<deck> (2)" when you have one with that

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { showFullscreen } from '@/composables/useFullscreen'
-import type { DeckDetail } from '@/lib/decks'
+import { onBranch, type DeckDetail } from '@/lib/decks'
 
 /**
  * A deck's token: image, price, the cards that make it, and for the owner its printing
@@ -35,7 +35,7 @@ async function choose(token: string | null) {
   if (!props.token) return
   busy.value = true
   const { data } = await api.POST('/api/decks/{id}/token-printing/', {
-    params: { path: { id: props.deck.id } }, body: { kind: props.token.kind, token },
+    params: { path: { id: props.deck.id }, query: onBranch(props.deck) }, body: { kind: props.token.kind, token },
   })
   busy.value = false
   if (!data) return toast.error('Could not change the printing.')

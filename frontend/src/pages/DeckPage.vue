@@ -2,8 +2,8 @@
 import { computed, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
-  ArrowLeftIcon, BadgePercentIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, DownloadIcon, EllipsisIcon, GlobeIcon, HeartIcon,
-  PackagePlusIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon,
+  ArrowLeftIcon, BadgePercentIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, CopyIcon, DownloadIcon, EllipsisIcon, GitBranchIcon,
+  GitForkIcon, GlobeIcon, HeartIcon, PackagePlusIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon, UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, type Schemas } from '@/api/client'
@@ -24,6 +24,7 @@ import OptimizeDialog from '@/components/decks/OptimizeDialog.vue'
 import ProposeSwapDialog from '@/components/decks/ProposeSwapDialog.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import DeckStats from '@/components/decks/DeckStats.vue'
+import DeckVersionsPanel from '@/components/decks/DeckVersionsPanel.vue'
 import DeckVisual from '@/components/decks/DeckVisual.vue'
 import DeleteDeckDialog from '@/components/decks/DeleteDeckDialog.vue'
 import EditDeckDialog from '@/components/decks/EditDeckDialog.vue'
@@ -36,12 +37,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useConfirm } from '@/composables/useConfirm'
+import { useAuthStore } from '@/stores/auth'
 import { useCardNavigation } from '@/composables/useCardNavigation'
 import { usePreference } from '@/composables/usePreference'
 import { CARD_SIZES, type CardSize } from '@/lib/cards'
 import { clearedQuery, filterFromQuery, filterToQuery, matches, type DeckFilter } from '@/lib/deckFilter'
 import { loadScanTarget, saveScanTarget, scannerUrl, type ScanTarget } from '@/lib/scanTarget'
-import { WANT_MISSING, ZONE_LABELS, formatLabel, groupDeck, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
+import { WANT_MISSING, ZONE_LABELS, formatLabel, groupDeck, onBranch, shownList, type DeckCard, type DeckDetail, type GroupBy, type SortBy, type Zone } from '@/lib/decks'
 
 /** A deck: list, owned and missing cards, stats; also the public view (spec 004, AC-16 to AC-28). */
 const route = useRoute()
@@ -52,17 +54,62 @@ const isOwner = computed(() => !username.value)
 
 const deck = ref<DeckDetail | null>(null)
 const notFound = ref(false)
+// The branch or saved version shown lives in the URL; Main has none (spec 027, AC-2, AC-8).
+function asId(v: unknown) {
+  const text = String((Array.isArray(v) ? v[0] : v) ?? '')
+  return /^\d+$/.test(text) ? Number(text) : undefined
+}
+const branchId = computed(() => asId(route.query.branch))
+const versionId = computed(() => asId(route.query.version))
 
+let loading = 0
 async function load() {
-  deck.value = null
+  const ticket = ++loading
+  // Switching lists keeps the page; another deck starts blank.
+  if (deck.value?.id !== id.value) deck.value = null
   notFound.value = false
-  const { data } = username.value
-    ? await api.GET('/api/users/{username}/decks/{id}/', { params: { path: { username: username.value, id: id.value } } })
-    : await api.GET('/api/decks/{id}/', { params: { path: { id: id.value } } })
+  const query = branchId.value ? { branch: branchId.value } : {}
+  const u = username.value
+  const v = versionId.value
+  const { data } = v
+    ? u
+      ? await api.GET('/api/users/{username}/decks/{id}/versions/{version_id}/', { params: { path: { username: u, id: id.value, version_id: v } } })
+      : await api.GET('/api/decks/{id}/versions/{version_id}/', { params: { path: { id: id.value, version_id: v } } })
+    : u
+      ? await api.GET('/api/users/{username}/decks/{id}/', { params: { path: { username: u, id: id.value }, query } })
+      : await api.GET('/api/decks/{id}/', { params: { path: { id: id.value }, query } })
+  if (ticket !== loading) return
   deck.value = data ?? null
   notFound.value = !data
 }
-watch([id, username], load, { immediate: true })
+watch([id, username, branchId, versionId], load, { immediate: true })
+/** Your own deck, not a saved version: the list can change (spec 027, AC-8, AC-14). */
+const editable = computed(() => isOwner.value && !deck.value?.version)
+const onMain = computed(() => deck.value?.branch.is_main ?? true)
+const panel = ref<InstanceType<typeof DeckVersionsPanel> | null>(null)
+/** Back from a version to its branch (AC-8). */
+function back() {
+  router.push({ query: { ...route.query, version: undefined, branch: onMain.value ? undefined : String(deck.value!.branch.id) } })
+}
+
+// Fork: your own copy, with every branch and version; the list shown becomes its Main (AC-15).
+const auth = useAuthStore()
+const canFork = computed(() => auth.isLoggedIn && (isOwner.value || !!deck.value?.is_public))
+async function fork() {
+  const d = deck.value!
+  const body = d.version ? { version: d.version.id } : { branch: d.branch.id }
+  const { data } = await api.POST('/api/decks/{id}/fork/', { params: { path: { id: d.id } }, body })
+  if (!data) return toast.error('Could not fork the deck.')
+  toast.success(`Forked ${d.name} into your decks.`)
+  router.push({ name: 'deck', params: { id: data.id } })
+}
+const forkedFrom = computed(() => {
+  const f = deck.value?.forked_from
+  if (!f) return null
+  const mine = f.username === auth.user?.username
+  const to = mine ? { name: 'deck', params: { id: f.id } } : f.public ? { name: 'public-deck', params: { username: f.username, id: f.id } } : null
+  return { ...f, to }
+})
 
 // Salt scores still to fetch and the commander's themes come after the deck (spec 022, AC-14, AC-15).
 const themes = ref<Schemas['DeckTheme'][]>([])
@@ -71,13 +118,13 @@ async function loadInsights() {
   const d = deck.value
   if (!d) return
   const commanders = d.cards.filter((c) => c.zone === 'commander').map((c) => c.printing.oracle_id).join()
-  const key = `${d.id}:${commanders}`
+  const key = `${d.id}:${JSON.stringify(shownList(d))}:${commanders}`
   if (!d.salt.pending && key === insightsFor) return
   insightsFor = key
   const { data } = username.value
-    ? await api.GET('/api/users/{username}/decks/{id}/insights/', { params: { path: { username: username.value, id: d.id } } })
-    : await api.GET('/api/decks/{id}/insights/', { params: { path: { id: d.id } } })
-  if (!data || deck.value?.id !== d.id) return
+    ? await api.GET('/api/users/{username}/decks/{id}/insights/', { params: { path: { username: username.value, id: d.id }, query: shownList(d) } })
+    : await api.GET('/api/decks/{id}/insights/', { params: { path: { id: d.id }, query: shownList(d) } })
+  if (!data || deck.value?.id !== d.id || JSON.stringify(shownList(deck.value)) !== JSON.stringify(shownList(d))) return
   themes.value = data.themes
   if (deck.value.salt.pending) deck.value = { ...deck.value, salt: data.salt }
 }
@@ -223,17 +270,17 @@ async function scan(target: ScanTarget) {
 }
 
 async function loadExport(options: ExportOptions) {
-  return (await api.GET('/api/decks/{id}/export/', { params: { path: { id: id.value }, query: options } })).data
+  return (await api.GET('/api/decks/{id}/export/', { params: { path: { id: id.value }, query: { ...options, ...onBranch(deck.value!) } } })).data
 }
 // Missing cards as a list, as the Missing tab did (spec 004 AC-17, spec 006 AC-8).
 const missingOpen = ref(false)
 async function loadMissing(options: ExportOptions) {
-  return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value } }, body: options })).data
+  return (await api.POST('/api/decks/{id}/missing/export/', { params: { path: { id: id.value }, query: onBranch(deck.value!) }, body: options })).data
 }
 
 /** Missing cards onto the want list for this deck: one card, or all of them (spec 010, AC-15, AC-16). */
 async function wantMissing(card?: DeckCard) {
-  const { data } = await api.POST('/api/decks/{id}/want-missing/', { params: { path: { id: id.value } }, body: card ? { card: card.id } : {} })
+  const { data } = await api.POST('/api/decks/{id}/want-missing/', { params: { path: { id: id.value }, query: onBranch(deck.value!) }, body: card ? { card: card.id } : {} })
   if (!data) return toast.error('Could not add to the want list.')
   changed(data.deck)
   if (!data.added) return toast.success(card ? `${card.printing.name} is already on the want list.` : 'Nothing is missing from the want list.')
@@ -245,7 +292,7 @@ provide(WANT_MISSING, (card) => void wantMissing(card))
 const optimizeOpen = ref(false)
 const optimizeChanges = ref<Schemas['OptimizeChange'][]>([])
 async function optimize() {
-  const { data } = await api.GET('/api/decks/{id}/optimize/', { params: { path: { id: id.value } } })
+  const { data } = await api.GET('/api/decks/{id}/optimize/', { params: { path: { id: id.value }, query: onBranch(deck.value!) } })
   if (!data) return toast.error('Could not look up printings.')
   if (!data.changes.length) return toast.success('Missing cards already use their cheapest printings.')
   optimizeChanges.value = data.changes
@@ -273,8 +320,9 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
         <h1 class="text-2xl font-semibold" data-testid="deck-name">{{ deck.name }}</h1>
         <span class="text-sm text-muted-foreground" data-testid="deck-format">{{ formatLabel(deck.format) }}</span>
         <GlobeIcon v-if="deck.is_public && isOwner" class="size-4 text-muted-foreground" aria-label="Public" />
-        <div v-if="isOwner" class="ml-auto flex gap-2">
-          <Button variant="outline" @click="scanOpen = true"><CameraIcon /> Scan cards</Button>
+        <div v-if="editable" class="ml-auto flex gap-2">
+          <!-- Scanning and the deck box work on Main only (spec 027, AC-5) -->
+          <Button v-if="onMain" variant="outline" @click="scanOpen = true"><CameraIcon /> Scan cards</Button>
           <Button @click="addOpen = true"><PlusIcon /> Add card</Button>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
@@ -287,14 +335,20 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               <DropdownMenuItem @select="wantMissing()"><HeartIcon /> Add missing to want list</DropdownMenuItem>
               <DropdownMenuItem @select="optimize()"><BadgePercentIcon /> Optimize printings</DropdownMenuItem>
               <DropdownMenuItem @select="editOpen = true"><PencilIcon /> Edit</DropdownMenuItem>
-              <DropdownMenuItem v-if="!deck.location" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
+              <DropdownMenuItem v-if="!deck.location && onMain" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
+              <DropdownMenuItem @select="fork()"><CopyIcon /> Fork</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" @select="deleteOpen = true"><Trash2Icon /> Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <Button v-else-if="canFork" variant="outline" class="ml-auto" data-testid="fork" @click="fork()"><GitForkIcon /> Fork</Button>
       </div>
       <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground" data-testid="deck-header">
+        <template v-if="!onMain && !deck.version">
+          <button type="button" class="flex items-center gap-1 text-foreground" data-testid="deck-branch" @click="panel?.open()"><GitBranchIcon class="size-4" /> {{ deck.branch.name }}</button>
+          <span>·</span>
+        </template>
         <span data-testid="deck-size" :class="sizeOff && 'text-destructive'">{{ counts!.size }}{{ counts!.target ? ` / ${counts!.target}` : '' }} cards</span>
         <span>·</span>
         <Price :value="deck.value" :values="deck.values" :currency="deck.currency" />
@@ -329,7 +383,31 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
             <BoxIcon class="size-4" /> {{ deck.location_name }}
           </RouterLink>
         </template>
+        <template v-if="forkedFrom">
+          <span>·</span>
+          <span class="flex items-center gap-1" data-testid="forked-from">
+            <GitForkIcon class="size-4" /> Forked from
+            <RouterLink v-if="forkedFrom.to" :to="forkedFrom.to" class="hover:text-foreground">{{ forkedFrom.username }} / {{ forkedFrom.name }}</RouterLink>
+            <template v-else>{{ forkedFrom.username }} / {{ forkedFrom.name }}</template>
+          </span>
+        </template>
+        <template v-if="deck.fork_count">
+          <span>·</span>
+          <span data-testid="fork-count">{{ deck.fork_count }} {{ deck.fork_count === 1 ? 'fork' : 'forks' }}</span>
+        </template>
       </p>
+    </div>
+
+    <div v-if="deck.version" class="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2" data-testid="version-bar">
+      <!-- Buttons on the left: the versions panel covers the right edge -->
+      <span class="mr-2 font-medium">
+        Viewing {{ deck.version.branch_name }} v{{ deck.version.number }}<span v-if="deck.version.name" class="font-normal text-muted-foreground"> · {{ deck.version.name }}</span>
+      </span>
+      <template v-if="isOwner">
+        <Button variant="outline" size="sm" @click="panel?.restore(deck.version)"><RotateCcwIcon /> Restore</Button>
+        <Button variant="outline" size="sm" @click="panel?.branchFrom(deck.version)"><GitBranchIcon /> Branch from it</Button>
+      </template>
+      <Button variant="outline" size="sm" data-testid="version-back" @click="back"><ArrowLeftIcon /> Back</Button>
     </div>
 
     <Tabs :model-value="tab" @update:model-value="(v) => setTab(v as Tab)">
@@ -348,7 +426,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
         <div :class="sideColumn ? 'grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]' : 'grid'">
           <aside v-if="sideColumn" class="grid content-start gap-4 lg:sticky lg:top-4 lg:self-start" data-testid="deck-side">
             <DeckCommander
-              v-if="showcase" :cards="commanders" :editable="isOwner"
+              v-if="showcase" :cards="commanders" :editable="editable"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
             />
             <img
@@ -358,36 +436,36 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
           </aside>
           <div class="grid min-w-0 content-start gap-4">
             <DeckText
-              v-if="viewCards.length && layout === 'text'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+              v-if="viewCards.length && layout === 'text'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="editable"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
             >
-              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="editable" @changed="changed" /></template>
             </DeckText>
             <DeckList
               v-else-if="viewCards.length && layout === 'list'" :cards="viewCards" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy"
-              :editable="isOwner" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard" @point="pointed = $event"
+              :editable="editable" @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard" @point="pointed = $event"
             >
-              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="editable" @changed="changed" /></template>
             </DeckList>
             <DeckVisual
-              v-else-if="viewCards.length" :cards="viewCards" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="isOwner"
+              v-else-if="viewCards.length" :cards="viewCards" :size="size" :currency="deck.currency" :group-by="groupBy" :sort-by="sortBy" :editable="editable"
               @open="showCard" @categories="editCategories" @swap="proposeSwap" @delete="removeCard"
             >
-              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" /></template>
+              <template #after><DeckTokens :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="editable" @changed="changed" /></template>
             </DeckVisual>
             <p v-else-if="deck.cards.length > commanders.length || !commanders.length" class="py-16 text-center text-muted-foreground">{{ deck.cards.length ? 'No cards match.' : 'No cards yet.' }}</p>
             <!-- A deck of only the commander still lists its tokens -->
-            <DeckTokens v-if="!viewCards.length" :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="isOwner" @changed="changed" />
+            <DeckTokens v-if="!viewCards.length" :deck="deck" :cards="shown" :layout="layout" :size="size" :editable="editable" @changed="changed" />
           </div>
         </div>
       </TabsContent>
 
       <TabsContent value="swaps" class="pt-2">
-        <DeckSwaps :deck="deck" :readonly="!isOwner" @open="showCard" @apply="applySwap" @unpair="unpair" @propose="(into) => openPropose(null, into)" />
+        <DeckSwaps :deck="deck" :readonly="!editable" @open="showCard" @apply="applySwap" @unpair="unpair" @propose="(into) => openPropose(null, into)" />
       </TabsContent>
 
       <TabsContent value="combos" class="pt-2">
-        <DeckCombos :deck="deck" :username="username" :editable="isOwner" @open="showCard" @preview="showPreview" @changed="changed" />
+        <DeckCombos :deck="deck" :username="username" :editable="editable" @open="showCard" @preview="showPreview" @changed="changed" />
       </TabsContent>
 
       <TabsContent value="stats" class="grid gap-4 pt-2">
@@ -397,9 +475,10 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
 
     </Tabs>
 
-    <CategoryDialog v-if="isOwner" v-model:open="categoriesOpen" :deck="deck" :card="openCard" @changed="changed" />
-    <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :preview="outside" :readonly="!isOwner" @changed="changed" />
-    <template v-if="isOwner">
+    <CategoryDialog v-if="editable" v-model:open="categoriesOpen" :deck="deck" :card="openCard" @changed="changed" />
+    <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :preview="outside" :readonly="!editable" @changed="changed" />
+    <DeckVersionsPanel ref="panel" :deck="deck" :username="username" :editable="isOwner" @changed="changed" @reload="load" />
+    <template v-if="editable">
       <DeckAddDialog v-model:open="addOpen" :deck="deck" @changed="changed" />
       <ScanTargetDialog
         v-model:open="scanOpen" :deck-id="deck.id" :box-id="deck.location" :current="loadScanTarget(deck.id)"
