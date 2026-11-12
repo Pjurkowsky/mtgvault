@@ -22,6 +22,7 @@ import forge.deck.io.DeckSerializer;
 import forge.game.*;
 import forge.game.card.Card;
 import forge.game.card.CounterType;
+import forge.game.combat.Combat;
 import forge.game.player.Player;
 import forge.game.player.RegisteredPlayer;
 import forge.game.zone.ZoneType;
@@ -196,6 +197,8 @@ public class MtgvaultSim {
                 s.put("lost", p.hasLost());
                 s.put("hand", p.getCardsIn(ZoneType.Hand).size());
                 s.put("library", p.getCardsIn(ZoneType.Library).size());
+                s.put("hand_cards", cards(p, ZoneType.Hand, false));
+                s.put("library_cards", cards(p, ZoneType.Library, false)); // top card first
                 s.put("battlefield", cards(p, ZoneType.Battlefield, true));
                 s.put("graveyard", cards(p, ZoneType.Graveyard, false));
                 s.put("exile", cards(p, ZoneType.Exile, false));
@@ -225,10 +228,27 @@ public class MtgvaultSim {
                     if (!counters.isEmpty()) m.put("counters", counters);
                     if (c.getAttachedTo() != null) m.put("attached_to", c.getAttachedTo().getId());
                     if (c.getOwner() != c.getController()) m.put("owner", seatOf(game, c.getOwner().getName()));
+                    combat(c, m);
                 }
                 out.add(m);
             }
             return out;
+        }
+
+        /** Marks an attacker with what it attacks and a blocker with the attackers it blocks. */
+        void combat(Card c, Map<String, Object> m) {
+            Combat combat = game.getCombat();
+            if (combat == null) return;
+            if (combat.isAttacking(c)) {
+                GameEntity target = combat.getDefenderByAttacker(c);
+                if (target instanceof Player) m.put("attacking", Map.of("seat", seatOf(game, ((Player) target).getName())));
+                else if (target instanceof Card) m.put("attacking", Map.of("card", ((Card) target).getId()));
+            }
+            if (combat.isBlocking(c)) {
+                List<Integer> ids = new ArrayList<>();
+                for (Card a : combat.getAttackersBlockedBy(c)) ids.add(a.getId());
+                if (!ids.isEmpty()) m.put("blocking", ids);
+            }
         }
     }
 }

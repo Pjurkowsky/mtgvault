@@ -1,4 +1,4 @@
-"""A finished game, turn by turn, for the replay page (spec 024, AC-23 to AC-28)."""
+"""A finished game, turn by turn, for the replay page (spec 024, AC-23 to AC-28; spec 026)."""
 
 import gzip
 import json
@@ -12,12 +12,20 @@ from .services import commanders, printings_by_name
 HIDDEN = {'TURN', 'MATCH_RESULTS', 'PLAYER_CONTROL'}
 
 
+def remap_card(card: dict, order: list[int]) -> dict:
+    if 'owner' in card:
+        card = {**card, 'owner': order[card['owner']]}
+    if 'seat' in card.get('attacking', {}):
+        card = {**card, 'attacking': {'seat': order[card['attacking']['seat']]}}
+    return card
+
+
 def remap_board(board: list[dict], order: list[int]) -> list[dict]:
-    """Runner seats (turn order) -> run seats."""
+    """Runner seats (turn order) -> run seats. Games recorded before spec 026 have no hand or library cards."""
     out: list[dict | None] = [None] * len(order)
     for runner_seat, seat in enumerate(board):
-        seat = dict(seat)
-        seat['battlefield'] = [{**c, 'owner': order[c['owner']]} if 'owner' in c else c for c in seat['battlefield']]
+        seat = {'hand_cards': None, 'library_cards': None, **seat}
+        seat['battlefield'] = [remap_card(c, order) for c in seat['battlefield']]
         out[order[runner_seat]] = seat
     return out
 
@@ -59,8 +67,8 @@ def build(game: SimGame) -> dict:
             board = remap_board(step['board'], order)
             boards.append(board)
             for seat in board:
-                for zone in ('battlefield', 'graveyard', 'exile', 'command'):
-                    names.update(c['name'] for c in seat[zone])
+                for zone in ('battlefield', 'graveyard', 'exile', 'command', 'hand_cards', 'library_cards'):
+                    names.update(c['name'] for c in seat[zone] or [])
         if step.get('type') in HIDDEN:
             continue
         group['events'].append({'type': step['type'], 'text': step['text'], 'board': max(len(boards) - 1, 0)})

@@ -235,6 +235,12 @@ class ReplayTurnSerializer(serializers.Serializer):
     events = ReplayEventSerializer(many=True)
 
 
+class AttackTargetSerializer(serializers.Serializer):
+    """Spec 026 AC-6: the player (run seat) or planeswalker (card id) an attacker attacks."""
+    seat = serializers.IntegerField(required=False)
+    card = serializers.IntegerField(required=False)
+
+
 class BoardCardSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -246,6 +252,13 @@ class BoardCardSerializer(serializers.Serializer):
     counters = serializers.DictField(child=serializers.IntegerField(), required=False)
     attached_to = serializers.IntegerField(required=False)
     owner = serializers.IntegerField(required=False)
+    attacking = AttackTargetSerializer(required=False)
+    blocking = serializers.ListField(child=serializers.IntegerField(), required=False)
+
+
+class ZoneCardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
 
 
 class BoardSeatSerializer(serializers.Serializer):
@@ -253,6 +266,9 @@ class BoardSeatSerializer(serializers.Serializer):
     lost = serializers.BooleanField()
     hand = serializers.IntegerField()
     library = serializers.IntegerField()
+    # Spec 026 AC-2, AC-3: the cards, library top first; null in games recorded before.
+    hand_cards = ZoneCardSerializer(many=True, allow_null=True)
+    library_cards = ZoneCardSerializer(many=True, allow_null=True)
     battlefield = BoardCardSerializer(many=True)
     graveyard = BoardCardSerializer(many=True)
     exile = BoardCardSerializer(many=True)

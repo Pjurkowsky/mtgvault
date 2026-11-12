@@ -1455,6 +1455,11 @@ export interface components {
             /** @description The deck card it replaces */
             out: number;
         };
+        /** @description Spec 026 AC-6: the player (run seat) or planeswalker (card id) an attacker attacks. */
+        AttackTarget: {
+            seat?: number;
+            card?: number;
+        };
         /** @description Body returned by register and login. The refresh token goes in a cookie. */
         AuthResponse: {
             access: string;
@@ -1565,12 +1570,16 @@ export interface components {
             };
             attached_to?: number;
             owner?: number;
+            attacking?: components["schemas"]["AttackTarget"];
+            blocking?: number[];
         };
         BoardSeat: {
             life: number;
             lost: boolean;
             hand: number;
             library: number;
+            hand_cards: components["schemas"]["ZoneCard"][] | null;
+            library_cards: components["schemas"]["ZoneCard"][] | null;
             battlefield: components["schemas"]["BoardCard"][];
             graveyard: components["schemas"]["BoardCard"][];
             exile: components["schemas"]["BoardCard"][];
@@ -3307,6 +3316,10 @@ export interface components {
             deck?: number | null;
             /** @default 1 */
             quantity?: number;
+        };
+        ZoneCard: {
+            id: number;
+            name: string;
         };
         /**
          * @description * `commander` - Commander

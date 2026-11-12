@@ -2990,6 +2990,15 @@ components:
           description: The deck card it replaces
       required:
       - out
+    AttackTarget:
+      type: object
+      description: 'Spec 026 AC-6: the player (run seat) or planeswalker (card id)
+        an attacker attacks.'
+      properties:
+        seat:
+          type: integer
+        card:
+          type: integer
     AuthResponse:
       type: object
       description: Body returned by register and login. The refresh token goes in
@@ -3266,6 +3275,12 @@ components:
           type: integer
         owner:
           type: integer
+        attacking:
+          $ref: '#/components/schemas/AttackTarget'
+        blocking:
+          type: array
+          items:
+            type: integer
       required:
       - id
       - name
@@ -3280,6 +3295,16 @@ components:
           type: integer
         library:
           type: integer
+        hand_cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZoneCard'
+          nullable: true
+        library_cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZoneCard'
+          nullable: true
         battlefield:
           type: array
           items:
@@ -3302,7 +3327,9 @@ components:
       - exile
       - graveyard
       - hand
+      - hand_cards
       - library
+      - library_cards
       - life
       - lost
     BoxEnum:
@@ -7437,6 +7464,16 @@ components:
           default: 1
       required:
       - printing
+    ZoneCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     ZoneEnum:
       enum:
       - commander

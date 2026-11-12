@@ -2,7 +2,7 @@
 
 ## Recording
 
-- [ ] **T1 Runner records hands, libraries and combat; new Forge image; re-recorded fixtures; replay API fields** (AC-1 to AC-3, AC-6)
+- [x] **T1 Runner records hands, libraries and combat; new Forge image; re-recorded fixtures; replay API fields** (AC-1 to AC-3, AC-6)
 
 ## Replay page
 

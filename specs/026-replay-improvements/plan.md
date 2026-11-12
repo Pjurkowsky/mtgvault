@@ -21,7 +21,7 @@
 |---|---|
 | `docker/forge/MtgvaultSim.java` | hand and library cards, combat |
 | `backend/sims/fixtures/forge/game-2.json.gz`, `game-4.json.gz` | re-recorded |
-| `backend/sims/management/commands/fake_forge.py` | cut-down seats get empty card lists |
+| `backend/sims/management/commands/fake_forge.py` | a deck named "Unrecorded" plays a game without the new details (AC-3) |
 | `backend/sims/replay.py`, `serializers.py` | new fields, remapping, images |
 | `frontend/src/pages/SimGamePage.vue` | cursor, keys, autoplay, sidebar, arrows |
 | `frontend/src/composables/useReplayPlayer.ts` | new: stepping and autoplay |

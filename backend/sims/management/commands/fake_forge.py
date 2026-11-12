@@ -1,5 +1,8 @@
 """A stand-in for the Forge service in e2e tests (spec 024): the same API, answered from
-fixtures recorded with the real runner. Games take about a second."""
+fixtures recorded with the real runner. Games take about a second.
+
+The fixtures were recorded with spec 026's runner: game-2 is "Krenko Forest" against
+"Piper Forest" (seed 2), game-4 four Forge precons (seed 7)."""
 
 import gzip
 import json
@@ -62,6 +65,19 @@ def rename(game: dict, names: list[str]) -> dict:
     return json.loads(text)
 
 
+def unrecorded(game: dict) -> dict:
+    """A game as the runner recorded it before spec 026: no hand, library or combat details."""
+    steps = []
+    for step in game['steps']:
+        if 'board' in step:
+            board = [{k: v for k, v in seat.items() if k not in ('hand_cards', 'library_cards')} for seat in step['board']]
+            for seat in board:
+                seat['battlefield'] = [{k: v for k, v in c.items() if k not in ('attacking', 'blocking')} for c in seat['battlefield']]
+            step = {**step, 'board': board}
+        steps.append(step)
+    return {**game, 'steps': steps}
+
+
 def deck_name(dck: str) -> str:
     for line in dck.splitlines():
         if line.startswith('Name='):
@@ -74,6 +90,9 @@ def outcome(decks: list[dict]) -> dict:
     game = rename(recorded(len(decks)), names)
     if any('Broken' in n for n in names):
         return {'result': {'status': 'failed', 'error': 'java.lang.IllegalStateException: Broken deck', 'log': []}, 'steps': []}
+    # A deck named "Unrecorded" gets a game like those recorded before spec 026.
+    if any('Unrecorded' in n for n in names):
+        game = unrecorded(game)
     if any('Stalls' in n for n in names):
         game['result'] = {**game['result'], 'status': 'draw', 'winner_seat': None, 'error': 'timeout', 'lost_on': {}}
     return game

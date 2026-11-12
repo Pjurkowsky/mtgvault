@@ -66,22 +66,22 @@ test.describe('Runs', () => {
     await openRun(page, run.id)
     await expect(page.getByTestId('sim-run-title')).toHaveText(`Results ${stamp}`)
 
-    // AC-16, AC-19: who, status and the win rate (the recorded game: the second seat wins on its turn 10).
+    // AC-16, AC-19: who, status and the win rate (the recorded game: the second seat wins on its turn 12, recorded again for spec 026).
     const card = runCard(page)
     await expect(card.getByTestId('run-status')).toHaveText('Done')
     await expect(card).toContainText(user.username)
     await expect(card.getByTestId('run-win-rate')).toHaveText('Win rate 50%')
     await expect(card.getByTestId('run-summary')).toContainText('1 / 2')
-    await expect(card.getByTestId('run-avg-turn')).toHaveText('10')
+    await expect(card.getByTestId('run-avg-turn')).toHaveText('12')
     // AC-20: a row per deck.
     await expect(card.getByTestId('pod-row')).toHaveText([
-      new RegExp(`Results ${stamp}.*Krenko, Mob Boss.*Default\\s*1\\s*0\\s*10\\s*1`),
-      new RegExp(`Secret ${stamp}.*The Prismatic Piper.*Default\\s*1\\s*0\\s*10\\s*1`),
+      new RegExp(`Results ${stamp}.*Krenko, Mob Boss.*Default\\s*1\\s*0\\s*12\\s*1`),
+      new RegExp(`Secret ${stamp}.*The Prismatic Piper.*Default\\s*1\\s*0\\s*12\\s*1`),
     ])
     // AC-21: each game with its winner, turn and seat order.
     await expect(card.getByTestId('run-game')).toHaveText([
-      new RegExp(`Game 1.*Secret ${stamp} won on turn 10.*Results ${stamp} → Secret ${stamp}.*Replay`),
-      new RegExp(`Game 2.*Results ${stamp} won on turn 10.*Secret ${stamp} → Results ${stamp}.*Replay`),
+      new RegExp(`Game 1.*Secret ${stamp} won on turn 12.*Results ${stamp} → Secret ${stamp}.*Replay`),
+      new RegExp(`Game 2.*Results ${stamp} won on turn 12.*Secret ${stamp} → Results ${stamp}.*Replay`),
     ])
     await card.getByTestId('pod-row').first().getByText(`Results ${stamp}`).click()
     await expect(card.getByTestId('pod-list').first()).toContainText('36 Forest')
