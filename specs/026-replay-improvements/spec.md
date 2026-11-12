@@ -35,6 +35,8 @@ autoplay, on a board that stays still while cards come and go.
 - **AC-16** With players side by side, the board is mirrored toward its centre:
   the left column's rows, labels and zones line up on the right; the right
   column's stay on the left, with the player's life on the left of their header.
+- **AC-17** Power / toughness counters show their total: two +1/+1 counters read
+  "+2/+2". Other counters show how many, as "2 Finality" (one shows just its name).
 - **AC-5** Each battlefield row (Creatures, Other, Lands) keeps room for one line
   of cards while empty, so the first card entering doesn't move anything.
 
@@ -63,6 +65,10 @@ autoplay, on a board that stays still while cards come and go.
   is highlighted and scrolled into view.
 - **AC-14** Card names in the events are underlined: hovering one shows the card,
   clicking shows it full screen.
+
+- **AC-18** The controls above the board work like a movie player: previous
+  turn (double arrow), previous event, Play / Pause, next event, next turn
+  (double arrow).
 
 ### Autoplay
 

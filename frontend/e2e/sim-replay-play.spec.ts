@@ -36,6 +36,14 @@ test.describe('Replay stepping and autoplay', () => {
     await page.keyboard.press('ArrowLeft')
     await expect(turn).toHaveText('Before the game')
     await expect(events.last()).toHaveAttribute('aria-current', 'true')
+    // AC-18: the movie-player controls over the board: ⏪ ◀ ▶ ▶ ⏩.
+    const controls = page.getByTestId('replay-controls').getByRole('button')
+    expect(await controls.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))).toEqual(['Previous turn', 'Previous event', 'Play', 'Next event', 'Next turn'])
+    await page.getByTestId('replay-controls').getByRole('button', { name: 'Next event' }).click()
+    await expect(turn).toHaveText(`Turn 1 · ${a}`)
+    await expect(events.first()).toHaveAttribute('aria-current', 'true')
+    await page.getByTestId('replay-controls').getByRole('button', { name: 'Previous event' }).click()
+    await expect(turn).toHaveText('Before the game')
     // The sidebar's buttons do the same.
     await sidebar(page).getByRole('button', { name: 'Next event' }).click()
     await expect(turn).toHaveText(`Turn 1 · ${a}`)

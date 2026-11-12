@@ -68,3 +68,10 @@ export function deathReason(events: { text: string; type: string }[], id: number
   const tag = `(${id})`
   return events.filter((e) => e.text.includes(tag) && !(e.type === 'ZONE_CHANGE' && e.text.includes('put into Graveyard'))).slice(-3).map((e) => e.text)
 }
+
+/** A counter's label: P/T counters add up ("+1/+1" ×2 → "+2/+2"); others show how many (spec 026, AC-17). */
+export function counterLabel(type: string, n: number): string {
+  const pt = /^([+-])(\d+)\/([+-])(\d+)$/.exec(type)
+  if (pt) return `${pt[1]}${Number(pt[2]) * n}/${pt[3]}${Number(pt[4]) * n}`
+  return n > 1 ? `${n} ${type}` : type
+}

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { onKeyStroke, useMediaQuery } from '@vueuse/core'
-import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, PauseIcon, PlayIcon } from '@lucide/vue'
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronsLeftIcon, ChevronsRightIcon, PauseIcon, PlayIcon } from '@lucide/vue'
 import { api, type Schemas } from '@/api/client'
 import IconButton from '@/components/IconButton.vue'
 import ReplayArrows from '@/components/sims/ReplayArrows.vue'
@@ -108,11 +108,16 @@ const sidebarOpen = computed({ get: () => sidebar.value === 'open', set: (v: boo
 
       <TabsContent value="replay" class="grid gap-4 pt-2">
         <div class="flex flex-wrap items-center gap-3">
-          <IconButton label="Previous turn" :disabled="cursor.turn === 0" @click="player.prevTurn()"><ChevronLeftIcon /></IconButton>
-          <IconButton :label="playing ? 'Pause' : 'Play'" data-testid="replay-play" @click="player.toggle()">
-            <PauseIcon v-if="playing" /><PlayIcon v-else />
-          </IconButton>
-          <IconButton label="Next turn" :disabled="cursor.turn >= game.turns.length - 1" @click="player.nextTurn()"><ChevronRightIcon /></IconButton>
+          <!-- Like a movie player: turn, event, play, event, turn (AC-18) -->
+          <div class="flex items-center gap-1" data-testid="replay-controls">
+            <IconButton label="Previous turn" :disabled="cursor.turn === 0" @click="player.prevTurn()"><ChevronsLeftIcon /></IconButton>
+            <IconButton label="Previous event" :disabled="!player.hasPrevEvent.value" @click="player.prev()"><ChevronLeftIcon /></IconButton>
+            <IconButton :label="playing ? 'Pause' : 'Play'" variant="default" data-testid="replay-play" @click="player.toggle()">
+              <PauseIcon v-if="playing" /><PlayIcon v-else />
+            </IconButton>
+            <IconButton label="Next event" :disabled="!player.hasNextEvent.value" @click="player.next()"><ChevronRightIcon /></IconButton>
+            <IconButton label="Next turn" :disabled="cursor.turn >= game.turns.length - 1" @click="player.nextTurn()"><ChevronsRightIcon /></IconButton>
+          </div>
           <span class="font-medium" data-testid="replay-turn">{{ turnTitle }}</span>
           <span v-if="current && current.number > 0" class="text-sm text-muted-foreground" data-testid="replay-game-turn">Game turn {{ current.number }} of {{ game.turn }}</span>
           <Slider v-model="slider" :min="0" :max="Math.max(game.turns.length - 1, 0)" :step="1" class="min-w-40 flex-1" label="Turn" />

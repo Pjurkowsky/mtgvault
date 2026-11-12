@@ -4,7 +4,7 @@ import { SkullIcon } from '@lucide/vue'
 import type { Schemas } from '@/api/client'
 import CardPreview from '@/components/CardPreview.vue'
 import { showFullscreen } from '@/composables/useFullscreen'
-import type { Segment } from '@/lib/replay'
+import { counterLabel, type Segment } from '@/lib/replay'
 import { cn } from '@/lib/utils'
 import ReplayEventText from './ReplayEventText.vue'
 
@@ -40,7 +40,7 @@ const open = () => showFullscreen(props.image?.image_normal, props.card.name)
       <img v-if="image?.image_small" :src="image.image_small" :alt="card.name" loading="lazy" class="w-14 rounded-[4.75%/3.5%] bg-muted" />
       <div v-else class="flex aspect-[63/88] w-14 items-center rounded-[4.75%/3.5%] border bg-muted p-1 text-center text-[0.55rem] leading-tight">{{ card.name }}</div>
       <span v-if="card.power != null" class="absolute right-0 bottom-0 rounded-tl-sm bg-background/90 px-1 text-[0.6rem] font-semibold tabular-nums" data-testid="board-pt">{{ card.power }}/{{ card.toughness }}</span>
-      <span v-for="([type, n], i) in counters" :key="type" class="absolute left-0 rounded-r-sm bg-primary px-1 text-[0.55rem] text-primary-foreground" :style="{ top: `${i * 0.9}rem` }" data-testid="board-counter">{{ n }} {{ type }}</span>
+      <span v-for="([type, n], i) in counters" :key="type" class="absolute left-0 rounded-r-sm bg-primary px-1 text-[0.55rem] text-primary-foreground" :style="{ top: `${i * 0.9}rem` }" data-testid="board-counter">{{ counterLabel(type, n) }}</span>
       <SkullIcon v-if="ghost" class="absolute inset-0 m-auto size-7 rounded-full bg-background/80 p-1 text-foreground" aria-hidden="true" />
     </div>
     <template v-if="ghost" #caption>

@@ -79,3 +79,6 @@ Depends on: 024-pod-simulation, 025-simulations-page
 18. A **mirrored board**: everything leans toward the centre. Left players' rows
     and zones align right; right players stay left-aligned with their life on
     the left.
+19. Counters: two +1/+1 counters show as **+2/+2**.
+20. Controls like a **movie player**: double arrows for turns, single arrows for
+    events, Play in the middle.

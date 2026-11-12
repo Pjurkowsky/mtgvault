@@ -114,6 +114,12 @@ test.describe('Replay', () => {
     await expect(page.getByTestId('replay-player')).toHaveCount(5)
     expect(await columns(page)).toBe(3)
 
+    // Spec 026 AC-17: two +1/+1 counters read +2/+2 (game turn 29: Prosperous Bandit).
+    for (let i = 0; i < 29; i++) await page.keyboard.press('Shift+ArrowRight')
+    await expect(page.getByTestId('replay-game-turn')).toHaveText(/Game turn 29 of/)
+    await expect(page.getByTestId('board-card').filter({ hasText: '+2/+2' }).first()).toBeVisible()
+    await expect(page.getByTestId('board-counter').filter({ hasText: /^2 \+1/ })).toHaveCount(0)
+
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await columns(page)).toBe(1)
     // Spec 026 AC-9: the sidebar replaces the drawer.
