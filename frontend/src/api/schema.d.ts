@@ -481,24 +481,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/decks/{id}/sims/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** @description A deck's runs (AC-16, AC-18) and starting one (AC-14). */
-        get: operations["decks_sims_list"];
-        put?: never;
-        /** @description A deck's runs (AC-16, AC-18) and starting one (AC-14). */
-        post: operations["decks_sims_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/decks/{id}/swaps/": {
         parameters: {
             query?: never;
@@ -1059,10 +1041,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The run playing and the queued ones, in order (AC-14). */
+        /** @description The run playing and the queued ones, in order (spec 024 AC-14, spec 025 AC-11). */
         get: operations["sims_queue_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/queue/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Admins stop the playing run and cancel every queued one (spec 025, AC-14). */
+        post: operations["sims_queue_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/runs/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every run the user can see (spec 025, AC-6, AC-7, AC-10) and starting one (AC-3). */
+        get: operations["sims_runs_list"];
+        put?: never;
+        /** @description Every run the user can see (spec 025, AC-6, AC-7, AC-10) and starting one (AC-3). */
+        post: operations["sims_runs_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1609,6 +1626,9 @@ export interface components {
         CanCommand: {
             commander: boolean;
             brawl: boolean;
+        };
+        CancelledAll: {
+            cancelled: number;
         };
         CardDetail: {
             /** Format: uuid */
@@ -2737,10 +2757,12 @@ export interface components {
         };
         QueueEntry: {
             id: number;
-            deck: number;
+            /** @description "Private deck" when the user can't see the run (spec 025, AC-11) */
             deck_name: string;
             user: string;
             mine: boolean;
+            visible: boolean;
+            can_cancel: boolean;
             status: components["schemas"]["SimRunStatusEnum"];
             played: number;
             games: number;
@@ -2808,12 +2830,16 @@ export interface components {
         RowEnum: "creature" | "land" | "other";
         Run: {
             id: number;
-            deck: number;
+            /** @description The tested deck; null for a pool deck */
+            deck: number | null;
             deck_name: string;
             user: string;
             mine: boolean;
+            can_cancel: boolean;
             status: components["schemas"]["SimRunStatusEnum"];
             cancelling: boolean;
+            /** @description The admin who cancelled it; null when the runner did (spec 025, AC-15) */
+            cancelled_by: string | null;
             games: number;
             minutes: number;
             seat_mode: components["schemas"]["SeatModeEnum"];
@@ -2829,6 +2855,32 @@ export interface components {
             seats: components["schemas"]["Seat"][];
             stats: components["schemas"]["RunStats"];
             results: components["schemas"]["Game"][];
+        };
+        RunPage: {
+            results: components["schemas"]["RunRow"][];
+            total: number;
+        };
+        /** @description A run in the list (spec 025, AC-6). */
+        RunRow: {
+            id: number;
+            user: string;
+            mine: boolean;
+            status: components["schemas"]["SimRunStatusEnum"];
+            cancelling: boolean;
+            cancelled_by: string | null;
+            played: number;
+            games: number;
+            /** Format: double */
+            win_rate: number | null;
+            /** Format: date-time */
+            created_at: string;
+            tested: components["schemas"]["RunRowSeat"];
+            opponents: components["schemas"]["RunRowSeat"][];
+        };
+        RunRowSeat: {
+            label: string;
+            commanders: string[];
+            image: string;
         };
         RunStats: {
             finished: number;
@@ -3044,6 +3096,7 @@ export interface components {
          * @enum {string}
          */
         SourceEnum: "deck" | "pool";
+        /** @description Seat 0 is the tested deck (spec 025, AC-3). */
         StartRun: {
             seats: components["schemas"]["SeatSpec"][];
             /** @default 10 */
@@ -4071,54 +4124,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckDetail"];
-                };
-            };
-        };
-    };
-    decks_sims_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Run"][];
-                };
-            };
-        };
-    };
-    decks_sims_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StartRun"];
-                "application/x-www-form-urlencoded": components["schemas"]["StartRun"];
-                "multipart/form-data": components["schemas"]["StartRun"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Run"];
                 };
             };
         };
@@ -5177,6 +5182,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueueEntry"][];
+                };
+            };
+        };
+    };
+    sims_queue_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelledAll"];
+                };
+            };
+        };
+    };
+    sims_runs_list: {
+        parameters: {
+            query?: {
+                mine?: boolean;
+                offset?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunPage"];
+                };
+            };
+        };
+    };
+    sims_runs_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartRun"];
+                "application/x-www-form-urlencoded": components["schemas"]["StartRun"];
+                "multipart/form-data": components["schemas"]["StartRun"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
                 };
             };
         };

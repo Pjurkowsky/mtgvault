@@ -11,8 +11,9 @@ urlpatterns = [
     path('sims/swaps/', views.SwapsView.as_view(), name='sims-swaps'),
     path('sims/suggest/', views.SuggestView.as_view(), name='sims-suggest'),
     path('sims/queue/', views.QueueView.as_view(), name='sims-queue'),
+    path('sims/queue/cancel/', views.CancelAllView.as_view(), name='sims-queue-cancel'),
+    path('sims/runs/', views.RunsView.as_view(), name='sims-runs'),
     path('sims/runs/<int:pk>/', views.RunView.as_view(), name='sims-run'),
     path('sims/runs/<int:pk>/cancel/', views.CancelRunView.as_view(), name='sims-run-cancel'),
     path('sims/runs/<int:pk>/games/<int:number>/', views.ReplayView.as_view(), name='sims-replay'),
-    path('decks/<int:pk>/sims/', views.DeckRunsView.as_view(), name='deck-sims'),
 ]

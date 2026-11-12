@@ -47,7 +47,8 @@ class SimRun(models.Model):
         RANDOM = 'random', 'Random'
         FIXED = 'fixed', 'Fixed'
 
-    deck = models.ForeignKey(Deck, on_delete=models.CASCADE, related_name='sim_runs')
+    # The tested deck when it is a player's deck; null for a pool deck (spec 025, AC-10).
+    deck = models.ForeignKey(Deck, on_delete=models.CASCADE, null=True, blank=True, related_name='sim_runs')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sim_runs')
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.QUEUED)
     games = models.PositiveIntegerField()
@@ -56,6 +57,9 @@ class SimRun(models.Model):
     # Fixed mode: seat indexes in turn order, as arranged in the form (AC-6).
     fixed_order = ArrayField(models.PositiveSmallIntegerField(), default=list, blank=True)
     cancel_requested = models.BooleanField(default=False)
+    cancelled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    # Lower-cased deck and commander names of every seat, for the run search (spec 025, AC-7).
+    search = models.TextField(blank=True, default='')
     error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)

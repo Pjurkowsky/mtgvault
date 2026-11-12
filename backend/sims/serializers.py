@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from .models import SimGame, SimRun
-from .services import PROFILES, commanders, printings_by_name
+from .services import PROFILES, can_cancel, commanders, printings_by_name
 
 
 def art(name: str | None, found: dict) -> str:
@@ -36,10 +36,11 @@ class PodSerializer(serializers.Serializer):
 
 
 class StartRunSerializer(PodSerializer):
+    """Seat 0 is the tested deck (spec 025, AC-3)."""
     games = serializers.IntegerField(min_value=1, default=10)
     minutes = serializers.IntegerField(min_value=1, default=5)
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices, default=SimRun.SeatMode.ROTATE)
-    # Fixed mode: seat indexes in turn order; seat 0 is always this deck.
+    # Fixed mode: seat indexes in turn order; seat 0 is the tested deck.
     order = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
 
 
@@ -150,12 +151,14 @@ class RunStatsSerializer(serializers.Serializer):
 
 class RunSerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    deck = serializers.IntegerField()
+    deck = serializers.IntegerField(allow_null=True, help_text='The tested deck; null for a pool deck')
     deck_name = serializers.CharField()
     user = serializers.CharField()
     mine = serializers.BooleanField()
+    can_cancel = serializers.BooleanField()
     status = serializers.ChoiceField(choices=SimRun.Status.choices)
     cancelling = serializers.BooleanField()
+    cancelled_by = serializers.CharField(allow_null=True, help_text='The admin who cancelled it; null when the runner did (spec 025, AC-15)')
     games = serializers.IntegerField()
     minutes = serializers.IntegerField()
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices)
@@ -172,13 +175,41 @@ class RunSerializer(serializers.Serializer):
 
 class QueueEntrySerializer(serializers.Serializer):
     id = serializers.IntegerField()
-    deck = serializers.IntegerField()
-    deck_name = serializers.CharField()
+    deck_name = serializers.CharField(help_text='"Private deck" when the user can\'t see the run (spec 025, AC-11)')
     user = serializers.CharField()
     mine = serializers.BooleanField()
+    visible = serializers.BooleanField()
+    can_cancel = serializers.BooleanField()
     status = serializers.ChoiceField(choices=SimRun.Status.choices)
     played = serializers.IntegerField()
     games = serializers.IntegerField()
+
+
+class RunRowSeatSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    commanders = serializers.ListField(child=serializers.CharField())
+    image = serializers.CharField()
+
+
+class RunRowSerializer(serializers.Serializer):
+    """A run in the list (spec 025, AC-6)."""
+    id = serializers.IntegerField()
+    user = serializers.CharField()
+    mine = serializers.BooleanField()
+    status = serializers.ChoiceField(choices=SimRun.Status.choices)
+    cancelling = serializers.BooleanField()
+    cancelled_by = serializers.CharField(allow_null=True)
+    played = serializers.IntegerField()
+    games = serializers.IntegerField()
+    win_rate = serializers.FloatField(allow_null=True)
+    created_at = serializers.DateTimeField()
+    tested = RunRowSeatSerializer()
+    opponents = RunRowSeatSerializer(many=True)
+
+
+class RunPageSerializer(serializers.Serializer):
+    results = RunRowSerializer(many=True)
+    total = serializers.IntegerField()
 
 
 class ReplayPlayerSerializer(serializers.Serializer):
@@ -272,14 +303,39 @@ def run_stats(run: SimRun, games: list[SimGame], seats: int) -> dict:
             'avg_win_turn': me['avg_win_turn'], 'seats': per_seat}
 
 
+def cancelled_by(run: SimRun) -> str | None:
+    """An admin's name when someone other than the runner cancelled (spec 025, AC-15)."""
+    if run.cancelled_by_id and run.cancelled_by_id != run.user_id:
+        return run.cancelled_by.username
+    return None
+
+
+def row_data(run: SimRun, user, found: dict) -> dict:
+    """A list row; `run` comes with seats and games prefetched."""
+    seats = list(run.seats.all())
+    games = [g for g in run.played.all() if g.status != SimGame.Status.FAILED]
+    wins = sum(1 for g in games if g.winner_seat == 0)
+
+    def seat(s) -> dict:
+        names = commanders(s.cards)
+        return {'label': s.label, 'commanders': names, 'image': art(next(iter(names), None), found)}
+
+    return {
+        'id': run.id, 'user': run.user.username, 'mine': run.user_id == user.id, 'status': run.status,
+        'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
+        'played': len(run.played.all()), 'games': run.games, 'win_rate': round(wins / len(games), 4) if games else None,
+        'created_at': run.created_at, 'tested': seat(seats[0]), 'opponents': [seat(s) for s in seats[1:]],
+    }
+
+
 def run_data(run: SimRun, user) -> dict:
     seats = list(run.seats.all())
     games = list(run.played.defer('replay'))
     found = printings_by_name([n for s in seats for n in commanders(s.cards)])
     return {
-        'id': run.id, 'deck': run.deck_id, 'deck_name': run.deck.name, 'user': run.user.username,
-        'mine': user.is_authenticated and run.user_id == user.id, 'status': run.status,
-        'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING,
+        'id': run.id, 'deck': run.deck_id, 'deck_name': seats[0].label if seats else '', 'user': run.user.username,
+        'mine': user.is_authenticated and run.user_id == user.id, 'can_cancel': can_cancel(user, run), 'status': run.status,
+        'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
         'games': run.games, 'minutes': run.minutes, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
         'created_at': run.created_at, 'started_at': run.started_at, 'finished_at': run.finished_at,
         'seats': [{'index': s.index, 'label': s.label, 'owner': s.owner, 'source': s.source, 'source_id': s.source_id,

@@ -9,24 +9,19 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useConfirm } from '@/composables/useConfirm'
-import { STATUS_LABELS, SEAT_MODES, active, percent, type Run } from '@/lib/sims'
+import { SEAT_MODES, active, percent, statusLabel, type Run } from '@/lib/sims'
 import { cn } from '@/lib/utils'
 
-/** One run: status, the pod, stats and games (spec 024, AC-15 to AC-22). */
-const props = defineProps<{ run: Run; username: string | null }>()
-const emit = defineEmits<{ changed: [] }>()
+/** One run: status, the pod, stats and games (spec 024, AC-15 to AC-22; spec 025, AC-8, AC-13, AC-15). */
+const props = defineProps<{ run: Run }>()
+const emit = defineEmits<{ changed: []; deleted: [] }>()
 const confirm = useConfirm()
 
-const status = computed(() =>
-  props.run.status === 'playing'
-    ? props.run.cancelling ? 'Cancelling' : `Playing ${props.run.played} / ${props.run.games}`
-    : STATUS_LABELS[props.run.status])
+const status = computed(() => statusLabel(props.run))
 const when = computed(() => new Date(props.run.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }))
 const seat = (i: number | null) => (i === null ? null : props.run.seats[i])
 const turns = (n: number | null | undefined) => (n == null ? '–' : String(n))
-const gameRoute = (number: number) => props.username
-  ? { name: 'public-sim-game', params: { username: props.username, id: props.run.deck, run: props.run.id, number } }
-  : { name: 'sim-game', params: { id: props.run.deck, run: props.run.id, number } }
+const gameRoute = (number: number) => ({ name: 'sim-game', params: { run: props.run.id, number } })
 
 async function cancel() {
   if (!(await confirm({ title: 'Cancel this run?', description: 'Finished games are kept.', action: 'Cancel run' }))) return
@@ -39,7 +34,7 @@ async function remove() {
   const { error } = await api.DELETE('/api/sims/runs/{id}/', { params: { path: { id: props.run.id } } })
   if (error) return toast.error('Could not delete the run.')
   toast.success('Run deleted.')
-  emit('changed')
+  emit('deleted')
 }
 </script>
 
@@ -50,7 +45,7 @@ async function remove() {
       <span class="text-muted-foreground">{{ run.user }} · {{ when }} · {{ run.games }} {{ run.games === 1 ? 'game' : 'games' }}, {{ run.minutes }} min each · {{ SEAT_MODES.find((m) => m.value === run.seat_mode)?.label }}</span>
       <span class="ml-auto" />
       <span v-if="run.stats.finished" class="font-semibold" data-testid="run-win-rate">Win rate {{ percent(run.stats.win_rate) }}</span>
-      <Button v-if="run.mine && active(run.status) && !run.cancelling" size="sm" variant="outline" @click="cancel"><CircleStopIcon /> Cancel</Button>
+      <Button v-if="run.can_cancel && active(run.status) && !run.cancelling" size="sm" variant="outline" @click="cancel"><CircleStopIcon /> Cancel</Button>
       <DestructiveButton v-if="run.mine && !active(run.status)" size="sm" @click="remove">Delete</DestructiveButton>
     </header>
     <Alert v-if="run.error" variant="destructive" class="bg-destructive/10"><AlertDescription>{{ run.error }}</AlertDescription></Alert>

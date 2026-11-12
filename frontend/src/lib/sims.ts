@@ -1,10 +1,11 @@
 import { ref } from 'vue'
 import { api, type Schemas } from '@/api/client'
 
-/** Pod simulation with Forge (spec 024). */
+/** Pod simulation with Forge (specs 024, 025). */
 export type Run = Schemas['Run']
 export type Opponent = Schemas['Opponent']
 export type QueueEntry = Schemas['QueueEntry']
+export type RunRow = Schemas['RunRow']
 export type Profile = 'Default' | 'Cautious' | 'Reckless' | 'Experimental'
 export type SeatMode = 'rotate' | 'random' | 'fixed'
 
@@ -28,4 +29,11 @@ export function useForge() {
     available.value = data?.available ?? false
   })
   return available
+}
+
+/** "Playing 4 / 10", "Cancelling", "Cancelled by admin" … (spec 024 AC-16, spec 025 AC-15). */
+export function statusLabel(run: Pick<Run, 'status' | 'played' | 'games' | 'cancelling' | 'cancelled_by'>) {
+  if (run.status === 'playing') return run.cancelling ? 'Cancelling' : `Playing ${run.played} / ${run.games}`
+  if (run.status === 'cancelled' && run.cancelled_by) return `Cancelled by ${run.cancelled_by}`
+  return STATUS_LABELS[run.status]
 }

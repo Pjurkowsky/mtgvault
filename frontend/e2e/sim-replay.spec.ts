@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import { logOut, signUpAndLogIn } from './helpers'
-import { PIPER, commanderDeck, openSimulate, runs, startRun, waitForRun } from './sim-helpers'
+import { PIPER, commanderDeck, openRun, runCard, startRun, waitForRun } from './sim-helpers'
 
-// Spec 024, AC-23 to AC-28: a finished game, turn by turn. The fake Forge replays a recorded
+// Spec 024, AC-23 to AC-28: a finished game, turn by turn, at /simulations/:run/games/:n since spec 025 (AC-9). The fake Forge replays a recorded
 // 2-player game (20 game turns; the second seat wins on its turn 10) and a 4-player one.
 const player = (page: Page, name: string) => page.getByTestId('replay-player').filter({ has: page.getByText(name, { exact: true }) })
 const columns = (page: Page) => page.getByTestId('replay-board').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
@@ -11,7 +11,7 @@ test.describe('Replay', () => {
   test.describe.configure({ timeout: 90_000 })
 
   test('AC-23 to AC-25, AC-27, AC-28: turns, panels, events, the log, and a link to share', async ({ page, request }) => {
-    const { user, api } = await signUpAndLogIn(page, request)
+    const { api } = await signUpAndLogIn(page, request)
     const stamp = Date.now()
     const a = `Replay Krenko ${stamp}`
     const b = `Replay Piper ${stamp}`
@@ -21,9 +21,9 @@ test.describe('Replay', () => {
     await waitForRun(api, run.id)
 
     // AC-23: from the game list to its own page.
-    await openSimulate(page, deck.id)
-    await runs(page).first().getByRole('link', { name: 'Replay' }).click()
-    await expect(page).toHaveURL(new RegExp(`/decks/${deck.id}/simulations/${run.id}/games/1$`))
+    await openRun(page, run.id)
+    await runCard(page).getByRole('link', { name: 'Replay' }).click()
+    await expect(page).toHaveURL(new RegExp(`/simulations/${run.id}/games/1$`))
     await expect(page.getByRole('heading', { name: 'Game 1' })).toBeVisible()
     await expect(page.getByTestId('game-result')).toHaveText(`${b} won on turn 10`)
 
@@ -82,13 +82,15 @@ test.describe('Replay', () => {
     await expect(page.getByTestId('replay-log')).toContainText(`Mulligan: ${a} has kept a hand of 7 cards`)
     await expect(page.getByTestId('replay-log')).toContainText(`Turn: Turn 20 (${b})`)
 
-    // AC-23: the link works for anyone who can see the run; Back returns to the Simulate tab.
-    await logOut(page)
-    await page.goto(`/u/${user.username}/decks/${deck.id}/simulations/${run.id}/games/1`)
-    await expect(page.getByTestId('game-result')).toHaveText(`${b} won on turn 10`)
+    // Spec 025 AC-9: Back returns to the run; the old deck links are gone. AC-1: visitors log in first.
     await page.getByRole('link', { name: a }).click()
-    await expect(page).toHaveURL(new RegExp(`/u/${user.username}/decks/${deck.id}\\?tab=simulate`))
-    await expect(page.getByTestId('deck-simulate')).toBeVisible()
+    await expect(page).toHaveURL(new RegExp(`/simulations/${run.id}$`))
+    await expect(runCard(page)).toBeVisible()
+    await page.goto(`/decks/${deck.id}/simulations/${run.id}/games/1`)
+    await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+    await logOut(page)
+    await page.goto(`/simulations/${run.id}/games/1`)
+    await expect(page).toHaveURL(/\/login/)
   })
 
   test('AC-26, AC-27: two columns up to four players, three for five or six, one on a phone with an events drawer', async ({ page, request }) => {
@@ -102,10 +104,10 @@ test.describe('Replay', () => {
     await waitForRun(api, five.id)
 
     await page.setViewportSize({ width: 1600, height: 1000 })
-    await page.goto(`/decks/${deck.id}/simulations/${four.id}/games/1`)
+    await page.goto(`/simulations/${four.id}/games/1`)
     await expect(page.getByTestId('replay-player')).toHaveCount(4)
     expect(await columns(page)).toBe(2)
-    await page.goto(`/decks/${deck.id}/simulations/${five.id}/games/1`)
+    await page.goto(`/simulations/${five.id}/games/1`)
     await expect(page.getByTestId('replay-player')).toHaveCount(5)
     expect(await columns(page)).toBe(3)
 

@@ -37,14 +37,21 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: [/performance\.spec\.ts/, /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/, /\.setup\.ts/],
+      testIgnore: [/performance\.spec\.ts/, /sim-admin\.spec\.ts/, /scanner(-deck|-binder|-small|-glare|-guesses)?\.spec\.ts/, /\.setup\.ts/],
+    },
+    // An admin's Cancel all stops every run, so it runs after the rest (spec 025, AC-14).
+    {
+      name: 'sim-admin',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: /sim-admin\.spec\.ts/,
+      dependencies: ['chromium'],
     },
     // Timing tests run alone after the rest, so parallel tests don't skew them.
     {
       name: 'performance',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /performance\.spec\.ts/,
-      dependencies: ['chromium'],
+      dependencies: ['sim-admin'],
     },
     { name: 'camera', testMatch: /camera\.setup\.ts/ },
     // Real recognition models with Chromium's fake camera (spec 003).

@@ -1,6 +1,6 @@
 """Pod simulation API (spec 024)."""
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, status
@@ -15,8 +15,8 @@ from . import forge, replay, services
 from .models import PoolDeck, SimGame, SimRun
 from .serializers import (
     OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
-    ReplaySerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer, StatusSerializer,
-    SuggestionSerializer, art, run_data,
+    ReplaySerializer, RunPageSerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer,
+    StatusSerializer, SuggestionSerializer, art, row_data, run_data,
 )
 
 LIST_LIMIT = 50
@@ -42,7 +42,7 @@ def opponent(obj, found) -> dict:
 
 class OpponentsView(APIView):
     """Opponent pool, my decks and public decks, searchable by deck or commander name (AC-4)."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(parameters=[OpenApiParameter('q', str)], responses=OpponentsSerializer)
     def get(self, request):
@@ -102,7 +102,7 @@ class PoolDeckView(APIView):
 
 class CheckView(APIView):
     """Unsupported cards of each seat (AC-11)."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(request=PodSerializer, responses=SeatCheckSerializer(many=True))
     def post(self, request):
@@ -125,7 +125,7 @@ class SwapsView(APIView):
 
 class SuggestView(APIView):
     """Forge-supported stand-ins for a card (AC-12)."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(parameters=[OpenApiParameter('name', str, required=True), OpenApiParameter('deck', int), OpenApiParameter('pool', int)],
                    responses=SuggestionSerializer(many=True))
@@ -136,47 +136,66 @@ class SuggestView(APIView):
         return Response(SuggestionSerializer(services.suggestions(request.query_params.get('name', ''), colours), many=True).data)
 
 
-class DeckRunsView(APIView):
-    """A deck's runs (AC-16, AC-18) and starting one (AC-14)."""
-    permission_classes = [AllowAny]
+RUN_PAGE = 20
 
-    @extend_schema(responses=RunSerializer(many=True))
-    def get(self, request, pk):
-        deck = services.visible_deck(request.user, pk)
-        runs = deck.sim_runs.select_related('deck', 'user').prefetch_related('seats').order_by('-created_at')
-        return Response(RunSerializer([run_data(r, request.user) for r in runs], many=True).data)
+
+class RunsView(APIView):
+    """Every run the user can see (spec 025, AC-6, AC-7, AC-10) and starting one (AC-3)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(operation_id='sims_runs_list', parameters=[OpenApiParameter('mine', bool), OpenApiParameter('q', str), OpenApiParameter('offset', int)],
+                   responses=RunPageSerializer)
+    def get(self, request):
+        runs = services.visible_runs(request.user)
+        if request.query_params.get('mine') in ('1', 'true'):
+            runs = runs.filter(user=request.user)
+        if q := request.query_params.get('q', '').strip():
+            runs = runs.filter(search__icontains=q.lower())
+        total = runs.count()
+        offset = max(int(request.query_params.get('offset') or 0), 0)
+        page = list(runs.select_related('user').prefetch_related(
+            'seats', Prefetch('played', queryset=SimGame.objects.defer('replay')),
+        ).order_by('-created_at', '-id')[offset:offset + RUN_PAGE])
+        found = services.printings_by_name([n for r in page for s in r.seats.all() for n in services.commanders(s.cards)])
+        return Response(RunPageSerializer({'results': [row_data(r, request.user, found) for r in page], 'total': total}).data)
 
     @extend_schema(request=StartRunSerializer, responses={201: RunSerializer})
-    def post(self, request, pk):
-        if not request.user.is_authenticated:
-            raise NotFound()
-        deck = services.commander_decks(services.visible_decks(request.user)).filter(pk=pk).first()
-        if deck is None:
-            raise NotFound()
+    def post(self, request):
         data = StartRunSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         d = data.validated_data
-        run = services.start_run(request.user, deck, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'))
+        run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'))
         return Response(RunSerializer(run_data(run, request.user)).data, status=status.HTTP_201_CREATED)
 
 
 class QueueView(APIView):
-    """The run playing and the queued ones, in order (AC-14)."""
-    permission_classes = [AllowAny]
+    """The run playing and the queued ones, in order (spec 024 AC-14, spec 025 AC-11)."""
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(responses=QueueEntrySerializer(many=True))
     def get(self, request):
+        user = request.user
         runs = (SimRun.objects.filter(status__in=[SimRun.Status.PLAYING, SimRun.Status.QUEUED])
-                .select_related('deck', 'user').order_by('-status', 'created_at'))
+                .select_related('user').prefetch_related('seats').order_by('created_at'))
+        visible = set(services.visible_runs(user).filter(pk__in=[r.pk for r in runs]).values_list('pk', flat=True))
         return Response(QueueEntrySerializer([{
-            'id': r.id, 'deck': r.deck_id, 'deck_name': r.deck.name, 'user': r.user.username,
-            'mine': request.user.is_authenticated and r.user_id == request.user.id, 'status': r.status,
-            'played': r.played.count(), 'games': r.games,
+            'id': r.id, 'deck_name': r.seats.all()[0].label if r.id in visible and r.seats.all() else 'Private deck',
+            'user': r.user.username, 'mine': r.user_id == user.id, 'visible': r.id in visible,
+            'can_cancel': services.can_cancel(user, r), 'status': r.status, 'played': r.played.count(), 'games': r.games,
         } for r in sorted(runs, key=lambda r: (r.status != SimRun.Status.PLAYING, r.created_at))], many=True).data)
 
 
+class CancelAllView(APIView):
+    """Admins stop the playing run and cancel every queued one (spec 025, AC-14)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=None, responses=inline_serializer('CancelledAll', {'cancelled': serializers.IntegerField()}))
+    def post(self, request):
+        return Response({'cancelled': services.cancel_all(request.user)})
+
+
 class RunView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(responses=RunSerializer)
     def get(self, request, pk):
@@ -201,7 +220,7 @@ class CancelRunView(APIView):
 
 class ReplayView(APIView):
     """One game, turn by turn (AC-23 to AC-28)."""
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(responses=ReplaySerializer)
     def get(self, request, pk, number):

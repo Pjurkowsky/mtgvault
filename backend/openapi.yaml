@@ -932,63 +932,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
-  /api/decks/{id}/sims/:
-    get:
-      operationId: decks_sims_list
-      description: A deck's runs (AC-16, AC-18) and starting one (AC-14).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - decks
-      security:
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Run'
-          description: ''
-    post:
-      operationId: decks_sims_create
-      description: A deck's runs (AC-16, AC-18) and starting one (AC-14).
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - decks
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StartRun'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/StartRun'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/StartRun'
-        required: true
-      security:
-      - jwtAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Run'
-          description: ''
   /api/decks/{id}/swaps/:
     post:
       operationId: decks_swaps_create
@@ -1999,7 +1942,6 @@ paths:
         required: true
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -2023,7 +1965,6 @@ paths:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -2103,12 +2044,12 @@ paths:
   /api/sims/queue/:
     get:
       operationId: sims_queue_list
-      description: The run playing and the queued ones, in order (AC-14).
+      description: The run playing and the queued ones, in order (spec 024 AC-14,
+        spec 025 AC-11).
       tags:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -2117,6 +2058,78 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/QueueEntry'
+          description: ''
+  /api/sims/queue/cancel/:
+    post:
+      operationId: sims_queue_cancel_create
+      description: Admins stop the playing run and cancel every queued one (spec 025,
+        AC-14).
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelledAll'
+          description: ''
+  /api/sims/runs/:
+    get:
+      operationId: sims_runs_list
+      description: Every run the user can see (spec 025, AC-6, AC-7, AC-10) and starting
+        one (AC-3).
+      parameters:
+      - in: query
+        name: mine
+        schema:
+          type: boolean
+      - in: query
+        name: offset
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      tags:
+      - sims
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunPage'
+          description: ''
+    post:
+      operationId: sims_runs_create
+      description: Every run the user can see (spec 025, AC-6, AC-7, AC-10) and starting
+        one (AC-3).
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StartRun'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
           description: ''
   /api/sims/runs/{id}/:
     get:
@@ -2131,7 +2144,6 @@ paths:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -2151,7 +2163,6 @@ paths:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '204':
           description: No response body
@@ -2194,7 +2205,6 @@ paths:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -2239,7 +2249,6 @@ paths:
       - sims
       security:
       - jwtAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -3397,6 +3406,13 @@ components:
       required:
       - brawl
       - commander
+    CancelledAll:
+      type: object
+      properties:
+        cancelled:
+          type: integer
+      required:
+      - cancelled
     CardDetail:
       type: object
       properties:
@@ -6097,13 +6113,17 @@ components:
       properties:
         id:
           type: integer
-        deck:
-          type: integer
         deck_name:
           type: string
+          description: '"Private deck" when the user can''t see the run (spec 025,
+            AC-11)'
         user:
           type: string
         mine:
+          type: boolean
+        visible:
+          type: boolean
+        can_cancel:
           type: boolean
         status:
           $ref: '#/components/schemas/SimRunStatusEnum'
@@ -6112,7 +6132,7 @@ components:
         games:
           type: integer
       required:
-      - deck
+      - can_cancel
       - deck_name
       - games
       - id
@@ -6120,6 +6140,7 @@ components:
       - played
       - status
       - user
+      - visible
     RarityEnum:
       enum:
       - common
@@ -6294,16 +6315,25 @@ components:
           type: integer
         deck:
           type: integer
+          nullable: true
+          description: The tested deck; null for a pool deck
         deck_name:
           type: string
         user:
           type: string
         mine:
           type: boolean
+        can_cancel:
+          type: boolean
         status:
           $ref: '#/components/schemas/SimRunStatusEnum'
         cancelling:
           type: boolean
+        cancelled_by:
+          type: string
+          nullable: true
+          description: The admin who cancelled it; null when the runner did (spec
+            025, AC-15)
         games:
           type: integer
         minutes:
@@ -6340,6 +6370,8 @@ components:
           items:
             $ref: '#/components/schemas/Game'
       required:
+      - can_cancel
+      - cancelled_by
       - cancelling
       - created_at
       - deck
@@ -6359,6 +6391,80 @@ components:
       - stats
       - status
       - user
+    RunPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunRow'
+        total:
+          type: integer
+      required:
+      - results
+      - total
+    RunRow:
+      type: object
+      description: A run in the list (spec 025, AC-6).
+      properties:
+        id:
+          type: integer
+        user:
+          type: string
+        mine:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/SimRunStatusEnum'
+        cancelling:
+          type: boolean
+        cancelled_by:
+          type: string
+          nullable: true
+        played:
+          type: integer
+        games:
+          type: integer
+        win_rate:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        tested:
+          $ref: '#/components/schemas/RunRowSeat'
+        opponents:
+          type: array
+          items:
+            $ref: '#/components/schemas/RunRowSeat'
+      required:
+      - cancelled_by
+      - cancelling
+      - created_at
+      - games
+      - id
+      - mine
+      - opponents
+      - played
+      - status
+      - tested
+      - user
+      - win_rate
+    RunRowSeat:
+      type: object
+      properties:
+        label:
+          type: string
+        commanders:
+          type: array
+          items:
+            type: string
+        image:
+          type: string
+      required:
+      - commanders
+      - image
+      - label
     RunStats:
       type: object
       properties:
@@ -6836,6 +6942,7 @@ components:
         * `pool` - pool
     StartRun:
       type: object
+      description: Seat 0 is the tested deck (spec 025, AC-3).
       properties:
         seats:
           type: array

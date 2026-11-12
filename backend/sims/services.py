@@ -217,12 +217,22 @@ def unique_labels(labels: list[str]) -> list[str]:
     return out
 
 
-def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None) -> SimRun:
-    """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15)."""
+def run_search(seats) -> str:
+    """Deck and commander names of every seat, for the run search (spec 025, AC-7)."""
+    names = []
+    for seat in seats:
+        names.append(seat['label'])
+        names.extend(commanders(seat['cards']))
+    return '\n'.join(names).lower()
+
+
+def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None) -> SimRun:
+    """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15).
+
+    Seat 0 is the tested deck: a player's deck or a pool deck (spec 025, AC-3).
+    """
     if not 2 <= len(seats) <= MAX_SEATS:
         raise ValidationError({'seats': 'A pod has 2 to 6 decks.'})
-    if seats[0].get('deck') != deck.id:
-        raise ValidationError({'seats': 'Seat 1 is this deck.'})
     if order and sorted(order) != list(range(len(seats))):
         raise ValidationError({'order': 'The order must name every seat once.'})
     supported = forge.supported_names()
@@ -238,8 +248,10 @@ def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, sea
         if seat['profile'] not in PROFILES:
             raise ValidationError({'profile': f"Unknown AI profile {seat['profile']}."})
     with transaction.atomic():
-        run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [])
         labels = unique_labels([s['label'] for s in built])
+        deck = Deck.objects.get(pk=built[0]['source_id']) if built[0]['source'] == SimSeat.Source.DECK else None
+        run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [],
+                                    search=run_search([{**s, 'label': labels[i]} for i, s in enumerate(built)]))
         SimSeat.objects.bulk_create(
             SimSeat(run=run, index=i, label=labels[i], source=s['source'], source_id=s['source_id'],
                     owner=s['owner'], profile=s['profile'], cards=s['cards'])
@@ -247,19 +259,41 @@ def start_run(user, deck: Deck, seats: list[dict], games: int, minutes: int, sea
     return run
 
 
+def can_cancel(user, run: SimRun) -> bool:
+    """Who started it (spec 024 AC-17) or an admin (spec 025, AC-13)."""
+    return user.is_authenticated and (run.user_id == user.id or user.is_staff)
+
+
+def _cancel(user, run: SimRun) -> SimRun:
+    """A queued run stops at once; a playing one after its game is killed."""
+    run = SimRun.objects.select_for_update().get(pk=run.pk)
+    if run.status == SimRun.Status.QUEUED:
+        run.status = SimRun.Status.CANCELLED
+        run.cancelled_by = user
+        run.save(update_fields=['status', 'cancelled_by'])
+    elif run.status == SimRun.Status.PLAYING and not run.cancel_requested:
+        run.cancel_requested = True
+        run.cancelled_by = user
+        run.save(update_fields=['cancel_requested', 'cancelled_by'])
+    return run
+
+
 def cancel_run(user, run: SimRun) -> SimRun:
-    """Only who started it (AC-17). A queued run stops at once; a playing one after its game is killed."""
-    if run.user_id != user.id:
+    if not can_cancel(user, run):
         raise NotFound()
     with transaction.atomic():
-        run = SimRun.objects.select_for_update().get(pk=run.pk)
-        if run.status == SimRun.Status.QUEUED:
-            run.status = SimRun.Status.CANCELLED
-            run.save(update_fields=['status'])
-        elif run.status == SimRun.Status.PLAYING:
-            run.cancel_requested = True
-            run.save(update_fields=['cancel_requested'])
-    return run
+        return _cancel(user, run)
+
+
+def cancel_all(user) -> int:
+    """An admin stops the playing run and cancels every queued one (spec 025, AC-14)."""
+    if not user.is_staff:
+        raise NotFound()
+    with transaction.atomic():
+        runs = list(SimRun.objects.filter(status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING]))
+        for run in runs:
+            _cancel(user, run)
+    return len(runs)
 
 
 def delete_run(user, run: SimRun):
@@ -270,5 +304,15 @@ def delete_run(user, run: SimRun):
     run.delete()
 
 
+def visible_runs(user):
+    """Runs a user can see (spec 025, AC-10, AC-12): a pool deck's, a public deck's or their own; admins all."""
+    if not user.is_authenticated:
+        return SimRun.objects.none()
+    runs = SimRun.objects.all()
+    if not user.is_staff:
+        runs = runs.filter(Q(deck__isnull=True) | Q(deck__is_public=True) | Q(deck__user=user))
+    return runs
+
+
 def visible_run(user, pk) -> SimRun:
-    return get_object_or_404(SimRun.objects.filter(deck__in=visible_decks(user)).select_related('deck__user', 'user'), pk=pk)
+    return get_object_or_404(visible_runs(user).select_related('deck__user', 'user', 'cancelled_by'), pk=pk)

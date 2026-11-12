@@ -4,32 +4,27 @@ import { ArrowDownIcon, ArrowUpIcon, PlayIcon, PlusIcon, XIcon } from '@lucide/v
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import IconButton from '@/components/IconButton.vue'
+import { Badge } from '@/components/ui/badge'
 import InfoTip from '@/components/InfoTip.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { DeckDetail } from '@/lib/decks'
 import { PROFILES, SEAT_MODES, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
 import OpponentPicker from './OpponentPicker.vue'
 import SeatTile from './SeatTile.vue'
 import SimSwapStep from './SimSwapStep.vue'
 
-/** Seats, AI profiles, seat order, games and time limit (spec 024, AC-3 to AC-7). */
-const props = defineProps<{ deck: DeckDetail }>()
+/** Seats, AI profiles, seat order, games and time limit (spec 024, AC-3 to AC-7; spec 025, AC-3 to AC-5). */
 const emit = defineEmits<{ started: [run: Run] }>()
 
 type Seat = { key: number; pick: Opponent | null; profile: Profile }
 let nextKey = 0
 const seat = (pick: Opponent | null = null): Seat => ({ key: nextKey++, pick, profile: 'Default' })
 
-const self = computed<Opponent>(() => ({
-  id: props.deck.id, source: 'deck', name: props.deck.name, owner: props.deck.username, precon: false,
-  commanders: props.deck.cards.filter((c) => c.zone === 'commander').map((c) => c.printing.name),
-  image: props.deck.cards.find((c) => c.zone === 'commander')?.printing.image_normal.replace('/normal/', '/art_crop/') ?? '',
-}))
+// The first seat is the tested deck; it can move but not go (spec 025, AC-3).
 const seats = ref<Seat[]>([seat(), seat(), seat(), seat()])
-seats.value[0]!.pick = self.value
+const testedKey = seats.value[0]!.key
 const MAX = 6
 const games = ref(10)
 const minutes = ref(5)
@@ -55,9 +50,9 @@ const valid = computed(() =>
   && Number.isInteger(minutes.value) && minutes.value >= 1)
 // No upper limit (AC-7); a long run gets a warning.
 const hours = computed(() => (games.value * minutes.value) / 60)
-// Seat 1 of the run is always this deck; Fixed mode sends the arranged turn order.
-const isSelf = (s: Seat) => s.pick?.source === 'deck' && s.pick.id === props.deck.id
-const ordered = () => [...seats.value].sort((a, b) => Number(isSelf(b)) - Number(isSelf(a)))
+// The run's seat 0 is the tested deck; Fixed mode sends the arranged turn order.
+const isTested = (s: Seat) => s.key === testedKey
+const ordered = () => [...seats.value].sort((a, b) => Number(isTested(b)) - Number(isTested(a)))
 const specs = () => ordered().map((s) => ({ ...(s.pick!.source === 'pool' ? { pool: s.pick!.id } : { deck: s.pick!.id }), profile: s.profile }))
 const order = () => seats.value.map((s) => ordered().indexOf(s))
 
@@ -81,8 +76,7 @@ async function run() {
 
 async function start() {
   busy.value = true
-  const { data, error } = await api.POST('/api/decks/{id}/sims/', {
-    params: { path: { id: props.deck.id } },
+  const { data, error } = await api.POST('/api/sims/runs/', {
     body: { seats: specs(), games: games.value, minutes: minutes.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}) },
   })
   busy.value = false
@@ -93,18 +87,19 @@ async function start() {
 </script>
 
 <template>
-  <section class="grid gap-4 rounded-lg border p-4" data-testid="sim-form">
+  <section class="grid grid-cols-1 gap-4 rounded-lg border p-4" data-testid="sim-form">
     <ol class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       <li v-for="(s, i) in seats" :key="s.key" class="grid gap-2 rounded-md border p-2" data-testid="sim-seat">
         <div class="flex items-center gap-1">
           <span class="text-xs font-medium text-muted-foreground">Seat {{ i + 1 }}</span>
+          <Badge v-if="isTested(s)" variant="secondary" class="h-5 px-1.5 text-xs" data-testid="seat-tested">Tested</Badge>
           <span class="ml-auto" />
           <IconButton label="Move up" variant="ghost" size="icon-sm" :disabled="i === 0" @click="move(i, -1)"><ArrowUpIcon /></IconButton>
           <IconButton label="Move down" variant="ghost" size="icon-sm" :disabled="i === seats.length - 1" @click="move(i, 1)"><ArrowDownIcon /></IconButton>
-          <IconButton v-if="!isSelf(s)" label="Remove seat" variant="ghost" size="icon-sm" :disabled="seats.length <= 2" @click="seats.splice(i, 1)"><XIcon /></IconButton>
+          <IconButton v-if="!isTested(s)" label="Remove seat" variant="ghost" size="icon-sm" :disabled="seats.length <= 2" @click="seats.splice(i, 1)"><XIcon /></IconButton>
         </div>
-        <SeatTile v-if="s.pick" :pick="s.pick" :button="!isSelf(s)" @click="picking = s.key" />
-        <Button v-else variant="outline" class="h-16 border-dashed" @click="picking = s.key">Choose opponent</Button>
+        <SeatTile v-if="s.pick" :pick="s.pick" button @click="picking = s.key" />
+        <Button v-else variant="outline" class="h-16 border-dashed" @click="picking = s.key">{{ isTested(s) ? 'Choose deck' : 'Choose opponent' }}</Button>
         <Select v-model="s.profile">
           <SelectTrigger class="w-full" :aria-label="`AI profile, seat ${i + 1}`"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem v-for="p in PROFILES" :key="p" :value="p">{{ p }}</SelectItem></SelectContent>
@@ -135,7 +130,10 @@ async function start() {
       This run could take up to {{ Math.round(hours) }} hours.
     </p>
 
-    <OpponentPicker v-model:open="pickerOpen" :deck="deck" @choose="choose" />
+    <OpponentPicker
+      v-model:open="pickerOpen" :title="picking === testedKey ? 'Choose deck' : 'Choose opponent'" :start="picking === testedKey ? 'mine' : 'pool'"
+      @choose="choose"
+    />
     <SimSwapStep v-model:open="swapping" :checks="checks" @done="start" />
   </section>
 </template>

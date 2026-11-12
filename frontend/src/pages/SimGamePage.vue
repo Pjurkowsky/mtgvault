@@ -13,9 +13,8 @@ import { Slider } from '@/components/ui/slider'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 
-/** A finished game, turn by turn (spec 024, AC-23 to AC-28). */
+/** A finished game, turn by turn (spec 024, AC-23 to AC-28; spec 025, AC-9). */
 const route = useRoute()
-const username = computed(() => (route.name === 'public-sim-game' ? String(route.params.username) : null))
 const game = ref<Schemas['Replay'] | null>(null)
 const notFound = ref(false)
 const turn = ref(0)
@@ -32,9 +31,8 @@ watch(() => [route.params.run, route.params.number], async () => {
   event.value = null
 }, { immediate: true })
 
-const back = computed(() => username.value
-  ? { name: 'public-deck', params: { username: username.value, id: route.params.id }, query: { tab: 'simulate' } }
-  : { name: 'deck', params: { id: route.params.id }, query: { tab: 'simulate' } })
+// Back returns to the run (spec 025, AC-9).
+const back = computed(() => ({ name: 'sim-run', params: { run: route.params.run } }))
 
 const current = computed(() => game.value?.turns[turn.value] ?? null)
 const board = computed(() => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { watchDebounced } from '@vueuse/core'
-import { CheckIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from '@lucide/vue'
+import { CheckIcon, ListPlusIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, fieldErrors, type Schemas } from '@/api/client'
 import IconButton from '@/components/IconButton.vue'
@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useConfirm } from '@/composables/useConfirm'
-import type { DeckDetail } from '@/lib/decks'
 import type { Opponent } from '@/lib/sims'
 import SeatTile from './SeatTile.vue'
 
-/** Opponent pool, my decks and public decks; the pool can be added to, renamed and pruned (AC-4, AC-8 to AC-10). */
-const props = defineProps<{ deck: DeckDetail }>()
+/**
+ * Opponent pool, my decks and public decks; the pool can be added to, renamed and pruned
+ * (spec 024, AC-4, AC-8 to AC-10). Any deck in the lists can be copied to the pool (spec 025, AC-4).
+ */
+const props = defineProps<{ title: string; start?: 'pool' | 'mine' | 'public' }>()
 const open = defineModel<boolean>('open', { required: true })
 const emit = defineEmits<{ choose: [pick: Opponent] }>()
 const confirm = useConfirm()
@@ -33,10 +35,16 @@ async function load() {
   const { data } = await api.GET('/api/sims/opponents/', { params: { query: { q: query.value.trim() || undefined } } })
   found.value = data ?? { pool: [], mine: [], public: [] }
 }
-watch(open, (isOpen) => isOpen && load())
+// Each opening starts fresh, on the group the seat calls for.
+watch(open, (isOpen) => {
+  if (!isOpen) return
+  query.value = ''
+  group.value = props.start ?? 'pool'
+  load()
+})
 watchDebounced(query, () => open.value && load(), { debounce: 250 })
 
-// Add to pool: this deck, or a pasted list with a name (AC-8).
+// Add to pool: a deck from the lists, or a pasted list with a name.
 const adding = ref<null | 'list'>(null)
 const listName = ref('')
 const listText = ref('')
@@ -76,12 +84,11 @@ async function remove(pick: Opponent) {
   <Dialog v-model:open="open">
     <DialogContent class="max-h-[90vh] w-full overflow-y-auto sm:max-w-2xl" data-testid="opponent-picker">
       <DialogHeader>
-        <DialogTitle>Choose opponent</DialogTitle>
+        <DialogTitle>{{ title }}</DialogTitle>
         <DialogDescription class="sr-only">Pick a deck from the opponent pool, your decks or public decks</DialogDescription>
       </DialogHeader>
       <div class="flex flex-wrap items-center gap-2">
         <Input v-model="query" type="search" placeholder="Deck or commander" aria-label="Search opponents" class="min-w-48 flex-1" />
-        <Button variant="outline" :disabled="busy" @click="addPool({ deck: deck.id })"><PlusIcon /> Add this deck to pool</Button>
         <Button variant="outline" @click="adding = adding ? null : 'list'"><PlusIcon /> Paste a list</Button>
       </div>
       <form v-if="adding" class="grid gap-2 rounded-md border p-3" data-testid="pool-add-list" @submit.prevent="addPool({ name: listName, text: listText })">
@@ -103,6 +110,7 @@ async function remove(pick: Opponent) {
               </form>
               <template v-else>
                 <SeatTile :pick="pick" button :label="pick.name" class="flex-1 p-1" @click="emit('choose', pick)" />
+                <IconButton v-if="g.value !== 'pool'" label="Add to pool" variant="ghost" :disabled="busy" @click="addPool({ deck: pick.id })"><ListPlusIcon /></IconButton>
                 <template v-if="g.value === 'pool'">
                   <IconButton label="Rename" variant="ghost" @click="renaming = pick.id; newName = pick.name"><PencilIcon /></IconButton>
                   <IconButton label="Remove from pool" variant="ghost" class="text-destructive" @click="remove(pick)"><Trash2Icon /></IconButton>
