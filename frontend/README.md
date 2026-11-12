@@ -63,10 +63,13 @@ src/
                           (seats with the tested deck, AI profiles, seat order), OpponentPicker
                           (pool, my decks, public), SimSwapStep (unsupported cards), SimRunList
                           (All / Mine, search), SimRunCard (stats, games); replay pieces
-                          ReplayPlayer, ReplayCard, ReplayEvents
+                          (spec 026): ReplayPlayer (rows, zones), ReplayCard, ReplayZoneDialog,
+                          ReplayArrows (combat), ReplaySidebar (events, settings), ReplayEvents
   pages/SimulationsPage.vue  /simulations: queue, run form, runs
   pages/SimRunPage.vue    one run's results
-  pages/SimGamePage.vue   a game's replay: turn stepper, boards, events, Log tab
+  pages/SimGamePage.vue   a game's replay: turn stepper, Play, boards, events sidebar, Log tab
+  composables/useReplayPlayer.ts  stepping by event or turn, autoplay, remembered settings
+  lib/replay.ts           deaths and new graveyard cards, from the board before
   lib/sims.ts             run types, AI profiles, seat modes, useForge
   lib/theme.ts            Light/Dark/System theme, saved in the browser; index.html sets the
                           class before the app loads

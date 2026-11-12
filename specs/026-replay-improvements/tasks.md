@@ -14,4 +14,4 @@
 ## Tests and finish
 
 - [x] **T6 Update spec 024's replay tests; sim-replay-zones, -combat, -play specs; screenshots** (all)
-- [ ] **T7 Full suite (2 workers), READMEs, spec status; push**
+- [x] **T7 Full suite (2 workers), READMEs, spec status; push**

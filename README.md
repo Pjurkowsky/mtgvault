@@ -81,6 +81,12 @@ memory; a 4-player game takes about a minute. `FORGE_CPUS=3` caps Forge at three
 cores, so the rest of the server stays responsive. Without `FORGE_URL`, or while
 Forge is down, Simulations is hidden.
 
+Each game has a replay: every player's battlefield, hand, library, graveyard and
+exile, arrows for attacks and blocks, and the turn's events in a sidebar. Step
+by event (← →) or turn (Shift + ← →), or press Play with a speed, pause at
+combat and follow one player. Games played with a Forge image older than spec
+026 show hand and library counts only.
+
 ### Settings
 
 | Variable | Default | |

@@ -278,6 +278,9 @@ hides the feature.
   one game at a time, polling Forge each second (`SIMS_POLL_SECONDS`). A run
   left Playing by a restart goes back to the queue. Each game keeps its replay
   as gzipped JSON; `sims/replay.py` turns it into turns, boards and card images.
+  Since spec 026 each board also holds every hand and library (top card first)
+  and, during combat, what each attacker attacks and each blocker blocks;
+  older games have `hand_cards` and `library_cards` null.
 - Seat order per game: Rotate, Random (seeded by run and game) or Fixed.
 - Who sees a run (`services.visible_runs`): every logged-in user, except runs
   whose tested deck is private (owner only); staff see all. `SimRun.deck` is
@@ -288,7 +291,8 @@ hides the feature.
   turn counts every player's turn.
 - Tests use `manage.py fake_forge`, which answers like Forge from recorded games
   in `sims/fixtures/forge/`. Decks named Hangs, Broken and Stalls play slowly,
-  fail and draw.
+  fail and draw; a deck named Unrecorded plays a game without hands, libraries
+  and combat, like those recorded before spec 026.
 
 ## Scanner
 

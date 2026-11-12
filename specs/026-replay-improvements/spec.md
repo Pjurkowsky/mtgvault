@@ -1,6 +1,6 @@
 # Spec 026: Replay improvements
 
-Status: Draft
+Status: Done
 Depends on: 024-pod-simulation, 025-simulations-page
 
 ## Goal
