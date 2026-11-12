@@ -250,6 +250,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/branches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["decks_branches_retrieve"];
+        put?: never;
+        /** @description AC-3, AC-9: a new branch from a branch's list or a version. */
+        post: operations["decks_branches_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/branches/{branch_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["decks_branches_destroy"];
+        options?: never;
+        head?: never;
+        /** @description AC-4: rename, or make Main. */
+        patch: operations["decks_branches_partial_update"];
+        trace?: never;
+    };
+    "/api/decks/{id}/branches/{branch_id}/versions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description AC-7: save the branch's list as a version. */
+        post: operations["decks_branches_versions_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/cards/": {
         parameters: {
             query?: never;
@@ -366,6 +417,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/compare/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description AC-12, AC-13 */
+        get: operations["decks_compare_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/delete/": {
         parameters: {
             query?: never;
@@ -392,6 +460,23 @@ export interface paths {
         get: operations["decks_export_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/fork/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description AC-15: your own deck or anyone's public deck, with its history, as your private deck. */
+        post: operations["decks_fork_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -509,6 +594,41 @@ export interface paths {
         put?: never;
         /** @description Spec 021, AC-10: the printing a deck shows for a kind of token. */
         post: operations["decks_token_printing_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/versions/{version_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description AC-8: the version as a deck, read only. */
+        get: operations["decks_versions_retrieve"];
+        put?: never;
+        post?: never;
+        /** @description AC-11 */
+        delete: operations["decks_versions_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{id}/versions/{version_id}/restore/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description AC-10: the branch's list is saved, then replaced with the version's. */
+        post: operations["decks_versions_restore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1249,6 +1369,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/decks/{id}/branches/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description AC-14 */
+        get: operations["users_decks_branches_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/decks/{id}/combos/": {
         parameters: {
             query?: never;
@@ -1265,6 +1402,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/{username}/decks/{id}/compare/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_compare_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/{username}/decks/{id}/insights/": {
         parameters: {
             query?: never;
@@ -1273,6 +1426,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["users_decks_insights_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/decks/{id}/versions/{version_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_versions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1596,10 +1765,31 @@ export interface components {
             item_id: number;
             quantity: number;
         };
+        Branch: {
+            id: number;
+            name: string;
+            is_main: boolean;
+            /** @description Where it came from, as "Main v2" */
+            from_label: string | null;
+            /** Format: date-time */
+            created_at: string;
+            cards: number;
+            versions: components["schemas"]["Version"][];
+        };
         BranchRef: {
             id: number;
             name: string;
             is_main: boolean;
+        };
+        BranchWrite: {
+            name: string;
+            from_branch?: number;
+            from_version?: number;
+        };
+        Branches: {
+            branches: components["schemas"]["Branch"][];
+            /** @description The branch just made */
+            created?: number;
         };
         BulkChanges: {
             condition?: components["schemas"]["ConditionEnum"];
@@ -1721,6 +1911,21 @@ export interface components {
              */
             printing: string | null;
         };
+        Compare: {
+            added: components["schemas"]["CompareCard"][];
+            removed: components["schemas"]["CompareCard"][];
+            changed: components["schemas"]["CompareCard"][];
+            moved: components["schemas"]["CompareCard"][];
+            total_added: number;
+            total_removed: number;
+        };
+        CompareCard: {
+            printing: components["schemas"]["DeckPrinting"];
+            quantity: number;
+            zone: components["schemas"]["ZoneEnum"];
+            from_zone: (components["schemas"]["ZoneEnum"] | components["schemas"]["NullEnum"]) | null;
+            from_quantity?: number;
+        };
         /**
          * @description * `NM` - Near Mint
          *     * `LP` - Lightly Played
@@ -1803,6 +2008,8 @@ export interface components {
             branch: components["schemas"]["BranchRef"];
             forked_from: components["schemas"]["ForkedFrom"] | null;
             fork_count: number;
+            /** @description The version shown, read only (spec 027, AC-8) */
+            readonly version: components["schemas"]["VersionRef"] | null;
             currency: string;
             cards: components["schemas"]["DeckCard"][];
             /** @description Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015) */
@@ -2025,6 +2232,13 @@ export interface components {
          * @enum {string}
          */
         FinishEnum: "nonfoil" | "foil" | "etched";
+        Fork: {
+            branch?: number;
+            version?: number;
+        };
+        ForkResult: {
+            id: number;
+        };
         /** @description Spec 027, AC-15: the deck a fork came from; `public` says whether a link can open it. */
         ForkedFrom: {
             id: number;
@@ -2453,6 +2667,10 @@ export interface components {
             spread?: boolean;
             pages?: number | null;
             sections?: components["schemas"]["BinderSection"][];
+        };
+        PatchedBranchEdit: {
+            name?: string;
+            is_main?: boolean;
         };
         PatchedDeckCardEdit: {
             /**
@@ -3258,6 +3476,30 @@ export interface components {
             owned: components["schemas"]["Money"];
             missing: components["schemas"]["Money"];
         };
+        Version: {
+            id: number;
+            number: number;
+            name: string;
+            note: string;
+            /** Format: date-time */
+            created_at: string;
+            /** @description Cards in the list (Commander + Mainboard) */
+            cards: number;
+        };
+        VersionRef: {
+            id: number;
+            number: number;
+            name: string;
+            note: string;
+            branch: number;
+            branch_name: string;
+        };
+        VersionWrite: {
+            /** @default  */
+            name?: string;
+            /** @default  */
+            note?: string;
+        };
         /** @description What visitors see of a public want list (AC-18): no decks. */
         Want: {
             readonly id: number;
@@ -3743,6 +3985,131 @@ export interface operations {
             };
         };
     };
+    decks_branches_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
+    decks_branches_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["BranchWrite"];
+                "multipart/form-data": components["schemas"]["BranchWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
+    decks_branches_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decks_branches_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedBranchEdit"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedBranchEdit"];
+                "multipart/form-data": components["schemas"]["PatchedBranchEdit"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
+    decks_branches_versions_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                branch_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["VersionWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["VersionWrite"];
+                "multipart/form-data": components["schemas"]["VersionWrite"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
     decks_cards_create: {
         parameters: {
             query?: {
@@ -3933,6 +4300,8 @@ export interface operations {
             query?: {
                 /** @description Branch id; Main when missing */
                 branch?: number;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
             };
             header?: never;
             path: {
@@ -3948,6 +4317,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckCombos"];
+                };
+            };
+        };
+    };
+    decks_compare_retrieve: {
+        parameters: {
+            query: {
+                /** @description branch:<id> or version:<id> */
+                a: string;
+                /** @description branch:<id> or version:<id> */
+                b: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Compare"];
                 };
             };
         };
@@ -4008,6 +4403,33 @@ export interface operations {
             };
         };
     };
+    decks_fork_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Fork"];
+                "application/x-www-form-urlencoded": components["schemas"]["Fork"];
+                "multipart/form-data": components["schemas"]["Fork"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForkResult"];
+                };
+            };
+        };
+    };
     decks_import_create: {
         parameters: {
             query?: {
@@ -4043,6 +4465,8 @@ export interface operations {
             query?: {
                 /** @description Branch id; Main when missing */
                 branch?: number;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
             };
             header?: never;
             path: {
@@ -4231,6 +4655,71 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["TokenPrintingChoice"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_versions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                version_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
+                };
+            };
+        };
+    };
+    decks_versions_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                version_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    decks_versions_restore_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                version_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {
@@ -5554,11 +6043,35 @@ export interface operations {
             };
         };
     };
+    users_decks_branches_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Branches"];
+                };
+            };
+        };
+    };
     users_decks_combos_retrieve: {
         parameters: {
             query?: {
                 /** @description Branch id; Main when missing */
                 branch?: number;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
             };
             header?: never;
             path: {
@@ -5579,11 +6092,40 @@ export interface operations {
             };
         };
     };
+    users_decks_compare_retrieve: {
+        parameters: {
+            query: {
+                /** @description branch:<id> or version:<id> */
+                a: string;
+                /** @description branch:<id> or version:<id> */
+                b: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Compare"];
+                };
+            };
+        };
+    };
     users_decks_insights_retrieve: {
         parameters: {
             query?: {
                 /** @description Branch id; Main when missing */
                 branch?: number;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
             };
             header?: never;
             path: {
@@ -5600,6 +6142,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckInsights"];
+                };
+            };
+        };
+    };
+    users_decks_versions_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+                version_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckDetail"];
                 };
             };
         };

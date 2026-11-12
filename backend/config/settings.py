@@ -237,6 +237,7 @@ SPECTACULAR_SETTINGS = {
         'ScannerSourceKindEnum': 'scanner.models.ScannerSource.KINDS',
         'SimRunStatusEnum': 'sims.models.SimRun.Status',
         'SimGameStatusEnum': 'sims.models.SimGame.Status',
+        'ZoneEnum': 'decks.models.DeckCard.Zone',
     },
 }
 

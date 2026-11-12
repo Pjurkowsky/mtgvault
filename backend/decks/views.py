@@ -24,10 +24,18 @@ from collection.views import browse_params, selected_items
 from . import services, stats, textlist
 from .insights import deck_insights, deck_salt
 from .legality import COUNTED, FORMATS, issues
-from .models import Deck, DeckBranch, DeckCard
+from . import versions
+from .models import Deck, DeckBranch, DeckCard, DeckVersion
 from .optimize import cheapest_changes
 from .ownership import deck_ownership
 from .serializers import (
+    BranchEditSerializer,
+    BranchesSerializer,
+    BranchWriteSerializer,
+    CompareSerializer,
+    ForkResultSerializer,
+    ForkSerializer,
+    VersionWriteSerializer,
     AddFromCollectionSerializer,
     AddResultSerializer,
     CategorySuggestionsSerializer,
@@ -82,9 +90,10 @@ def deck_cards(deck):
     return list(deck.list_cards().select_related('printing__set').prefetch_related('swaps_for').order_by('printing__name'))
 
 
-def build(deck, ctx, detail=True, public=False) -> dict:
-    """Summary (tiles) or full deck (page) as plain data."""
-    cards = deck_cards(deck)
+def build(deck, ctx, detail=True, public=False, cards=None, version=None) -> dict:
+    """Summary (tiles) or full deck (page) as plain data. `cards` and `version`: a saved
+    version's list, shown read only (spec 027, AC-8)."""
+    cards = deck_cards(deck) if cards is None else cards
     own = deck_ownership(deck, cards)
     st = stats.deck_stats(cards, own, ctx['currency'], ctx['rates'])
     by_zone = {zone: sum(c.quantity for c in cards if c.zone == zone) for zone in DeckCard.Zone.values}
@@ -120,7 +129,7 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'price': price(c.printing, finish, ctx['currency'], ctx['rates']),
             'prices': prices_in_all(c.printing, finish, ctx['rates']),
             'ownership': ownership,
-            'swap_for': sorted(o.id for o in c.swaps_for.all()),
+            'swap_for': sorted(c.swap_ids if hasattr(c, 'swap_ids') else (o.id for o in c.swaps_for.all())),
             'categories': c.categories,
         })
     source = deck.forked_from
@@ -128,6 +137,8 @@ def build(deck, ctx, detail=True, public=False) -> dict:
             'branch': {'id': deck.branch.id, 'name': deck.branch.name, 'is_main': deck.branch.is_main},
             'forked_from': {'id': source.id, 'name': source.name, 'username': source.user.username, 'public': source.is_public} if source else None,
             'fork_count': deck.forks.count(),
+            'version': {'id': version.id, 'number': version.number, 'name': version.name, 'note': version.note,
+                        'branch': version.branch_id, 'branch_name': version.branch.name} if version else None,
             'legality': {'legal': not problems, 'issues': problems}, 'stats': st,
             'tokens': deck_tokens([c for c in cards if c.zone in COUNTED], deck.token_printings, ctx),
             'salt': deck_salt(cards)}
@@ -137,9 +148,23 @@ def counted(cards) -> set:
     return {c.oracle_id for c in cards if c.zone in COUNTED}
 
 
-def combos_response(deck, viewer_id):
+def shown_cards(request, deck):
+    """The shown list: `?version=` (spec 027, AC-8), else the picked branch."""
+    vid = request.query_params.get('version')
+    if vid:
+        if not str(vid).isdigit():
+            raise Http404('No such version.')
+        version = get_object_or_404(DeckVersion.objects.select_related('branch'), pk=vid, branch__deck=deck)
+        return versions.version_cards(deck, version)
+    return deck_cards(pick_branch(request, deck))
+
+
+VERSION = OpenApiParameter('version', int, description='Version id: that version\'s list (spec 027)')
+
+
+def combos_response(deck, viewer_id, cards=None):
     """Spec 022, AC-7, AC-8: in a Commander deck, combos fit the commander's colours."""
-    cards = deck_cards(deck)
+    cards = deck_cards(deck) if cards is None else cards
     commanders = [c for c in cards if c.zone == DeckCard.Zone.COMMANDER]
     identity = None
     if FORMATS[deck.format].commander and commanders:
@@ -148,36 +173,37 @@ def combos_response(deck, viewer_id):
 
 
 class DeckCombosView(APIView):
-    @extend_schema(parameters=[BRANCH], responses=DeckCombosSerializer)
+    @extend_schema(parameters=[BRANCH, VERSION], responses=DeckCombosSerializer)
     def get(self, request, pk):
-        return combos_response(pick_branch(request, own_deck(request, pk)), request.user.id)
+        deck = own_deck(request, pk)
+        return combos_response(deck, request.user.id, shown_cards(request, deck))
 
 
 class DeckInsightsView(APIView):
     """Spec 022, AC-14, AC-15: fetches missing salt scores, so the page asks after loading."""
 
-    @extend_schema(parameters=[BRANCH], responses=DeckInsightsSerializer)
+    @extend_schema(parameters=[BRANCH, VERSION], responses=DeckInsightsSerializer)
     def get(self, request, pk):
-        deck = pick_branch(request, own_deck(request, pk))
-        return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
+        deck = own_deck(request, pk)
+        return Response(DeckInsightsSerializer(deck_insights(deck, shown_cards(request, deck))).data)
 
 
 class PublicDeckInsightsView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(parameters=[BRANCH], responses=DeckInsightsSerializer)
+    @extend_schema(parameters=[BRANCH, VERSION], responses=DeckInsightsSerializer)
     def get(self, request, username, pk):
-        deck = pick_branch(request, get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True))
-        return Response(DeckInsightsSerializer(deck_insights(deck, deck_cards(deck))).data)
+        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        return Response(DeckInsightsSerializer(deck_insights(deck, shown_cards(request, deck))).data)
 
 
 class PublicDeckCombosView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(parameters=[BRANCH], responses=DeckCombosSerializer)
+    @extend_schema(parameters=[BRANCH, VERSION], responses=DeckCombosSerializer)
     def get(self, request, username, pk):
-        deck = pick_branch(request, get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True))
-        return combos_response(deck, None)  # visitors see no ownership (AC-9)
+        deck = get_object_or_404(Deck, pk=pk, user__username__iexact=username, is_public=True)
+        return combos_response(deck, None, shown_cards(request, deck))  # visitors see no ownership (AC-9)
 
 
 def own_deck(request, pk) -> Deck:
@@ -591,3 +617,190 @@ class OptimizeView(APIView):
                 if change['card'] in wanted:
                     DeckCard.objects.filter(pk=change['card']).update(printing=change['cheapest'])
         return detail_response(request, deck)
+
+
+# Spec 027: branches, versions, compare, fork ----------------------------------
+
+def branches_data(deck) -> dict:
+    out = []
+    for b in deck.branches.order_by('-is_main', 'created_at').prefetch_related('versions', 'cards'):
+        counted = lambda cards: sum(c['quantity'] if isinstance(c, dict) else c.quantity
+                                    for c in cards if (c['zone'] if isinstance(c, dict) else c.zone) in COUNTED)
+        source = b.from_version.branch.name + f' v{b.from_version.number}' if b.from_version_id and b.from_version else (
+            b.from_branch.name if b.from_branch_id and b.from_branch else None)
+        out.append({
+            'id': b.id, 'name': b.name, 'is_main': b.is_main, 'from_label': source, 'created_at': b.created_at,
+            'cards': counted(list(b.cards.all())),
+            'versions': [{'id': v.id, 'number': v.number, 'name': v.name, 'note': v.note, 'created_at': v.created_at,
+                          'cards': counted(v.cards)} for v in b.versions.all()],
+        })
+    return {'branches': out}
+
+
+def readable_deck(request, pk, username=None) -> Deck:
+    """The owner's deck, or (with `username`) a public one."""
+    if username is None:
+        return own_deck(request, pk)
+    deck = Deck.objects.select_related('location', 'user').filter(pk=pk, user__username__iexact=username, is_public=True).first()
+    if deck is None:
+        raise Http404('Not found.')
+    return deck
+
+
+def deck_version(deck, vid) -> DeckVersion:
+    return get_object_or_404(DeckVersion.objects.select_related('branch'), pk=vid, branch__deck=deck)
+
+
+def compare_side(deck, value: str):
+    """`branch:<id>` (its list now) or `version:<id>`."""
+    kind, _, ident = (value or '').partition(':')
+    if not ident.isdigit():
+        raise ValidationError({'detail': 'Pick two lists to compare.'})
+    if kind == 'branch':
+        return get_object_or_404(DeckBranch, pk=ident, deck=deck)
+    if kind == 'version':
+        return deck_version(deck, ident)
+    raise ValidationError({'detail': 'Pick two lists to compare.'})
+
+
+class BranchesView(APIView):
+    @extend_schema(responses=BranchesSerializer)
+    def get(self, request, pk):
+        return Response(BranchesSerializer(branches_data(own_deck(request, pk))).data)
+
+    @extend_schema(request=BranchWriteSerializer, responses={201: BranchesSerializer})
+    def post(self, request, pk):
+        """AC-3, AC-9: a new branch from a branch's list or a version."""
+        deck = own_deck(request, pk)
+        data = BranchWriteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        version = deck_version(deck, d['from_version']) if 'from_version' in d else None
+        source = get_object_or_404(DeckBranch, pk=d['from_branch'], deck=deck) if 'from_branch' in d else deck.branch
+        branch = versions.new_branch(deck, d['name'], source, version)
+        return Response({**BranchesSerializer(branches_data(deck)).data, 'created': branch.id}, status=status.HTTP_201_CREATED)
+
+
+class BranchDetailView(APIView):
+    @extend_schema(request=BranchEditSerializer, responses=BranchesSerializer)
+    def patch(self, request, pk, branch_id):
+        """AC-4: rename, or make Main."""
+        deck = own_deck(request, pk)
+        branch = get_object_or_404(DeckBranch, pk=branch_id, deck=deck)
+        data = BranchEditSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        if 'name' in d:
+            branch.name = versions.check_name(deck, d['name'], exclude=branch.id)
+            branch.save(update_fields=['name'])
+        if d.get('is_main'):
+            versions.make_main(branch)
+        return Response(BranchesSerializer(branches_data(deck)).data)
+
+    @extend_schema(request=None, responses=BranchesSerializer)
+    def delete(self, request, pk, branch_id):
+        deck = own_deck(request, pk)
+        versions.delete_branch(get_object_or_404(DeckBranch, pk=branch_id, deck=deck))
+        return Response(BranchesSerializer(branches_data(deck)).data)
+
+
+class VersionsView(APIView):
+    @extend_schema(request=VersionWriteSerializer, responses={201: BranchesSerializer})
+    def post(self, request, pk, branch_id):
+        """AC-7: save the branch's list as a version."""
+        deck = own_deck(request, pk)
+        branch = get_object_or_404(DeckBranch, pk=branch_id, deck=deck)
+        data = VersionWriteSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        versions.save_version(branch, data.validated_data['name'], data.validated_data['note'])
+        return Response(BranchesSerializer(branches_data(deck)).data, status=status.HTTP_201_CREATED)
+
+
+def version_response(request, deck, vid, public=False):
+    version = deck_version(deck, vid)
+    deck.branch = version.branch
+    cards = versions.version_cards(deck, version)
+    return Response(DeckDetailSerializer(build(deck, price_context(request), public=public, cards=cards, version=version)).data)
+
+
+class VersionDetailView(APIView):
+    @extend_schema(responses=DeckDetailSerializer)
+    def get(self, request, pk, version_id):
+        """AC-8: the version as a deck, read only."""
+        return version_response(request, own_deck(request, pk), version_id)
+
+    @extend_schema(request=None, responses=BranchesSerializer)
+    def delete(self, request, pk, version_id):
+        """AC-11"""
+        deck = own_deck(request, pk)
+        deck_version(deck, version_id).delete()
+        return Response(BranchesSerializer(branches_data(deck)).data)
+
+
+class RestoreView(APIView):
+    @extend_schema(request=None, responses=DeckDetailSerializer)
+    def post(self, request, pk, version_id):
+        """AC-10: the branch's list is saved, then replaced with the version's."""
+        deck = own_deck(request, pk)
+        version = deck_version(deck, version_id)
+        versions.restore(version)
+        deck.branch = version.branch
+        return detail_response(request, deck)
+
+
+COMPARE_PARAMS = [OpenApiParameter('a', str, required=True, description='branch:<id> or version:<id>'),
+                  OpenApiParameter('b', str, required=True, description='branch:<id> or version:<id>')]
+
+
+def compare_response(request, deck):
+    a = compare_side(deck, request.query_params.get('a'))
+    b = compare_side(deck, request.query_params.get('b'))
+    return Response(CompareSerializer(versions.compare(a, b)).data)
+
+
+class CompareView(APIView):
+    @extend_schema(parameters=COMPARE_PARAMS, responses=CompareSerializer)
+    def get(self, request, pk):
+        """AC-12, AC-13"""
+        return compare_response(request, own_deck(request, pk))
+
+
+class ForkView(APIView):
+    @extend_schema(request=ForkSerializer, responses={201: ForkResultSerializer})
+    def post(self, request, pk):
+        """AC-15: your own deck or anyone's public deck, with its history, as your private deck."""
+        source = Deck.objects.select_related('user').filter(pk=pk).first()
+        if source is None or not (source.user_id == request.user.id or source.is_public):
+            raise Http404('Not found.')
+        data = ForkSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        d = data.validated_data
+        branch = get_object_or_404(DeckBranch, pk=d['branch'], deck=source) if 'branch' in d else None
+        version = deck_version(source, d['version']) if 'version' in d else None
+        deck = versions.fork(source, request.user, branch, version)
+        return Response({'id': deck.id}, status=status.HTTP_201_CREATED)
+
+
+class PublicBranchesView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=BranchesSerializer)
+    def get(self, request, username, pk):
+        """AC-14"""
+        return Response(BranchesSerializer(branches_data(readable_deck(request, pk, username))).data)
+
+
+class PublicVersionView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses=DeckDetailSerializer)
+    def get(self, request, username, pk, version_id):
+        return version_response(request, readable_deck(request, pk, username), version_id, public=True)
+
+
+class PublicCompareView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(parameters=COMPARE_PARAMS, responses=CompareSerializer)
+    def get(self, request, username, pk):
+        return compare_response(request, readable_deck(request, pk, username))

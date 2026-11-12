@@ -393,6 +393,152 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/decks/{id}/branches/:
+    get:
+      operationId: decks_branches_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
+    post:
+      operationId: decks_branches_create
+      description: 'AC-3, AC-9: a new branch from a branch''s list or a version.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BranchWrite'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
+  /api/decks/{id}/branches/{branch_id}/:
+    patch:
+      operationId: decks_branches_partial_update
+      description: 'AC-4: rename, or make Main.'
+      parameters:
+      - in: path
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchEdit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchEdit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBranchEdit'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
+    delete:
+      operationId: decks_branches_destroy
+      parameters:
+      - in: path
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/decks/{id}/branches/{branch_id}/versions/:
+    post:
+      operationId: decks_branches_versions_create
+      description: 'AC-7: save the branch''s list as a version.'
+      parameters:
+      - in: path
+        name: branch_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionWrite'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VersionWrite'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VersionWrite'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
   /api/decks/{id}/cards/:
     post:
       operationId: decks_cards_create
@@ -641,6 +787,11 @@ paths:
         schema:
           type: integer
         required: true
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
       tags:
       - decks
       security:
@@ -651,6 +802,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeckCombos'
+          description: ''
+  /api/decks/{id}/compare/:
+    get:
+      operationId: decks_compare_retrieve
+      description: AC-12, AC-13
+      parameters:
+      - in: query
+        name: a
+        schema:
+          type: string
+        description: branch:<id> or version:<id>
+        required: true
+      - in: query
+        name: b
+        schema:
+          type: string
+        description: branch:<id> or version:<id>
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compare'
           description: ''
   /api/decks/{id}/delete/:
     post:
@@ -722,6 +906,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExportResult'
           description: ''
+  /api/decks/{id}/fork/:
+    post:
+      operationId: decks_fork_create
+      description: 'AC-15: your own deck or anyone''s public deck, with its history,
+        as your private deck.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fork'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fork'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fork'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForkResult'
+          description: ''
   /api/decks/{id}/import/:
     post:
       operationId: decks_import_create
@@ -775,6 +992,11 @@ paths:
         schema:
           type: integer
         required: true
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
       tags:
       - decks
       security:
@@ -1045,6 +1267,79 @@ paths:
             schema:
               $ref: '#/components/schemas/TokenPrintingChoice'
         required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+  /api/decks/{id}/versions/{version_id}/:
+    get:
+      operationId: decks_versions_retrieve
+      description: 'AC-8: the version as a deck, read only.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
+          description: ''
+    delete:
+      operationId: decks_versions_destroy
+      description: AC-11
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/decks/{id}/versions/{version_id}/restore/:
+    post:
+      operationId: decks_versions_restore_create
+      description: 'AC-10: the branch''s list is saved, then replaced with the version''s.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - decks
       security:
       - jwtAuth: []
       responses:
@@ -2436,15 +2731,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
-  /api/users/{username}/decks/{id}/combos/:
+  /api/users/{username}/decks/{id}/branches/:
     get:
-      operationId: users_decks_combos_retrieve
+      operationId: users_decks_branches_retrieve
+      description: AC-14
       parameters:
-      - in: query
-        name: branch
-        schema:
-          type: integer
-        description: Branch id; Main when missing
       - in: path
         name: id
         schema:
@@ -2465,7 +2756,81 @@ paths:
           content:
             application/json:
               schema:
+                $ref: '#/components/schemas/Branches'
+          description: ''
+  /api/users/{username}/decks/{id}/combos/:
+    get:
+      operationId: users_decks_combos_retrieve
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
                 $ref: '#/components/schemas/DeckCombos'
+          description: ''
+  /api/users/{username}/decks/{id}/compare/:
+    get:
+      operationId: users_decks_compare_retrieve
+      parameters:
+      - in: query
+        name: a
+        schema:
+          type: string
+        description: branch:<id> or version:<id>
+        required: true
+      - in: query
+        name: b
+        schema:
+          type: string
+        description: branch:<id> or version:<id>
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compare'
           description: ''
   /api/users/{username}/decks/{id}/insights/:
     get:
@@ -2486,6 +2851,11 @@ paths:
         schema:
           type: string
         required: true
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
       tags:
       - users
       security:
@@ -2497,6 +2867,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeckInsights'
+          description: ''
+  /api/users/{username}/decks/{id}/versions/{version_id}/:
+    get:
+      operationId: users_decks_versions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: version_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckDetail'
           description: ''
   /api/users/{username}/locations/:
     get:
@@ -3428,6 +3829,36 @@ components:
       required:
       - item_id
       - quantity
+    Branch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        is_main:
+          type: boolean
+        from_label:
+          type: string
+          nullable: true
+          description: Where it came from, as "Main v2"
+        created_at:
+          type: string
+          format: date-time
+        cards:
+          type: integer
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Version'
+      required:
+      - cards
+      - created_at
+      - from_label
+      - id
+      - is_main
+      - name
+      - versions
     BranchRef:
       type: object
       properties:
@@ -3441,6 +3872,30 @@ components:
       - id
       - is_main
       - name
+    BranchWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 40
+        from_branch:
+          type: integer
+        from_version:
+          type: integer
+      required:
+      - name
+    Branches:
+      type: object
+      properties:
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+        created:
+          type: integer
+          description: The branch just made
+      required:
+      - branches
     BulkChanges:
       type: object
       properties:
@@ -3702,6 +4157,57 @@ components:
       - oracle_id
       - owned
       - printing
+    Compare:
+      type: object
+      properties:
+        added:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareCard'
+        removed:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareCard'
+        changed:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareCard'
+        moved:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareCard'
+        total_added:
+          type: integer
+        total_removed:
+          type: integer
+      required:
+      - added
+      - changed
+      - moved
+      - removed
+      - total_added
+      - total_removed
+    CompareCard:
+      type: object
+      properties:
+        printing:
+          $ref: '#/components/schemas/DeckPrinting'
+        quantity:
+          type: integer
+        zone:
+          $ref: '#/components/schemas/ZoneEnum'
+        from_zone:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ZoneEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        from_quantity:
+          type: integer
+      required:
+      - from_zone
+      - printing
+      - quantity
+      - zone
     ConditionEnum:
       enum:
       - NM
@@ -3889,6 +4395,12 @@ components:
           nullable: true
         fork_count:
           type: integer
+        version:
+          allOf:
+          - $ref: '#/components/schemas/VersionRef'
+          nullable: true
+          readOnly: true
+          description: The version shown, read only (spec 027, AC-8)
         currency:
           type: string
         cards:
@@ -3928,6 +4440,7 @@ components:
       - username
       - value
       - values
+      - version
     DeckImportPreview:
       type: object
       properties:
@@ -4443,6 +4956,20 @@ components:
         * `nonfoil` - Nonfoil
         * `foil` - Foil
         * `etched` - Etched
+    Fork:
+      type: object
+      properties:
+        branch:
+          type: integer
+        version:
+          type: integer
+    ForkResult:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
     ForkedFrom:
       type: object
       description: 'Spec 027, AC-15: the deck a fork came from; `public` says whether
@@ -5468,6 +5995,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BinderSection'
+    PatchedBranchEdit:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 40
+        is_main:
+          type: boolean
     PatchedDeckCardEdit:
       type: object
       properties:
@@ -7408,6 +7943,63 @@ components:
       - missing
       - owned
       - total
+    Version:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        name:
+          type: string
+        note:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        cards:
+          type: integer
+          description: Cards in the list (Commander + Mainboard)
+      required:
+      - cards
+      - created_at
+      - id
+      - name
+      - note
+      - number
+    VersionRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        name:
+          type: string
+        note:
+          type: string
+        branch:
+          type: integer
+        branch_name:
+          type: string
+      required:
+      - branch
+      - branch_name
+      - id
+      - name
+      - note
+      - number
+    VersionWrite:
+      type: object
+      properties:
+        name:
+          type: string
+          default: ''
+          maxLength: 60
+        note:
+          type: string
+          default: ''
+          maxLength: 1000
     Want:
       type: object
       description: 'What visitors see of a public want list (AC-18): no decks.'

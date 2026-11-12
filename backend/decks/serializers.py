@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cards.models import Finish, Printing
@@ -157,6 +158,15 @@ class DeckInsightsSerializer(serializers.Serializer):
     themes = DeckThemeSerializer(many=True, help_text="The commander's most played EDHREC themes (spec 022, AC-15)")
 
 
+class VersionRefSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    number = serializers.IntegerField()
+    name = serializers.CharField()
+    note = serializers.CharField()
+    branch = serializers.IntegerField()
+    branch_name = serializers.CharField()
+
+
 class BranchRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -176,6 +186,11 @@ class DeckDetailSerializer(DeckSummarySerializer):
     branch = BranchRefSerializer(help_text='The branch shown (spec 027)')
     forked_from = ForkedFromSerializer(allow_null=True)
     fork_count = serializers.IntegerField()
+    version = serializers.SerializerMethodField(help_text='The version shown, read only (spec 027, AC-8)')
+
+    @extend_schema_field(VersionRefSerializer(allow_null=True))
+    def get_version(self, obj):
+        return obj.get('version')
     currency = serializers.CharField()
     cards = DeckCardSerializer(many=True)
     tokens = DeckTokenSerializer(many=True, help_text='Made by Commander, Mainboard and Sideboard cards, one per kind (spec 015)')
@@ -362,3 +377,71 @@ class OptimizePreviewSerializer(serializers.Serializer):
 
 class OptimizeApplySerializer(serializers.Serializer):
     cards = serializers.ListField(child=serializers.IntegerField(), allow_empty=False, help_text='Deck card ids to switch')
+
+
+# Spec 027: branches, versions, compare, fork -------------------------------------
+
+class VersionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    number = serializers.IntegerField()
+    name = serializers.CharField()
+    note = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    cards = serializers.IntegerField(help_text='Cards in the list (Commander + Mainboard)')
+
+
+class BranchSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    is_main = serializers.BooleanField()
+    from_label = serializers.CharField(allow_null=True, help_text='Where it came from, as "Main v2"')
+    created_at = serializers.DateTimeField()
+    cards = serializers.IntegerField()
+    versions = VersionSerializer(many=True)
+
+
+class BranchesSerializer(serializers.Serializer):
+    branches = BranchSerializer(many=True)
+    created = serializers.IntegerField(required=False, help_text='The branch just made')
+
+
+class BranchWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=40)
+    from_branch = serializers.IntegerField(required=False)
+    from_version = serializers.IntegerField(required=False)
+
+
+class BranchEditSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=40, required=False)
+    is_main = serializers.BooleanField(required=False)
+
+
+class VersionWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=60, required=False, allow_blank=True, default='')
+    note = serializers.CharField(max_length=1000, required=False, allow_blank=True, default='')
+
+
+class CompareCardSerializer(serializers.Serializer):
+    printing = DeckPrintingSerializer()
+    quantity = serializers.IntegerField()
+    zone = serializers.ChoiceField(DeckCard.Zone.choices)
+    from_zone = serializers.ChoiceField(DeckCard.Zone.choices, allow_null=True)
+    from_quantity = serializers.IntegerField(required=False)
+
+
+class CompareSerializer(serializers.Serializer):
+    added = CompareCardSerializer(many=True)
+    removed = CompareCardSerializer(many=True)
+    changed = CompareCardSerializer(many=True)
+    moved = CompareCardSerializer(many=True)
+    total_added = serializers.IntegerField()
+    total_removed = serializers.IntegerField()
+
+
+class ForkSerializer(serializers.Serializer):
+    branch = serializers.IntegerField(required=False)
+    version = serializers.IntegerField(required=False)
+
+
+class ForkResultSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
