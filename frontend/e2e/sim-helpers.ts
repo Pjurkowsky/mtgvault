@@ -74,3 +74,28 @@ export function makeStaff(username: string) {
     env: { ...process.env, DATABASE_URL },
   })
 }
+
+/**
+ * Spec 026: a finished 2-player game of the recorded Krenko deck (seat 1, plays first) against Piper,
+ * opened on its replay page. Game turn 3 (Krenko's turn 2) holds a full combat: an attack, a block,
+ * Giant Growth and the blocker dying.
+ */
+export async function openReplay(page: Page, api: Api, prefix = 'Replay') {
+  const stamp = Date.now()
+  const a = `${prefix} Krenko ${stamp}`
+  const b = `${prefix} Piper ${stamp}`
+  const deck = await commanderDeck(api, a)
+  const piper = await commanderDeck(api, b, PIPER)
+  const run = await startRun(api, deck.id, [{ deck: piper.id }], { games: 1 })
+  await waitForRun(api, run.id)
+  await page.goto(`/simulations/${run.id}/games/1`)
+  await expect(page.getByTestId('replay-turn')).toHaveText('Before the game')
+  return { a, b, run }
+}
+export const replayPlayer = (page: Page, name: string) => page.getByTestId('replay-player').filter({ has: page.getByText(name, { exact: true }) })
+export const sidebar = (page: Page) => page.getByRole('complementary', { name: 'Events' })
+export const replayEvents = (page: Page) => sidebar(page).getByTestId('replay-event')
+/** Shift + → a few turns: 3 reaches game turn 3. */
+export async function turnsAhead(page: Page, n: number) {
+  for (let i = 0; i < n; i++) await page.keyboard.press('Shift+ArrowRight')
+}

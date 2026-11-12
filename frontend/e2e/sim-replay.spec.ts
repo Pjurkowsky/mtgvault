@@ -3,7 +3,8 @@ import { logOut, signUpAndLogIn } from './helpers'
 import { PIPER, commanderDeck, openRun, runCard, startRun, waitForRun } from './sim-helpers'
 
 // Spec 024, AC-23 to AC-28: a finished game, turn by turn, at /simulations/:run/games/:n since spec 025 (AC-9). The fake Forge replays a recorded
-// 2-player game (20 game turns; the second seat wins on its turn 10) and a 4-player one.
+// 2-player game (24 game turns; the second seat wins on its turn 12; recorded again for spec 026) and a 4-player one.
+// Spec 026 moved the events into a sidebar (AC-9), arrow keys to events with Shift for turns (AC-10), and piles into image dialogs (AC-2).
 const player = (page: Page, name: string) => page.getByTestId('replay-player').filter({ has: page.getByText(name, { exact: true }) })
 const columns = (page: Page) => page.getByTestId('replay-board').evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length)
 
@@ -25,53 +26,55 @@ test.describe('Replay', () => {
     await runCard(page).getByRole('link', { name: 'Replay' }).click()
     await expect(page).toHaveURL(new RegExp(`/simulations/${run.id}/games/1$`))
     await expect(page.getByRole('heading', { name: 'Game 1' })).toBeVisible()
-    await expect(page.getByTestId('game-result')).toHaveText(`${b} won on turn 10`)
+    await expect(page.getByTestId('game-result')).toHaveText(`${b} won on turn 12`)
 
-    // AC-24: buttons, arrow keys and the slider step through turns.
+    // AC-24: buttons, Shift + arrow keys (spec 026 AC-10) and the slider step through turns.
     const turn = page.getByTestId('replay-turn')
     await expect(turn).toHaveText('Before the game')
     await page.getByRole('button', { name: 'Next turn' }).click()
     await expect(turn).toHaveText(`Turn 1 · ${a}`)
-    await expect(page.getByTestId('replay-game-turn')).toHaveText('Game turn 1 of 20')
+    await expect(page.getByTestId('replay-game-turn')).toHaveText('Game turn 1 of 24')
     await expect(player(page, a)).toHaveAttribute('data-active', 'true')
-    await page.keyboard.press('ArrowRight')
+    await page.keyboard.press('Shift+ArrowRight')
     await expect(turn).toHaveText(`Turn 1 · ${b}`)
     await expect(player(page, b)).toHaveAttribute('data-active', 'true')
-    await page.keyboard.press('ArrowLeft')
+    await page.keyboard.press('Shift+ArrowLeft')
     await expect(turn).toHaveText(`Turn 1 · ${a}`)
 
-    // AC-27: a turn's events; clicking one shows the board then (game turn 3: a land, then Cloudstone Curio).
-    await page.keyboard.press('ArrowRight')
-    await page.keyboard.press('ArrowRight')
+    // AC-27: a turn's events; clicking one shows the board then (game turn 3: a land, an attack, then the blocker dies).
+    await page.keyboard.press('Shift+ArrowRight')
+    await page.keyboard.press('Shift+ArrowRight')
     await expect(turn).toHaveText(`Turn 2 · ${a}`)
-    const events = page.getByRole('complementary').getByTestId('replay-event')
-    await expect(events.first()).toHaveText(`${a} played Forest (86)`)
-    await expect(events.nth(1)).toHaveText(`${a} cast Cloudstone Curio`)
-    const other = player(page, a).getByTestId('row-other').getByTestId('board-card')
-    await expect(other).toHaveCount(1)
+    const events = page.getByRole('complementary', { name: 'Events' }).getByTestId('replay-event')
+    await expect(events.first()).toHaveText(`${a} played Forest (72)`)
+    await expect(events.nth(1)).toHaveText(`${a} assigned Llanowar Elves (37) to attack ${b}.`)
+    const blocker = player(page, b).getByTestId('row-creature').getByTestId('board-card')
+    await expect(blocker).toHaveCount(0)
     await events.first().click()
     await expect(events.first()).toHaveAttribute('aria-current', 'true')
-    await expect(other).toHaveCount(0)
+    await expect(blocker).toHaveCount(1)
 
     // AC-25: the last turn: life, rows, tapped cards, P/T, piles, hand and library, the loser dimmed.
     await page.getByRole('slider', { name: 'Turn' }).focus()
     await page.keyboard.press('End')
-    await expect(page.getByTestId('replay-game-turn')).toHaveText('Game turn 20 of 20')
+    await expect(page.getByTestId('replay-game-turn')).toHaveText('Game turn 24 of 24')
     const loser = player(page, a)
     await expect(loser).toHaveAttribute('data-lost', 'true')
-    await expect(loser.getByTestId('player-lost')).toHaveText('Lost on turn 10')
-    await expect(loser.getByTestId('player-life')).toHaveText('-7')
+    await expect(loser.getByTestId('player-lost')).toHaveText('Lost on turn 12')
+    await expect(loser.getByTestId('player-life')).toHaveText('-12')
     expect(await loser.evaluate((el) => Number(getComputedStyle(el).opacity))).toBeLessThan(1)
     const winner = player(page, b)
-    await expect(winner.getByTestId('player-life')).toHaveText('37')
-    await expect(winner.getByTestId('player-hand')).toHaveText('Hand 6')
-    await expect(winner.getByTestId('player-library')).toHaveText('Library 82')
-    await expect(winner.getByTestId('board-card')).toHaveCount(10)
-    await expect(winner.locator('[data-tapped]')).toHaveCount(6)
+    await expect(winner.getByTestId('player-life')).toHaveText('22')
+    await expect(winner.getByTestId('player-hand')).toHaveText('Hand 0')
+    await expect(winner.getByTestId('player-library')).toHaveText('Library 80')
+    await expect(winner.getByTestId('board-card')).toHaveCount(16)
+    await expect(winner.locator('[data-tapped]')).toHaveCount(7)
     await expect(winner.getByTestId('row-creature').getByTestId('board-pt').first()).toHaveText(/\d+\/\d+/)
     await expect(winner.getByTestId('row-land').getByRole('img', { name: 'Forest' }).first()).toHaveAttribute('src', /scryfall/)
-    await loser.getByTestId('pile-graveyard').click()
-    await expect(page.getByTestId('pile-graveyard-list').getByRole('listitem')).toHaveText(['Forest', 'Temur Sabertooth', 'Forest', 'Temur Sabertooth', 'Fire // Ice'])
+    await loser.getByTestId('player-graveyard').click()
+    expect(await page.getByTestId('zone-graveyard-list').getByRole('button').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))).toEqual([
+      'Giant Growth', 'Giant Growth', 'Temur Sabertooth', 'Temur Sabertooth', 'Llanowar Elves', 'Temur Sabertooth', 'Llanowar Elves', 'Llanowar Elves', 'Llanowar Elves',
+    ])
     await page.keyboard.press('Escape')
     // Hovering a card shows it large.
     await winner.getByTestId('row-creature').getByTestId('board-card').first().hover()
@@ -93,7 +96,7 @@ test.describe('Replay', () => {
     await expect(page).toHaveURL(/\/login/)
   })
 
-  test('AC-26, AC-27: two columns up to four players, three for five or six, one on a phone with an events drawer', async ({ page, request }) => {
+  test('AC-26, AC-27: two columns up to four players, three for five or six, one on a phone with the events sidebar', async ({ page, request }) => {
     const { api } = await signUpAndLogIn(page, request)
     const stamp = Date.now()
     const deck = await commanderDeck(api, `Table ${stamp}`)
@@ -113,10 +116,12 @@ test.describe('Replay', () => {
 
     await page.setViewportSize({ width: 390, height: 844 })
     expect(await columns(page)).toBe(1)
-    await expect(page.getByRole('complementary')).toBeHidden()
+    // Spec 026 AC-9: the sidebar replaces the drawer.
+    await page.getByRole('button', { name: 'Hide events' }).click()
+    await expect(page.getByRole('complementary', { name: 'Events' })).toBeHidden()
     await page.getByRole('button', { name: 'Next turn' }).click()
-    await page.getByRole('button', { name: 'Events' }).click()
-    await expect(page.getByRole('dialog', { name: 'Events' }).getByTestId('replay-event').first()).toBeVisible()
+    await page.getByRole('button', { name: 'Show events' }).click()
+    await expect(page.getByRole('complementary', { name: 'Events' }).getByTestId('replay-event').first()).toBeVisible()
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390)
   })
 })

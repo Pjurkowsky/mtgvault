@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
 import type { Schemas } from '@/api/client'
 import { cn } from '@/lib/utils'
 
-/** A turn's events in order; clicking one shows the board at that moment (AC-27). */
-defineProps<{ events: Schemas['ReplayEvent'][]; selected: number | null }>()
+/** A turn's events in order; clicking one shows the board at that moment (spec 024, AC-27). The current one stays in view (spec 026, AC-10). */
+const props = defineProps<{ events: Schemas['ReplayEvent'][]; selected: number | null }>()
 const emit = defineEmits<{ select: [index: number] }>()
+const list = ref<HTMLElement | null>(null)
+watch(() => [props.selected, props.events], () => nextTick(() => {
+  list.value?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' })
+}))
 </script>
 
 <template>
-  <ol class="grid gap-0.5 text-sm" data-testid="replay-events">
+  <ol ref="list" class="grid content-start gap-0.5 text-sm" data-testid="replay-events">
     <li v-for="(e, i) in events" :key="i">
       <button
         type="button" :aria-current="selected === i || undefined" data-testid="replay-event"

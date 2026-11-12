@@ -83,6 +83,9 @@ autoplay, on a board that stays still while cards come and go.
   the window is resized or the sidebar opens.
 - AC-7: "this step" is the step where the card left; a card exiled or bounced
   just disappears.
+- AC-9: the sidebar starts open on a screen 1280 px or wider and closed on smaller ones.
+  On those wide screens the page leaves room for it while open, so it covers none
+  of the board; the board doesn't move sideways.
 - AC-10: stepping past a turn's last event goes to the next turn's first event;
   a turn without events counts as one step.
 - AC-11: Play at the end starts again from the first step; any manual step,
