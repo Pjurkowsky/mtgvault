@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 024-pod-simulation
-Followed by: 026-replay-improvements
+Followed by: 026-replay-improvements, 027-deck-versions (versions in simulations)
 
 ## Goal
 

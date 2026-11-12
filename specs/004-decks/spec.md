@@ -2,7 +2,7 @@
 
 Status: Done
 Depends on: 001-collection, 002-collection-polish
-Followed by: 005-deck-improvements
+Followed by: 005-deck-improvements, 027-deck-versions (branches and versions)
 
 ## Goal
 
