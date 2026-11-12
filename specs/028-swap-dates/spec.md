@@ -1,6 +1,6 @@
 # Spec 028: Sort swaps by date
 
-Status: Draft
+Status: Done
 Depends on: 005-deck-improvements, 021-deck-and-layout-polish, 027-deck-versions
 
 ## Goal

@@ -227,6 +227,10 @@ JSON (oracle id, printing, zone, quantity, categories, swap pairs by
 position); `decks/versions.py` saves, restores, branches from, compares
 (by card and zone) and forks (`Deck.forked_from`, every branch and version).
 
+Swap pairs (spec 028) go through `DeckSwap` (candidate, out, `created_at`; null
+for pairs from before spec 028). Merges, re-pairs, versions and forks copy
+the date; deck cards in the API carry `swap_dates` and `added_at`.
+
 - `cards/tokens.py`: tokens a printing or a deck makes. The sync keeps tokens,
   emblems and markers in `Token` (never searchable, with set name, finishes
   and prices) and each printing's `token_ids` from Scryfall's `all_parts`

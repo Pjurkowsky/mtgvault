@@ -11,4 +11,4 @@
 ## Tests and finish
 
 - [x] **T3 e2e tests for every AC; screenshots at desktop and phone width** (all)
-- [ ] **T4 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**
+- [x] **T4 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**

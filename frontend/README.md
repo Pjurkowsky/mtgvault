@@ -37,7 +37,8 @@ src/
                           commander (DeckCommander; List view lists it as a group instead)
                           and the List view's hovered card, with card menus, toolbar (search
                           with the keys tooltip, filters, group, sort, size),
-                          Swaps tab (unpaired cards, mirrored pairs, Unpair), ProposeSwapDialog
+                          Swaps tab (unpaired cards, mirrored pairs, Unpair, sort by name or
+                          date with dates in tooltips), ProposeSwapDialog
                           (Out and In), OptimizeDialog (cheapest printings), DeckTokens (a Tokens group
                           after Maybeboard in each view), TokenDialog (price, makers, printing picker),
                           categories (CategoryInput, CategoryDialog), add (built on
