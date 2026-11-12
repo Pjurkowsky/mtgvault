@@ -63,11 +63,11 @@ src/
   composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
-  components/sims/        simulations (specs 024, 025, 027): SimQueue (admin cancel), SimRunForm
+  components/sims/        simulations (specs 024, 025, 027, 029): SimQueue (admin cancel), SimRunForm
                           (seats with the tested deck, a list per deck seat, Compare versions,
-                          AI profiles, seat order), OpponentPicker
+                          AI profiles, seat order, Look-ahead), OpponentPicker
                           (pool, my decks, public), SimSwapStep (unsupported cards), SimRunList
-                          (All / Mine, search), SimRunCard (stats, games); replay pieces
+                          (All / Mine, search), SimRunCard (stats, games, Forge tooltips); replay pieces
                           (spec 026): ReplayPlayer (rows, zones), ReplayCard, ReplayZoneDialog,
                           ReplayArrows (combat), ReplaySidebar (events, settings), ReplayEvents
   pages/SimulationsPage.vue  /simulations: queue, run form, runs
@@ -76,7 +76,7 @@ src/
   pages/SimGamePage.vue   a game's replay: turn stepper, Play, boards, events sidebar, Log tab
   composables/useReplayPlayer.ts  stepping by event or turn, autoplay, remembered settings
   lib/replay.ts           deaths and new graveyard cards, from the board before
-  lib/sims.ts             run types, AI profiles, seat modes, useForge
+  lib/sims.ts             run types, AI profiles, look-ahead levels, seat modes, useForge
   lib/theme.ts            Light/Dark/System theme, saved in the browser; index.html sets the
                           class before the app loads
   assets/mana/            Scryfall mana symbols
@@ -84,7 +84,8 @@ src/
                           the first tap anywhere), glare check, combined frames, guesses; recognition/ is
                           ported from manavault (MPL-2.0, see the root README)
   components/scanner/     result bar, guess strip, scanner settings sheet
-  components/settings/    Scanner model section (staff): model source, installed version, Sync now
+  components/settings/    staff sections: Scanner model (source, installed version, Sync now);
+                          Forge (spec 029: Main and Fallback address, key, games at once, Test)
   components/wants/       want list (spec 010): add and edit dialog, the entry in the card dialog;
                           the page is CardBrowser with a `wants` source (pages/WantsPage.vue)
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)

@@ -92,6 +92,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
 | `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |
 | `GET /api/sims/status/` | public | Whether Forge is reachable, and its version |
+| `GET, PUT /api/sims/forge/` | staff | Main and Fallback Forge: address, key, games at once (spec 029) |
+| `POST /api/sims/forge/test/` | staff | Ask a Forge for its version with a typed address and key |
 | `GET, POST /api/sims/runs/` | auth | Runs the user can see (`mine`, `q`, `offset`; 20 a page); start a run, seat 0 the tested deck |
 | `GET, DELETE /api/sims/runs/{id}/` | auth / runner | One run; delete it |
 | `POST /api/sims/runs/{id}/cancel/` | runner or staff | Cancel a queued or playing run |
@@ -283,23 +285,35 @@ of the collection. Every write goes through `wants/services.py`:
 `collection.filters.apply_filters(..., finish_field='price_finish',
 collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
-## Pod simulation (specs 024, 025, 027)
+## Pod simulation (specs 024, 025, 027, 029)
 
 App `sims`. A tested Commander deck plays AI games against 1 to 5 opponents in
 [Forge](https://github.com/Card-Forge/forge), which runs as its own service
 (`docker/forge`: Forge's release, our runner `MtgvaultSim.java` compiled against
-it, and `server.py`, an HTTP API on port 8790). `FORGE_URL` points at it; empty
-hides the feature.
+it, and `server.py`, an HTTP API on port 8790). Spec 029: two Forges,
+`ForgeServer` Main and Fallback (address, key, `slots` = games at once), set by
+staff in Settings; Fallback starts as `FORGE_URL`. With neither set the feature
+is hidden. A container started with `FORGE_KEY` wants it as `X-Forge-Key` on
+every request (401 otherwise).
 
 - `sims/forge.py` talks to Forge: `/health`, `/cards` (names Forge supports,
   cached 24 h in Redis), `/precons`, `POST /games`, `GET`/`DELETE /games/{id}`.
+  `active()` is Main while its `/health` answers, otherwise Fallback.
+  `ForgeUnreachable` (connection errors, 5xx, a wrong key) is apart from other
+  `ForgeError`s.
 - Opponents: the user's decks, other users' public decks, or the shared pool
   (`PoolDeck`, seeded with Forge's precons on first use). Unsupported cards must
   be swapped first; swaps (`SimSwap`) are per user per deck and apply only to
   simulations.
-- `manage.py run_sims` (s6 service `sims`) plays queued runs one at a time,
-  one game at a time, polling Forge each second (`SIMS_POLL_SECONDS`). A run
-  left Playing by a restart goes back to the queue. Each game keeps its replay
+- `manage.py run_sims` (s6 service `sims`) runs a dispatcher (spec 029): every
+  `SIMS_IDLE_SECONDS` it asks which Forge answers and, while that Forge has free
+  slots, starts the oldest run's next unplayed game on a thread, then the next
+  run's. Each game polls its Forge each second (`SIMS_POLL_SECONDS`). Games in
+  flight live in memory: a game whose Forge stops answering, or one cut by a
+  restart, plays again. A run is Done when every game is in. Each game records
+  `forge_version` and `forge_server` (main, fallback); each run its `lookahead`
+  (off, light, normal, max), which the runner turns into Forge's
+  `AI_FLAT_MONTE_CARLO` flags. Runs before spec 029 are `off` on 2.0.15. Each game keeps its replay
   as gzipped JSON; `sims/replay.py` turns it into turns, boards and card images.
   Since spec 026 each board also holds every hand and library (top card first)
   and, during combat, what each attacker attacks and each blocker blocks;
@@ -313,7 +327,8 @@ hides the feature.
 - Turn numbers: a game's win turn is the winner's own turn count; Forge's game
   turn counts every player's turn.
 - Tests use `manage.py fake_forge`, which answers like Forge from recorded games
-  in `sims/fixtures/forge/`. Decks named Hangs, Broken and Stalls play slowly,
+  in `sims/fixtures/forge/`; `--key` and `--forge-version` set its key and version,
+  and `POST /_down {"seconds"}` makes it answer 503 for a while. Decks named Hangs, Broken and Stalls play slowly,
   fail and draw; a deck named Unrecorded plays a game without hands, libraries
   and combat, like those recorded before spec 026.
 - Spec 027: a deck seat may name a `branch` or `version`; its label becomes

@@ -1,6 +1,6 @@
 # Spec 029: Forge 2.0.16 and a Forge on another PC
 
-Status: Approved
+Status: Done
 Depends on: 024-pod-simulation, 025-simulations-page, 027-deck-versions
 
 ## Goal

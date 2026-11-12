@@ -76,10 +76,39 @@ docker compose --profile forge up -d
 ```
 
 All-in-one: run the Forge image next to it on a shared Docker network and set
-`FORGE_URL` to its address. One game runs at a time and uses about 1 GB of
-memory; a 4-player game takes about a minute. `FORGE_CPUS=3` caps Forge at three
-cores, so the rest of the server stays responsive. Without `FORGE_URL`, or while
-Forge is down, Simulations is hidden.
+`FORGE_URL` to its address. Each game uses about 1 GB of memory and takes from
+under a minute to a few minutes; a stronger **Look-ahead** (Forge 2.0.16's AI that
+tries its best plays a few moves ahead) plays better and slower. `FORGE_CPUS=3`
+caps Forge at three cores, so the rest of the server stays responsive. Without
+a Forge, or while none answers, Simulations is hidden.
+
+#### Forge on another PC
+
+A faster PC on the same network can play the games. The server's own Forge
+stays as the fallback while that PC is off.
+
+1. On the PC, install Docker (Docker Desktop on Windows or macOS), then start
+   Forge with a password of your choice:
+
+   ```bash
+   docker run -d --name mtgvault-forge --restart unless-stopped \
+     -p 8790:8790 -e FORGE_KEY=choose-a-password -e FORGE_MEMORY=2g \
+     ghcr.io/pjurkowsky/mtgvault-forge:latest
+   ```
+
+   Update it later with `docker pull ghcr.io/pjurkowsky/mtgvault-forge:latest`,
+   then remove and start the container again.
+2. Find the PC's address on your network (`ipconfig` on Windows, `ip addr` on
+   Linux), e.g. `192.168.1.20`, and allow incoming TCP port 8790 in its firewall.
+3. In MTG Vault, as an admin, open **Settings → Forge**. Under **Main** enter
+   `http://192.168.1.20:8790`, the same key, and **Games at once** (each game
+   needs a CPU core and `FORGE_MEMORY` of memory). Press **Test**: it shows
+   the Forge version. Then **Save**.
+
+Each new game goes to Main while it answers, otherwise to **Fallback** (the
+server's `FORGE_URL`). A game whose Forge stops answering plays again on the
+other one. Keep both on the same image version. Each run's page shows which
+Forge played each game.
 
 Each game has a replay: every player's battlefield, hand, library, graveyard and
 exile, arrows for attacks and blocks, and the turn's events in a sidebar. Step

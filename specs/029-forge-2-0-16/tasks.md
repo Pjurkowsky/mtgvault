@@ -19,4 +19,4 @@
 
 - [x] **T7 e2e tests for AC-2 to AC-12; screenshots at desktop and phone width** (AC-2 to AC-12)
 - [x] **T8 Smoke test of the real 2.0.16 image: each look-ahead level, key check** (AC-1, AC-9)
-- [ ] **T9 Full suite (2 workers), `scripts/check-api.sh`, READMEs with the other-PC setup, spec status; push and tag v1.0.15**
+- [x] **T9 Full suite (2 workers), `scripts/check-api.sh`, READMEs with the other-PC setup, spec status; push and tag v1.0.15**
