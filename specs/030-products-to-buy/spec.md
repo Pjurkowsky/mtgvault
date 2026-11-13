@@ -63,7 +63,8 @@ to browse every card it can have, filtered like a collection.
 
 - AC-2: Chosen counts only the deck's chosen printing; Any counts every printing
   of the card. Missing uses the same copies as Export missing (cards only in
-  other decks are not missing). Released counts from today.
+  other decks are not missing). Released counts from today. Like To buy, only
+  Commander, Mainboard and Sideboard cards count, not the Maybeboard.
 - AC-3: a deck card counts once however many copies the product has. Ties go to
   the newer product.
 - AC-4, AC-10: the chance uses MTGJSON's pack layouts and slot weights. Packs
@@ -72,7 +73,10 @@ to browse every card it can have, filtered like a collection.
   count as decks.
 - AC-5: a card shows once even if the product has more printings of it; in a
   booster the chance is for any of them.
-- AC-7: products whose MTGJSON name or type mentions Arena or MTGO, and sets that
-  are digital only.
+- AC-9: a printing is priced and filtered by finish as non-foil when it has a
+  non-foil finish, otherwise foil, otherwise etched (as To buy prices it).
+- AC-7: products whose MTGJSON name or type mentions Arena or MTGO, digital-only
+  deck types (Historic Brawl precons, Shandalar, Duels of the Planeswalkers) and
+  sets that are online only.
 - AC-12: the sync runs Sunday mornings; staff can run it by hand
   (`manage.py sync_products`). A failed sync keeps last week's data.

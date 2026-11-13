@@ -16,4 +16,5 @@ urlpatterns = [
     path('api/', include('decks.urls')),
     path('api/', include('wants.urls')),
     path('api/', include('sims.urls')),
+    path('api/', include('products.urls')),
 ]

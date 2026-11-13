@@ -566,6 +566,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{id}/products/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Products holding the deck's cards (spec 030, AC-1 to AC-7). */
+        get: operations["decks_products_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{id}/swaps/": {
         parameters: {
             query?: never;
@@ -942,6 +959,40 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["me_password_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{code}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A product's name, set and size (spec 030, AC-8). */
+        get: operations["products_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{code}/cards/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Every card a product can hold (spec 030, AC-9 to AC-11). */
+        get: operations["products_cards_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1495,6 +1546,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["users_decks_insights_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{username}/decks/{id}/products/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["users_decks_products_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2171,6 +2238,27 @@ export interface components {
             readonly color_identity: string[];
             readonly produced_mana: string[];
             readonly can_command: components["schemas"]["CanCommand"];
+        };
+        DeckProduct: {
+            product: components["schemas"]["Product"];
+            /** @description How many of the deck's cards it holds */
+            count: number;
+            /**
+             * Format: double
+             * @description Boosters: chance a pack holds at least one of them
+             */
+            chance?: number;
+            cards: components["schemas"]["ProductCard"][];
+        };
+        DeckProducts: {
+            /** @description False until the first product sync (spec 030, AC-12) */
+            synced: boolean;
+            /** @description Cards looked for */
+            cards: number;
+            decks: components["schemas"]["DeckProduct"][];
+            boosters: components["schemas"]["DeckProduct"][];
+            /** @description Cards no listed product holds */
+            none: components["schemas"]["Printing"][];
         };
         /** @description Spec 022, AC-12 to AC-14. */
         DeckSalt: {
@@ -3042,6 +3130,82 @@ export interface components {
             /** Format: uri */
             readonly image_back_large: string;
         };
+        Product: {
+            /** @description e.g. blb-play, blc-animated-army */
+            readonly code: string;
+            readonly kind: components["schemas"]["ProductKindEnum"];
+            readonly name: string;
+            readonly set_code: string;
+            readonly set_name: string;
+            /** Format: date */
+            readonly released_at: string | null;
+            /** @description MTGJSON's deck type, e.g. Commander Deck */
+            readonly deck_type: string;
+        };
+        ProductCard: {
+            printing: components["schemas"]["Printing"];
+            /** @description Decks: copies of this card */
+            copies: number;
+            /**
+             * Format: double
+             * @description Boosters: chance a pack holds this card, 0 to 1
+             */
+            chance: number | null;
+        };
+        ProductDetail: {
+            /** @description e.g. blb-play, blc-animated-army */
+            readonly code: string;
+            readonly kind: components["schemas"]["ProductKindEnum"];
+            readonly name: string;
+            readonly set_code: string;
+            readonly set_name: string;
+            /** Format: date */
+            readonly released_at: string | null;
+            /** @description MTGJSON's deck type, e.g. Commander Deck */
+            readonly deck_type: string;
+            /** @description Printings it can hold */
+            count: number;
+        };
+        /** @description A printing on a product's page, shaped like a card browser row. */
+        ProductItem: {
+            id: number;
+            printing: components["schemas"]["PrintingBrief"];
+            /** @description Decks: copies; boosters: 1 */
+            quantity: number;
+            finish: string;
+            /** @default NM */
+            condition?: string;
+            /** @default en */
+            language?: string;
+            /** Format: double */
+            unit_price: number | null;
+            /** @description Singles price per copy in every currency */
+            readonly unit_prices: components["schemas"]["Money"];
+            /**
+             * Format: double
+             * @description Boosters: chance a pack holds this printing, 0 to 1
+             */
+            chance: number | null;
+            /** @description Copies of the card (any printing) the viewer owns; null signed out */
+            owned: number | null;
+        };
+        ProductItemPage: {
+            currency: string;
+            /** Format: date-time */
+            prices_updated_at: string | null;
+            count: number;
+            total_quantity: number;
+            /** Format: double */
+            total_value: number | null;
+            total_values: components["schemas"]["Money"];
+            results: components["schemas"]["ProductItem"][];
+        };
+        /**
+         * @description * `deck` - Deck
+         *     * `booster` - Booster
+         * @enum {string}
+         */
+        ProductKindEnum: "deck" | "booster";
         /**
          * @description * `Default` - Default
          *     * `Cautious` - Cautious
@@ -4798,6 +4962,52 @@ export interface operations {
             };
         };
     };
+    decks_products_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+                /**
+                 * @description * `missing` - missing
+                 *     * `all` - all
+                 */
+                cards?: "missing" | "all";
+                /**
+                 * @description * `any` - any
+                 *     * `chosen` - chosen
+                 */
+                printing?: "any" | "chosen";
+                /**
+                 * @description Years back; 0 for any
+                 *
+                 *     * `0` - 0
+                 *     * `1` - 1
+                 *     * `2` - 2
+                 *     * `3` - 3
+                 *     * `4` - 4
+                 */
+                since?: 0 | 1 | 2 | 3 | 4;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckProducts"];
+                };
+            };
+        };
+    };
     decks_swaps_create: {
         parameters: {
             query?: never;
@@ -5563,6 +5773,86 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    products_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductDetail"];
+                };
+            };
+        };
+    };
+    products_cards_retrieve: {
+        parameters: {
+            query?: {
+                color?: ("W" | "U" | "B" | "R" | "G" | "C")[];
+                condition?: ("NM" | "LP" | "MP" | "HP" | "DMG")[];
+                /** @description Only copies of this deck's cards */
+                deck?: number;
+                /**
+                 * @description * `asc` - asc
+                 *     * `desc` - desc
+                 */
+                dir?: "asc" | "desc";
+                finish?: ("nonfoil" | "foil" | "etched")[];
+                /** @description Location id, "unfiled" or "cart" */
+                location?: string;
+                /**
+                 * @description Signed in only
+                 *
+                 *     * `owned` - owned
+                 *     * `not_owned` - not_owned
+                 */
+                owned?: "owned" | "not_owned";
+                price_max?: number;
+                price_min?: number;
+                q?: string;
+                rarity?: ("common" | "uncommon" | "rare" | "mythic" | "special" | "bonus")[];
+                set?: string[];
+                /**
+                 * @description * `name` - name
+                 *     * `set` - set
+                 *     * `rarity` - rarity
+                 *     * `price` - price
+                 *     * `quantity` - quantity
+                 *     * `added` - added
+                 *     * `color` - color
+                 *     * `mana_value` - mana_value
+                 *     * `chance` - chance
+                 */
+                sort?: "name" | "set" | "rarity" | "price" | "quantity" | "added" | "color" | "mana_value" | "chance";
+                type?: ("Artifact" | "Battle" | "Creature" | "Enchantment" | "Instant" | "Kindred" | "Land" | "Planeswalker" | "Sorcery" | "Tribal")[];
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductItemPage"];
+                };
             };
         };
     };
@@ -6443,6 +6733,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeckInsights"];
+                };
+            };
+        };
+    };
+    users_decks_products_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Branch id; Main when missing */
+                branch?: number;
+                /**
+                 * @description * `missing` - missing
+                 *     * `all` - all
+                 */
+                cards?: "missing" | "all";
+                /**
+                 * @description * `any` - any
+                 *     * `chosen` - chosen
+                 */
+                printing?: "any" | "chosen";
+                /**
+                 * @description Years back; 0 for any
+                 *
+                 *     * `0` - 0
+                 *     * `1` - 1
+                 *     * `2` - 2
+                 *     * `3` - 3
+                 *     * `4` - 4
+                 */
+                since?: 0 | 1 | 2 | 3 | 4;
+                /** @description Version id: that version's list (spec 027) */
+                version?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+                username: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeckProducts"];
                 };
             };
         };

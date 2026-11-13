@@ -1213,6 +1213,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeckDetail'
           description: ''
+  /api/decks/{id}/products/:
+    get:
+      operationId: decks_products_retrieve
+      description: Products holding the deck's cards (spec 030, AC-1 to AC-7).
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
+      - in: query
+        name: cards
+        schema:
+          enum:
+          - missing
+          - all
+          type: string
+          default: missing
+          minLength: 1
+        description: |-
+          * `missing` - missing
+          * `all` - all
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: printing
+        schema:
+          enum:
+          - any
+          - chosen
+          type: string
+          default: any
+          minLength: 1
+        description: |-
+          * `any` - any
+          * `chosen` - chosen
+      - in: query
+        name: since
+        schema:
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          type: integer
+          default: 0
+        description: |-
+          Years back; 0 for any
+
+          * `0` - 0
+          * `1` - 1
+          * `2` - 2
+          * `3` - 3
+          * `4` - 4
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
+      tags:
+      - decks
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckProducts'
+          description: ''
   /api/decks/{id}/swaps/:
     post:
       operationId: decks_swaps_create
@@ -2072,6 +2146,239 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/products/{code}/:
+    get:
+      operationId: products_retrieve
+      description: A product's name, set and size (spec 030, AC-8).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetail'
+          description: ''
+  /api/products/{code}/cards/:
+    get:
+      operationId: products_cards_retrieve
+      description: Every card a product can hold (spec 030, AC-9 to AC-11).
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: color
+        schema:
+          type: array
+          items:
+            enum:
+            - W
+            - U
+            - B
+            - R
+            - G
+            - C
+            type: string
+            description: |-
+              * `W` - W
+              * `U` - U
+              * `B` - B
+              * `R` - R
+              * `G` - G
+              * `C` - C
+      - in: query
+        name: condition
+        schema:
+          type: array
+          items:
+            enum:
+            - NM
+            - LP
+            - MP
+            - HP
+            - DMG
+            type: string
+            description: |-
+              * `NM` - Near Mint
+              * `LP` - Lightly Played
+              * `MP` - Moderately Played
+              * `HP` - Heavily Played
+              * `DMG` - Damaged
+      - in: query
+        name: deck
+        schema:
+          type: integer
+        description: Only copies of this deck's cards
+      - in: query
+        name: dir
+        schema:
+          enum:
+          - asc
+          - desc
+          type: string
+          default: asc
+          minLength: 1
+        description: |-
+          * `asc` - asc
+          * `desc` - desc
+      - in: query
+        name: finish
+        schema:
+          type: array
+          items:
+            enum:
+            - nonfoil
+            - foil
+            - etched
+            type: string
+            description: |-
+              * `nonfoil` - Nonfoil
+              * `foil` - Foil
+              * `etched` - Etched
+      - in: query
+        name: location
+        schema:
+          type: string
+          minLength: 1
+        description: Location id, "unfiled" or "cart"
+      - in: query
+        name: owned
+        schema:
+          enum:
+          - owned
+          - not_owned
+          type: string
+          minLength: 1
+        description: |-
+          Signed in only
+
+          * `owned` - owned
+          * `not_owned` - not_owned
+      - in: query
+        name: price_max
+        schema:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: 0
+          exclusiveMaximum: true
+      - in: query
+        name: price_min
+        schema:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: 0
+          exclusiveMaximum: true
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: rarity
+        schema:
+          type: array
+          items:
+            enum:
+            - common
+            - uncommon
+            - rare
+            - mythic
+            - special
+            - bonus
+            type: string
+            description: |-
+              * `common` - Common
+              * `uncommon` - Uncommon
+              * `rare` - Rare
+              * `mythic` - Mythic
+              * `special` - Special
+              * `bonus` - Bonus
+      - in: query
+        name: set
+        schema:
+          type: array
+          items:
+            type: string
+            maxLength: 10
+      - in: query
+        name: sort
+        schema:
+          enum:
+          - name
+          - set
+          - rarity
+          - price
+          - quantity
+          - added
+          - color
+          - mana_value
+          - chance
+          type: string
+          default: name
+          minLength: 1
+        description: |-
+          * `name` - name
+          * `set` - set
+          * `rarity` - rarity
+          * `price` - price
+          * `quantity` - quantity
+          * `added` - added
+          * `color` - color
+          * `mana_value` - mana_value
+          * `chance` - chance
+      - in: query
+        name: type
+        schema:
+          type: array
+          items:
+            enum:
+            - Artifact
+            - Battle
+            - Creature
+            - Enchantment
+            - Instant
+            - Kindred
+            - Land
+            - Planeswalker
+            - Sorcery
+            - Tribal
+            type: string
+            description: |-
+              * `Artifact` - Artifact
+              * `Battle` - Battle
+              * `Creature` - Creature
+              * `Enchantment` - Enchantment
+              * `Instant` - Instant
+              * `Kindred` - Kindred
+              * `Land` - Land
+              * `Planeswalker` - Planeswalker
+              * `Sorcery` - Sorcery
+              * `Tribal` - Tribal
+      tags:
+      - products
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductItemPage'
+          description: ''
   /api/scanner/bundle/:
     get:
       operationId: scanner_bundle_retrieve
@@ -2993,6 +3300,85 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeckInsights'
+          description: ''
+  /api/users/{username}/decks/{id}/products/:
+    get:
+      operationId: users_decks_products_retrieve
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: integer
+        description: Branch id; Main when missing
+      - in: query
+        name: cards
+        schema:
+          enum:
+          - missing
+          - all
+          type: string
+          default: missing
+          minLength: 1
+        description: |-
+          * `missing` - missing
+          * `all` - all
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: printing
+        schema:
+          enum:
+          - any
+          - chosen
+          type: string
+          default: any
+          minLength: 1
+        description: |-
+          * `any` - any
+          * `chosen` - chosen
+      - in: query
+        name: since
+        schema:
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          type: integer
+          default: 0
+        description: |-
+          Years back; 0 for any
+
+          * `0` - 0
+          * `1` - 1
+          * `2` - 2
+          * `3` - 3
+          * `4` - 4
+      - in: path
+        name: username
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: version
+        schema:
+          type: integer
+        description: 'Version id: that version''s list (spec 027)'
+      tags:
+      - users
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeckProducts'
           description: ''
   /api/users/{username}/decks/{id}/versions/{version_id}/:
     get:
@@ -4791,6 +5177,54 @@ components:
       - set_name
       - type_line
       - types
+    DeckProduct:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        count:
+          type: integer
+          description: How many of the deck's cards it holds
+        chance:
+          type: number
+          format: double
+          description: 'Boosters: chance a pack holds at least one of them'
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCard'
+      required:
+      - cards
+      - count
+      - product
+    DeckProducts:
+      type: object
+      properties:
+        synced:
+          type: boolean
+          description: False until the first product sync (spec 030, AC-12)
+        cards:
+          type: integer
+          description: Cards looked for
+        decks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+        boosters:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+        none:
+          type: array
+          items:
+            $ref: '#/components/schemas/Printing'
+          description: Cards no listed product holds
+      required:
+      - boosters
+      - cards
+      - decks
+      - none
+      - synced
     DeckSalt:
       type: object
       description: Spec 022, AC-12 to AC-14.
@@ -6795,6 +7229,197 @@ components:
       - set_code
       - set_name
       - type_line
+    Product:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+          description: e.g. blb-play, blc-animated-army
+          pattern: ^[-a-zA-Z0-9_]+$
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ProductKindEnum'
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        set_code:
+          type: string
+          readOnly: true
+        set_name:
+          type: string
+          readOnly: true
+        released_at:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        deck_type:
+          type: string
+          readOnly: true
+          description: MTGJSON's deck type, e.g. Commander Deck
+      required:
+      - code
+      - deck_type
+      - kind
+      - name
+      - released_at
+      - set_code
+      - set_name
+    ProductCard:
+      type: object
+      properties:
+        printing:
+          $ref: '#/components/schemas/Printing'
+        copies:
+          type: integer
+          description: 'Decks: copies of this card'
+        chance:
+          type: number
+          format: double
+          nullable: true
+          description: 'Boosters: chance a pack holds this card, 0 to 1'
+      required:
+      - chance
+      - copies
+      - printing
+    ProductDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+          description: e.g. blb-play, blc-animated-army
+          pattern: ^[-a-zA-Z0-9_]+$
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ProductKindEnum'
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        set_code:
+          type: string
+          readOnly: true
+        set_name:
+          type: string
+          readOnly: true
+        released_at:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        deck_type:
+          type: string
+          readOnly: true
+          description: MTGJSON's deck type, e.g. Commander Deck
+        count:
+          type: integer
+          description: Printings it can hold
+      required:
+      - code
+      - count
+      - deck_type
+      - kind
+      - name
+      - released_at
+      - set_code
+      - set_name
+    ProductItem:
+      type: object
+      description: A printing on a product's page, shaped like a card browser row.
+      properties:
+        id:
+          type: integer
+        printing:
+          $ref: '#/components/schemas/PrintingBrief'
+        quantity:
+          type: integer
+          description: 'Decks: copies; boosters: 1'
+        finish:
+          type: string
+        condition:
+          type: string
+          default: NM
+        language:
+          type: string
+          default: en
+        unit_price:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        unit_prices:
+          allOf:
+          - $ref: '#/components/schemas/Money'
+          readOnly: true
+          description: Singles price per copy in every currency
+        chance:
+          type: number
+          format: double
+          nullable: true
+          description: 'Boosters: chance a pack holds this printing, 0 to 1'
+        owned:
+          type: integer
+          nullable: true
+          description: Copies of the card (any printing) the viewer owns; null signed
+            out
+      required:
+      - chance
+      - finish
+      - id
+      - owned
+      - printing
+      - quantity
+      - unit_price
+      - unit_prices
+    ProductItemPage:
+      type: object
+      properties:
+        currency:
+          type: string
+        prices_updated_at:
+          type: string
+          format: date-time
+          nullable: true
+        count:
+          type: integer
+        total_quantity:
+          type: integer
+        total_value:
+          type: number
+          format: double
+          maximum: 10000000000
+          minimum: -10000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        total_values:
+          $ref: '#/components/schemas/Money'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductItem'
+      required:
+      - count
+      - currency
+      - prices_updated_at
+      - results
+      - total_quantity
+      - total_value
+      - total_values
+    ProductKindEnum:
+      enum:
+      - deck
+      - booster
+      type: string
+      description: |-
+        * `deck` - Deck
+        * `booster` - Booster
     ProfileEnum:
       enum:
       - Default
