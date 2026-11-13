@@ -86,6 +86,8 @@ export default defineConfig({
       command: [
         'uv run manage.py migrate --noinput',
         `uv run manage.py sync_cards --file cards/fixtures/scryfall-sample.jsonl --tags-file cards/fixtures/oracle-tags-sample.jsonl --combos-file cards/fixtures/spellbook-sample.json --eur-pln ${RATES.EUR} --usd-pln ${RATES.USD}`,
+        // Products cut from MTGJSON (spec 030).
+        'uv run manage.py sync_products --printings-file products/fixtures/mtgjson-printings-sample.json --decks-file products/fixtures/mtgjson-decks-sample.json',
         // Real recognition models (~50 MB, downloaded once per machine; spec 003).
         'uv run manage.py sync_scanner_bundle --if-missing',
         `uv run manage.py runserver 127.0.0.1:${API_PORT} --noreload`,

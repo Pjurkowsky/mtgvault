@@ -2,7 +2,7 @@
 
 ## Backend
 
-- [ ] **T1 `products` app: models, MTGJSON sync streamed, `sync_products`, weekly job, fixture** (AC-7, AC-12)
+- [x] **T1 `products` app: models, MTGJSON sync streamed, `sync_products`, weekly job, fixture** (AC-7, AC-12)
 - [ ] **T2 Chance per pack; `GET /api/decks/{id}/products/` with the three filters** (AC-2 to AC-7)
 - [ ] **T3 `GET /api/products/{code}/` and `/cards/` with collection filters, owned and chance sort; `scripts/check-api.sh`** (AC-8 to AC-11)
 

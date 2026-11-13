@@ -166,6 +166,7 @@ class SyncRun(models.Model):
         RATES = 'rates', 'Rates'
         TAGS = 'tags', 'Tags'
         COMBOS = 'combos', 'Combos'
+        PRODUCTS = 'products', 'Products'
 
     class Status(models.TextChoices):
         RUNNING = 'running', 'Running'

@@ -40,3 +40,14 @@ Extortionist with Cloudstone Curio and with Temur Sabertooth) and the 150 most
 popular combos missing one or two of them, plus Krenko with Intruder Alarm and
 Krenko, Skirk Prospector and Goblin Warchief. Card fields are trimmed to the
 ones `cards/combos.py` reads. The tests load it with `sync_cards --combos-file`.
+
+## Products (spec 030)
+
+`backend/products/fixtures/mtgjson-printings-sample.json` and
+`mtgjson-decks-sample.json` are cut from MTGJSON's `AllPrintings.json.xz` and
+`AllDeckFiles.tar.xz` (2026-11-14). They keep 7 sets' booster types (FDN, MKM,
+CMM, M21, SLZ, 2X2 and the online-only VMA) and 9 decks, with only the cards
+from `scryfall-sample.jsonl`; each sheet keeps its real total weight, so the
+chances per pack are the real ones. Arena and MTGO entries (FDN/MKM
+`play-arena`, M21 `arena`, an Arena starter deck, an MTGO redemption) and VMA
+are there to prove they are left out.

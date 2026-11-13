@@ -6,7 +6,7 @@
 |---|---|
 | Source | MTGJSON `AllPrintings.json.xz` (each set's `booster`) and `AllDeckFiles.tar.xz` (fixed decks), both streamed: `lzma` plus `ijson` per set, `tarfile` per deck, so memory stays small. |
 | Matching | MTGJSON cards carry `identifiers.scryfallId`, mapped onto `Printing.id`. Cards with no `Printing` (digital, missing) are skipped. |
-| Models | New `products` app. `Product` (code, kind deck/booster, name, set, released_at), `ProductCard` (product, printing, copies) for decks, `BoosterLayout` (product, weight, slots `{sheet: count}`), `BoosterSheet` (product, name, total_weight), `SheetCard` (sheet, printing, weight). |
+| Models | New `products` app. `Product` (code, kind deck/booster, name, set code and name, released_at, deck type), `ProductCard` (product, printing, copies for decks, chance per pack for boosters, worked out at sync time), `BoosterLayout` (product, weight, slots `{sheet: count}`), `BoosterSheet` (product, name, total_weight, fixed), `SheetCard` (sheet, printing, weight). |
 | Codes | Booster: `<set>-<booster key>` (`blb-play`); deck: `<set>-<slugged name>` (`blc-animated-army`). |
 | Chance | Per layout, P(none) = Π over slots (1 − w/W)^count, where w is the weight of the wanted printings on that sheet; chance = 1 − Σ layout weight × P(none) / total weight. Computed in Python per request from the sheets of the products touched. |
 | Sync | `sync_products` command (`--printings-file`, `--decks-file` for tests) and a weekly Celery beat job, Sunday 06:00. All rows are replaced in one transaction; `SyncRun` kind `products`. |

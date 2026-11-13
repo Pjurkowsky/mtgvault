@@ -1,0 +1,164 @@
+{
+ "data": [
+  {
+   "name": "Back for More",
+   "code": "M21",
+   "type": "Arena Starter Deck",
+   "releaseDate": "2021-07-03",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Forest",
+     "count": 4,
+     "identifiers": {
+      "scryfallId": "3279314f-d639-4489-b2ab-3621bb3ca64b"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Keen Engineering",
+   "code": "FDC",
+   "type": "Commander Deck",
+   "releaseDate": "2026-10-02",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Counterspell",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "83390164-f00b-4be1-9cec-5de088c9debc"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Lorehold Legacies",
+   "code": "C21",
+   "type": "Commander Deck",
+   "releaseDate": "2021-04-23",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Sol Ring",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "4cbc6901-6a4a-4d0a-83ea-7eefa3b35021"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Multiverse Reforged",
+   "code": "FRC",
+   "type": "Commander Deck",
+   "releaseDate": "2026-10-02",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Swords to Plowshares",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "f7e12477-d59f-442b-a678-1be746d0b7be"
+     }
+    },
+    {
+     "name": "Brainstorm",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "ec7d6864-7b6b-4f74-8474-9b9ec96b1d33"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Murders at Karlov Manor Redemption",
+   "code": "MKM",
+   "type": "MTGO Redemption",
+   "releaseDate": "2024-03-06",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Lightning Helix",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "4101e3fe-b0e7-4f0f-b9ac-9b61a4d628b3"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Odds and Ends",
+   "code": "SLD",
+   "type": "Commander Deck",
+   "releaseDate": "2026-09-28",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Brainstorm",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "42a87213-2210-418a-9c48-562c80093a96"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Prismari Performance",
+   "code": "C21",
+   "type": "Commander Deck",
+   "releaseDate": "2021-04-23",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Sol Ring",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "4cbc6901-6a4a-4d0a-83ea-7eefa3b35021"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Reign of Dragons",
+   "code": "FDC",
+   "type": "Commander Deck",
+   "releaseDate": "2026-10-02",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Lightning Bolt",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "0852f9f3-d7ef-4d31-93e3-93bc7c5a4ec9"
+     }
+    }
+   ],
+   "sideBoard": []
+  },
+  {
+   "name": "Scarlet",
+   "code": "MSH",
+   "type": "Jumpstart",
+   "releaseDate": "2026-06-26",
+   "commander": [],
+   "mainBoard": [
+    {
+     "name": "Lightning Bolt",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "7673784e-db4b-43a1-8d55-1bb9fc1e284f"
+     }
+    }
+   ],
+   "sideBoard": []
+  }
+ ]
+}
