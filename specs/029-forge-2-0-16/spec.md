@@ -2,6 +2,7 @@
 
 Status: Done
 Depends on: 024-pod-simulation, 025-simulations-page, 027-deck-versions
+Followed by: 031-game-forge-and-time
 
 ## Goal
 
