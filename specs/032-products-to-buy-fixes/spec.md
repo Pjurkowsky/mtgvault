@@ -1,6 +1,6 @@
 # Spec 032: Products to buy fixes
 
-Status: Draft
+Status: Done
 Depends on: 030-products-to-buy
 
 ## Goal

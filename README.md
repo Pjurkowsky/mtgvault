@@ -282,7 +282,8 @@ keep that license and name their source files; the rest of MTG Vault is not
 affected. Card data, images and card tags come from [Scryfall](https://scryfall.com),
 EDHREC data (salt scores, commander themes) from [EDHREC](https://edhrec.com),
 combos from [Commander Spellbook](https://commanderspellbook.com), sealed products
-(precons and booster contents) from [MTGJSON](https://mtgjson.com). Pod simulation
+(precons and booster contents) from [MTGJSON](https://mtgjson.com), their photos from
+[TCGplayer](https://www.tcgplayer.com). Pod simulation
 runs [Forge](https://github.com/Card-Forge/forge) (GPL-3.0) unchanged in its own
 image, `docker/forge`, with a small runner compiled against it. Mana symbols in
 `frontend/src/assets/mana/` are Scryfall's card symbol images.

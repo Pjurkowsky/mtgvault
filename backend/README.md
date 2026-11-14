@@ -68,7 +68,7 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings`, `categories` and `tokens` |
 | `GET /api/decks/<id>/combos/`, `GET /api/users/<username>/decks/<id>/combos/` | bearer / public | Combos in the deck and infinite or win combos it could build; missing cards say if you own them (owner only) (spec 022) |
 | `GET /api/decks/<id>/insights/`, `GET /api/users/<username>/decks/<id>/insights/` | bearer / public | Fetches missing salt scores; returns the deck salt and the commander's EDHREC themes (spec 022) |
-| `GET /api/decks/<id>/products/`, `GET /api/users/<username>/decks/<id>/products/` | bearer / public | Products to buy: fixed decks and boosters holding the deck's cards (`cards` missing/all, `printing` any/chosen, `since` 0-4 years), cards in none (spec 030) |
+| `GET /api/decks/<id>/products/`, `GET /api/users/<username>/decks/<id>/products/` | bearer / public | Products to buy in four `sections` (precons, boosters, other decks, other boosters) holding the deck's cards (`cards` missing/all, `printing` any/chosen, `since` 0-4 years), cards in none (specs 030, 032) |
 | `GET /api/products/<code>/`, `GET .../items/` | public | A product, and every card it can have as a card browser page with collection filters, `owned`, chance per pack and `sort=chance` (spec 030) |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text; export takes `printings` and `other_decks` |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
@@ -129,7 +129,8 @@ cookies come from it, and `X-Forwarded-Proto` marks https requests.
 - `manage.py backup` writes a `pg_dump -Fc` to `BACKUP_DIR` and keeps
   `BACKUP_KEEP`; with `BACKUP_DIR` set, beat runs it at 03:00 UTC.
 - `manage.py first_run` queues the card sync and scanner bundle on an empty
-  catalog, and the product sync (after the cards) until one has succeeded; `manage.py wait_for_services` waits for Postgres and Redis.
+  catalog, and the product sync (after the cards) until one has succeeded
+  and products have photos; `manage.py wait_for_services` waits for Postgres and Redis.
 - `/api/health/` returns 503 when the database is unreachable.
 
 ## API contract
@@ -271,7 +272,7 @@ the date; deck cards in the API carry `swap_dates` and `added_at`.
 - Printings carry `produced_mana` (Scryfall's, WUBRGC only) for the deck
   stats' mana sources.
 
-## Products to buy (spec 030)
+## Products to buy (specs 030, 032)
 
 App `products`. `manage.py sync_products` streams MTGJSON's `AllPrintings.json.xz`
 (each set's booster configs) and `AllDeckFiles.tar.xz` (precons, Secret Lair
@@ -280,6 +281,11 @@ drops, Jumpstart themes) and replaces every `Product`, `ProductCard`,
 under 250 MB). Celery beat runs it Sundays at 06:00 UTC as a `SyncRun` of kind
 products; a failed sync keeps the last data. Arena, MTGO and online-only
 products are skipped. Cards match printings by Scryfall id.
+Spec 032: each product has a `section` (precons: Commander decks; boosters:
+play, draft, set, collector and default packs of 14 cards or more; other decks;
+other boosters), an `image` (TCGplayer's photo, via the TCGplayer id of
+MTGJSON's `sealedProduct`) and `ProductCard.commander`. The deck endpoint
+returns `sections`, most cards first, and never looks for basic lands.
 
 - `products/chance.py`: the chance one booster holds at least one of the wanted
   printings, from the layouts' weights and each slot sheet's card weights.

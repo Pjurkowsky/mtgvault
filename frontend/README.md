@@ -87,8 +87,9 @@ src/
   components/scanner/     result bar, guess strip, scanner settings sheet
   components/settings/    staff sections: Scanner model (source, installed version, Sync now);
                           Forge (specs 029, 031: Main and Other address, key, games at once, Test)
-  components/decks/ProductsDialog.vue  Products to buy (spec 030): fixed decks and boosters
-                          holding the deck's cards, chance per pack, cards in none
+  components/decks/ProductsDialog.vue  Products to buy (specs 030, 032): Precons, Boosters,
+                          Other decks and Other boosters with photos and commanders; each
+                          product's cards as images by type; cards in none
   pages/ProductPage.vue   /products/:code: every card a product can have, in CardBrowser with
                           a `product` source (chance per pack, Owned filter)
   lib/products.ts         Products to buy choices and chance labels
