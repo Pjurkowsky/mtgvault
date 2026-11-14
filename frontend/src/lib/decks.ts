@@ -51,7 +51,7 @@ export const OWN_STATES: Record<OwnState, { label: string; dot: string }> = {
   missing: { label: 'Missing', dot: 'bg-red-500' },
 }
 
-const TYPE_ORDER = ['Creature', 'Planeswalker', 'Battle', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land']
+export const TYPE_ORDER = ['Creature', 'Planeswalker', 'Battle', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land']
 const COLOR_NAMES: Record<string, string> = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' }
 
 export type GroupBy = 'type' | 'mana_value' | 'color' | 'category'
