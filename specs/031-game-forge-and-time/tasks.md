@@ -2,9 +2,9 @@
 
 ## Backend
 
-- [ ] **T1 Main and Other roles, migration of saved Forges and games; `SimRun.forge`, `SimGame.forge_url`, `SimPlaying`** (AC-1, AC-2, AC-7, AC-8)
-- [ ] **T2 Dispatcher: Auto / Main / Other, chosen Forge not answering fails the run, live games** (AC-3, AC-4, AC-8)
-- [ ] **T3 API: `forge` on start, restart, game `forge_url` and `duration_ms`, run `playing` and `games_ms`; `scripts/check-api.sh`** (AC-2 to AC-9)
+- [x] **T1 Main and Other roles, migration of saved Forges and games; `SimRun.forge`, `SimGame.forge_url`, `SimPlaying`** (AC-1, AC-2, AC-7, AC-8)
+- [x] **T2 Dispatcher: Auto / Main / Other, chosen Forge not answering fails the run, live games** (AC-3, AC-4, AC-8)
+- [x] **T3 API: `forge` on start, restart, game `forge_url` and `duration_ms`, run `playing` and `games_ms`; `scripts/check-api.sh`** (AC-2 to AC-9)
 
 ## Frontend
 

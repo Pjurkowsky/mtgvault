@@ -28,8 +28,8 @@ class ForgeServerSerializer(serializers.Serializer):
 
 
 class ForgeServersSerializer(serializers.Serializer):
-    main = ForgeServerSerializer()
-    fallback = ForgeServerSerializer()
+    main = ForgeServerSerializer(help_text="This server's Forge")
+    other = ForgeServerSerializer(help_text='Another Forge, e.g. a faster PC')
 
 
 class ForgeTestSerializer(serializers.Serializer):
@@ -86,6 +86,7 @@ class StartRunSerializer(PodSerializer):
     games = serializers.IntegerField(min_value=1, default=10)
     minutes = serializers.IntegerField(min_value=1, default=10)
     lookahead = serializers.ChoiceField(choices=SimRun.Lookahead.choices, default=SimRun.Lookahead.NORMAL, help_text="Forge's look-ahead AI (spec 029)")
+    forge = serializers.ChoiceField(choices=SimRun.Forge.choices, default=SimRun.Forge.AUTO, help_text='Where the games play (spec 031)')
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices, default=SimRun.SeatMode.ROTATE)
     # Fixed mode: seat indexes in turn order; seat 0 is the tested deck.
     order = serializers.ListField(child=serializers.IntegerField(min_value=0), required=False)
@@ -180,7 +181,9 @@ class GameSerializer(serializers.Serializer):
     error = serializers.CharField()
     variant = serializers.IntegerField(help_text="The tested seat's list in a Compare versions run (spec 027)")
     forge_version = serializers.CharField(help_text='The Forge version that played it (spec 029)')
-    forge_server = serializers.CharField(help_text='main or fallback; empty before spec 029')
+    forge_server = serializers.CharField(help_text='main or other; empty before spec 029')
+    forge_url = serializers.CharField(help_text='Its address, e.g. 192.168.1.20:8790; empty before spec 031')
+    duration_ms = serializers.IntegerField(help_text='How long it took')
 
 
 class SeatStatsSerializer(serializers.Serializer):
@@ -211,6 +214,17 @@ class VariantStatsSerializer(serializers.Serializer):
     avg_win_turn = serializers.FloatField(allow_null=True)
 
 
+class PlayingSerializer(serializers.Serializer):
+    number = serializers.IntegerField()
+    role = serializers.CharField()
+    url = serializers.CharField()
+    started_at = serializers.DateTimeField()
+
+
+class RestartSerializer(serializers.Serializer):
+    forge = serializers.ChoiceField(choices=SimRun.Forge.choices)
+
+
 class RunSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     deck = serializers.IntegerField(allow_null=True, help_text='The tested deck; null for a pool deck')
@@ -224,6 +238,7 @@ class RunSerializer(serializers.Serializer):
     games = serializers.IntegerField()
     minutes = serializers.IntegerField()
     lookahead = serializers.ChoiceField(choices=SimRun.Lookahead.choices)
+    forge = serializers.ChoiceField(choices=SimRun.Forge.choices)
     seat_mode = serializers.ChoiceField(choices=SimRun.SeatMode.choices)
     fixed_order = serializers.ListField(child=serializers.IntegerField())
     played = serializers.IntegerField()
@@ -231,6 +246,9 @@ class RunSerializer(serializers.Serializer):
     created_at = serializers.DateTimeField()
     started_at = serializers.DateTimeField(allow_null=True)
     finished_at = serializers.DateTimeField(allow_null=True)
+    games_ms = serializers.IntegerField(help_text='Sum of the game times (spec 031, AC-9)')
+    playing = PlayingSerializer(many=True, help_text='Games being played now (spec 031, AC-8)')
+    can_restart = serializers.BooleanField(help_text='Failed or cancelled, and yours (spec 031, AC-6)')
     seats = SeatSerializer(many=True)
     stats = RunStatsSerializer()
     results = GameSerializer(many=True)
@@ -289,6 +307,10 @@ class RunRowSerializer(serializers.Serializer):
     games = serializers.IntegerField()
     win_rate = serializers.FloatField(allow_null=True)
     created_at = serializers.DateTimeField()
+    # Spec 031, AC-9: the run's time.
+    started_at = serializers.DateTimeField(allow_null=True)
+    finished_at = serializers.DateTimeField(allow_null=True)
+    games_ms = serializers.IntegerField()
     tested = RunRowSeatSerializer()
     opponents = RunRowSeatSerializer(many=True)
     # Spec 027: lists a Compare versions run plays; the separate runs of a comparison, this one first.
@@ -431,7 +453,9 @@ def row_data(run: SimRun, user, found: dict) -> dict:
         'id': run.id, 'user': run.user.username, 'mine': run.user_id == user.id, 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
         'played': len(games), 'games': run.games, 'win_rate': best['win_rate'] if best else win_rate(games),
-        'created_at': run.created_at, 'tested': seat(seats[0], best['label'] if best else None), 'opponents': [seat(s) for s in seats[1:]],
+        'created_at': run.created_at, 'started_at': run.started_at, 'finished_at': run.finished_at,
+        'games_ms': sum(g.duration_ms for g in games),
+        'tested': seat(seats[0], best['label'] if best else None), 'opponents': [seat(s) for s in seats[1:]],
         'lists': len(run.variants), 'group': None,
     }
 
@@ -463,14 +487,19 @@ def run_data(run: SimRun, user) -> dict:
         'deck_name': run.deck.name if run.variants and run.deck else seats[0].label if seats else '',
         'mine': user.is_authenticated and run.user_id == user.id, 'can_cancel': can_cancel(user, run), 'status': run.status,
         'cancelling': run.cancel_requested and run.status == SimRun.Status.PLAYING, 'cancelled_by': cancelled_by(run),
-        'games': run.games, 'minutes': run.minutes, 'lookahead': run.lookahead, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
+        'games': run.games, 'minutes': run.minutes, 'lookahead': run.lookahead, 'forge': run.forge, 'seat_mode': run.seat_mode, 'fixed_order': run.fixed_order, 'played': len(games), 'error': run.error,
         'created_at': run.created_at, 'started_at': run.started_at, 'finished_at': run.finished_at,
+        'games_ms': sum(g.duration_ms for g in games),
+        'playing': [{'number': p.number, 'role': p.role, 'url': p.url, 'started_at': p.started_at} for p in run.playing_now.all()]
+        if run.status == SimRun.Status.PLAYING else [],
+        'can_restart': user.is_authenticated and run.user_id == user.id and run.status in (SimRun.Status.FAILED, SimRun.Status.CANCELLED),
         'seats': [{'index': s.index, 'label': s.label, 'owner': s.owner, 'source': s.source, 'source_id': s.source_id,
                    'profile': s.profile, 'commanders': commanders(s.cards),
                    'image': art(next(iter(commanders(s.cards)), None), found), 'cards': s.cards} for s in seats],
         'stats': run_stats(run, games, len(seats)),
         'results': [{'number': g.number, 'status': g.status, 'winner_seat': g.winner_seat, 'turn': g.turn,
                      'winner_turn': g.winner_turn, 'seat_order': g.seat_order, 'error': g.error, 'variant': g.variant,
-                     'forge_version': g.forge_version, 'forge_server': g.forge_server} for g in games],
+                     'forge_version': g.forge_version, 'forge_server': g.forge_server, 'forge_url': g.forge_url,
+                     'duration_ms': g.duration_ms} for g in games],
         'variants': variant_stats(run, games), 'group': run.group,
     }

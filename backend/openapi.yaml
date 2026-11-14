@@ -2651,7 +2651,7 @@ paths:
   /api/sims/forge/:
     get:
       operationId: sims_forge_retrieve
-      description: 'Staff: Main and Fallback Forge (spec 029, AC-7).'
+      description: 'Staff: Main and Other Forge (spec 029, AC-7; spec 031, AC-1).'
       tags:
       - sims
       security:
@@ -2665,7 +2665,7 @@ paths:
           description: ''
     put:
       operationId: sims_forge_update
-      description: 'Staff: Main and Fallback Forge (spec 029, AC-7).'
+      description: 'Staff: Main and Other Forge (spec 029, AC-7; spec 031, AC-1).'
       tags:
       - sims
       requestBody:
@@ -2999,6 +2999,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Replay'
+          description: ''
+  /api/sims/runs/{id}/restart/:
+    post:
+      operationId: sims_runs_restart_create
+      description: Plays a failed or cancelled run's remaining games (spec 031, AC-6).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sims
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Restart'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Restart'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Restart'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
           description: ''
   /api/sims/status/:
     get:
@@ -5560,6 +5593,16 @@ components:
         * `nonfoil` - Nonfoil
         * `foil` - Foil
         * `etched` - Etched
+    ForgeEnum:
+      enum:
+      - auto
+      - main
+      - other
+      type: string
+      description: |-
+        * `auto` - Auto
+        * `main` - Main
+        * `other` - Other
     ForgeServer:
       type: object
       description: Main or Fallback Forge (spec 029, AC-7).
@@ -5585,12 +5628,16 @@ components:
       type: object
       properties:
         main:
-          $ref: '#/components/schemas/ForgeServer'
-        fallback:
-          $ref: '#/components/schemas/ForgeServer'
+          allOf:
+          - $ref: '#/components/schemas/ForgeServer'
+          description: This server's Forge
+        other:
+          allOf:
+          - $ref: '#/components/schemas/ForgeServer'
+          description: Another Forge, e.g. a faster PC
       required:
-      - fallback
       - main
+      - other
     ForgeTest:
       type: object
       properties:
@@ -5725,10 +5772,18 @@ components:
           description: The Forge version that played it (spec 029)
         forge_server:
           type: string
-          description: main or fallback; empty before spec 029
+          description: main or other; empty before spec 029
+        forge_url:
+          type: string
+          description: Its address, e.g. 192.168.1.20:8790; empty before spec 031
+        duration_ms:
+          type: integer
+          description: How long it took
       required:
+      - duration_ms
       - error
       - forge_server
+      - forge_url
       - forge_version
       - number
       - seat_order
@@ -6976,6 +7031,23 @@ components:
           maximum: 999
           minimum: 1
           default: 1
+    Playing:
+      type: object
+      properties:
+        number:
+          type: integer
+        role:
+          type: string
+        url:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+      required:
+      - number
+      - role
+      - started_at
+      - url
     Pod:
       type: object
       properties:
@@ -7912,6 +7984,13 @@ components:
       - events
       - number
       - own_turn
+    Restart:
+      type: object
+      properties:
+        forge:
+          $ref: '#/components/schemas/ForgeEnum'
+      required:
+      - forge
     RowEnum:
       enum:
       - creature
@@ -7954,6 +8033,8 @@ components:
           type: integer
         lookahead:
           $ref: '#/components/schemas/LookaheadEnum'
+        forge:
+          $ref: '#/components/schemas/ForgeEnum'
         seat_mode:
           $ref: '#/components/schemas/SeatModeEnum'
         fixed_order:
@@ -7975,6 +8056,17 @@ components:
           type: string
           format: date-time
           nullable: true
+        games_ms:
+          type: integer
+          description: Sum of the game times (spec 031, AC-9)
+        playing:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playing'
+          description: Games being played now (spec 031, AC-8)
+        can_restart:
+          type: boolean
+          description: Failed or cancelled, and yours (spec 031, AC-6)
         seats:
           type: array
           items:
@@ -7995,6 +8087,7 @@ components:
           nullable: true
       required:
       - can_cancel
+      - can_restart
       - cancelled_by
       - cancelling
       - created_at
@@ -8003,13 +8096,16 @@ components:
       - error
       - finished_at
       - fixed_order
+      - forge
       - games
+      - games_ms
       - group
       - id
       - lookahead
       - mine
       - minutes
       - played
+      - playing
       - results
       - seat_mode
       - seats
@@ -8058,6 +8154,16 @@ components:
         created_at:
           type: string
           format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        finished_at:
+          type: string
+          format: date-time
+          nullable: true
+        games_ms:
+          type: integer
         tested:
           $ref: '#/components/schemas/RunRowSeat'
         opponents:
@@ -8074,13 +8180,16 @@ components:
       - cancelled_by
       - cancelling
       - created_at
+      - finished_at
       - games
+      - games_ms
       - group
       - id
       - lists
       - mine
       - opponents
       - played
+      - started_at
       - status
       - tested
       - user
@@ -8611,6 +8720,16 @@ components:
             * `light` - Light
             * `normal` - Normal
             * `max` - Maximum
+        forge:
+          allOf:
+          - $ref: '#/components/schemas/ForgeEnum'
+          default: auto
+          description: |-
+            Where the games play (spec 031)
+
+            * `auto` - Auto
+            * `main` - Main
+            * `other` - Other
         seat_mode:
           allOf:
           - $ref: '#/components/schemas/SeatModeEnum'

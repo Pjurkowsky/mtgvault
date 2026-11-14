@@ -35,11 +35,12 @@ class SimSwap(models.Model):
 
 
 class ForgeServer(models.Model):
-    """Main and Fallback Forge (spec 029, AC-7): new games go to Main while it answers."""
+    """Main (this server's Forge) and Other (e.g. a faster PC) (spec 029, AC-7; spec 031, AC-1).
+    Auto runs play on Other while it answers, otherwise on Main."""
 
     MAIN = 'main'
-    FALLBACK = 'fallback'
-    ROLES = [(MAIN, 'Main'), (FALLBACK, 'Fallback')]
+    OTHER = 'other'
+    ROLES = [(MAIN, 'Main'), (OTHER, 'Other')]
 
     role = models.CharField(max_length=8, choices=ROLES, unique=True)
     url = models.CharField(max_length=300, blank=True)
@@ -50,10 +51,10 @@ class ForgeServer(models.Model):
 
     @classmethod
     def pair(cls) -> tuple['ForgeServer', 'ForgeServer']:
-        """Main and Fallback; Fallback starts as the server's FORGE_URL."""
-        main = cls.objects.get_or_create(role=cls.MAIN)[0]
-        fallback = cls.objects.get_or_create(role=cls.FALLBACK, defaults={'url': settings.FORGE_URL})[0]
-        return main, fallback
+        """Main and Other; Main starts as the server's FORGE_URL."""
+        main = cls.objects.get_or_create(role=cls.MAIN, defaults={'url': settings.FORGE_URL})[0]
+        other = cls.objects.get_or_create(role=cls.OTHER)[0]
+        return main, other
 
 
 class SimRun(models.Model):
@@ -62,6 +63,12 @@ class SimRun(models.Model):
         LIGHT = 'light', 'Light'
         NORMAL = 'normal', 'Normal'
         MAX = 'max', 'Maximum'
+
+    class Forge(models.TextChoices):
+        """Where the run's games play (spec 031, AC-2)."""
+        AUTO = 'auto', 'Auto'
+        MAIN = 'main', 'Main'
+        OTHER = 'other', 'Other'
 
     class Status(models.TextChoices):
         QUEUED = 'queued', 'Queued'
@@ -99,6 +106,8 @@ class SimRun(models.Model):
     group = models.UUIDField(null=True, blank=True, db_index=True)
     # Spec 029, AC-3: Forge's look-ahead AI for every game of the run.
     lookahead = models.CharField(max_length=6, choices=Lookahead.choices, default=Lookahead.NORMAL)
+    # Spec 031, AC-2: Auto, Main or Other.
+    forge = models.CharField(max_length=5, choices=Forge.choices, default=Forge.AUTO)
 
     class Meta:
         indexes = [models.Index(fields=['status', 'created_at'], name='sim_run_queue')]
@@ -156,7 +165,23 @@ class SimGame(models.Model):
     # Spec 029, AC-6: the Forge that played it.
     forge_version = models.CharField(max_length=40, blank=True)
     forge_server = models.CharField(max_length=8, choices=ForgeServer.ROLES, blank=True)
+    # Spec 031, AC-7: its address, e.g. 192.168.1.20:8790; empty before spec 031.
+    forge_url = models.CharField(max_length=300, blank=True)
 
     class Meta:
         ordering = ['number']
         constraints = [models.UniqueConstraint(fields=['run', 'number'], name='sim_game_unique')]
+
+
+class SimPlaying(models.Model):
+    """A game being played now, and where (spec 031, AC-8). Gone when it ends."""
+
+    run = models.ForeignKey(SimRun, on_delete=models.CASCADE, related_name='playing_now')
+    number = models.PositiveIntegerField()
+    role = models.CharField(max_length=8, choices=ForgeServer.ROLES)
+    url = models.CharField(max_length=300)
+    started_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['number']
+        constraints = [models.UniqueConstraint(fields=['run', 'number'], name='sim_playing_unique')]

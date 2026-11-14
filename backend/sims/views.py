@@ -16,7 +16,7 @@ from . import forge, replay, services
 from .models import ForgeServer, PoolDeck, SimGame, SimRun
 from .serializers import (
     ForgeServersSerializer, ForgeTestResultSerializer, ForgeTestSerializer, GroupSerializer, OpponentsSerializer, PodSerializer, PoolDeckRenameSerializer, PoolDeckWriteSerializer, QueueEntrySerializer,
-    ReplaySerializer, RunPageSerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer,
+    ReplaySerializer, RestartSerializer, RunPageSerializer, RunSerializer, SaveSwapsSerializer, SeatCheckSerializer, StartRunSerializer,
     StatusSerializer, SuggestionSerializer, art, row_data, run_data, win_rate,
 )
 
@@ -36,7 +36,7 @@ def forge_servers() -> dict:
 
 
 class ForgeServersView(APIView):
-    """Staff: Main and Fallback Forge (spec 029, AC-7)."""
+    """Staff: Main and Other Forge (spec 029, AC-7; spec 031, AC-1)."""
     permission_classes = [IsAdminUser]
 
     @extend_schema(responses=ForgeServersSerializer)
@@ -48,7 +48,7 @@ class ForgeServersView(APIView):
         data = ForgeServersSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         ForgeServer.pair()
-        for role in (ForgeServer.MAIN, ForgeServer.FALLBACK):
+        for role in (ForgeServer.MAIN, ForgeServer.OTHER):
             ForgeServer.objects.filter(role=role).update(**data.validated_data[role])
         forge.forget_status()
         return Response(ForgeServersSerializer(forge_servers()).data)
@@ -218,7 +218,7 @@ class RunsView(APIView):
         data.is_valid(raise_exception=True)
         d = data.validated_data
         run = services.start_run(request.user, d['seats'], d['games'], d['minutes'], d['seat_mode'], d.get('order'), d.get('compare'),
-                                   d['lookahead'])
+                                   d['lookahead'], d['forge'])
         return Response(RunSerializer(run_data(run, request.user)).data, status=status.HTTP_201_CREATED)
 
 
@@ -269,6 +269,18 @@ class CancelRunView(APIView):
     @extend_schema(request=None, responses=RunSerializer)
     def post(self, request, pk):
         run = services.cancel_run(request.user, services.visible_run(request.user, pk))
+        return Response(RunSerializer(run_data(run, request.user)).data)
+
+
+class RestartRunView(APIView):
+    """Plays a failed or cancelled run's remaining games (spec 031, AC-6)."""
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(request=RestartSerializer, responses=RunSerializer)
+    def post(self, request, pk):
+        data = RestartSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        run = services.restart_run(request.user, services.visible_run(request.user, pk), data.validated_data['forge'])
         return Response(RunSerializer(run_data(run, request.user)).data)
 
 

@@ -281,7 +281,7 @@ def list_specs(tested: dict, compare: dict | None) -> list[dict]:
 
 
 def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str, order: list[int] | None = None,
-              compare: dict | None = None, lookahead: str = SimRun.Lookahead.NORMAL) -> SimRun:
+              compare: dict | None = None, lookahead: str = SimRun.Lookahead.NORMAL, forge_choice: str = SimRun.Forge.AUTO) -> SimRun:
     """Copy the pod with swaps applied and queue the run (AC-11, AC-14, AC-15).
 
     Seat 0 is the tested deck: a player's deck or a pool deck (spec 025, AC-3). With `compare`
@@ -306,7 +306,7 @@ def start_run(user, seats: list[dict], games: int, minutes: int, seat_mode: str,
         # A comparison is found by any of its lists' names.
         search = '\n'.join([search, *every]).lower() if compare else search
         run = SimRun.objects.create(deck=deck, user=user, games=games, minutes=minutes, seat_mode=seat_mode, fixed_order=order or [],
-                                    search=search, lookahead=lookahead, **extra)
+                                    search=search, lookahead=lookahead, forge=forge_choice, **extra)
         SimSeat.objects.bulk_create(
             SimSeat(run=run, index=i, label=labels[i], source=s['source'], source_id=s['source_id'],
                     owner=s['owner'], profile=s['profile'], cards=s['cards'])
@@ -363,6 +363,20 @@ def cancel_all(user) -> int:
         for run in runs:
             _cancel(user, run)
     return len(runs)
+
+
+def restart_run(user, run: SimRun, forge_choice: str) -> SimRun:
+    """A failed or cancelled run queues its remaining games again, keeping the finished ones (spec 031, AC-6)."""
+    if run.user_id != user.id:
+        raise NotFound()
+    with transaction.atomic():
+        run = SimRun.objects.select_for_update().get(pk=run.pk)
+        if run.status not in (SimRun.Status.FAILED, SimRun.Status.CANCELLED):
+            raise ValidationError({'status': 'Only a failed or cancelled run can restart.'})
+        run.status, run.error, run.forge = SimRun.Status.QUEUED, '', forge_choice
+        run.cancel_requested, run.cancelled_by, run.finished_at = False, None, None
+        run.save(update_fields=['status', 'error', 'forge', 'cancel_requested', 'cancelled_by', 'finished_at'])
+    return run
 
 
 def delete_run(user, run: SimRun):

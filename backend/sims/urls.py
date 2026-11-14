@@ -19,5 +19,6 @@ urlpatterns = [
     path('sims/groups/<uuid:group>/', views.GroupView.as_view(), name='sims-group'),
     path('sims/runs/<int:pk>/', views.RunView.as_view(), name='sims-run'),
     path('sims/runs/<int:pk>/cancel/', views.CancelRunView.as_view(), name='sims-run-cancel'),
+    path('sims/runs/<int:pk>/restart/', views.RestartRunView.as_view(), name='sims-run-restart'),
     path('sims/runs/<int:pk>/games/<int:number>/', views.ReplayView.as_view(), name='sims-replay'),
 ]

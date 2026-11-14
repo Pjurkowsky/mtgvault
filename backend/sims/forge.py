@@ -1,5 +1,5 @@
-"""The Forge service (specs 024, 029): an HTTP API around MTG Vault's Forge runner (docker/forge),
-on the server itself or on another PC (Main and Fallback)."""
+"""The Forge service (specs 024, 029, 031): an HTTP API around MTG Vault's Forge runner (docker/forge),
+on the server itself (Main) or on another PC (Other)."""
 
 import json
 import logging
@@ -33,10 +33,26 @@ class Server:
 
 
 def servers() -> list[Server]:
-    """Main, then Fallback; those with an address (spec 029, AC-7)."""
+    """Other, then Main: Auto's order (spec 031, AC-3); those with an address."""
     from .models import ForgeServer
 
-    return [Server(s.role, s.url.strip(), s.key, s.slots) for s in ForgeServer.pair() if s.url.strip()]
+    main, other = ForgeServer.pair()
+    return [Server(s.role, s.url.strip(), s.key, s.slots) for s in (other, main) if s.url.strip()]
+
+
+def server(role: str) -> Server | None:
+    """Main or Other, when it has an address."""
+    return next((s for s in servers() if s.role == role), None)
+
+
+def label(role: str, url: str) -> str:
+    """"Other (192.168.1.20:8790)" (spec 031, AC-4)."""
+    return f'{role.title()} ({host(url)})' if url else role.title()
+
+
+def host(url: str) -> str:
+    """The address without its scheme: 192.168.1.20:8790 (spec 031, AC-7)."""
+    return re.sub(r'^\w+://', '', url.strip()).rstrip('/')
 
 
 def call(method: str, path: str, body=None, timeout: float = TIMEOUT, server: Server | None = None):
@@ -75,7 +91,7 @@ def version(server: Server, timeout: float = 3) -> str:
 
 
 def answering() -> list[tuple[Server, str]]:
-    """Each Forge that answers now, Main first, with its version."""
+    """Each Forge that answers now, Other first, with its version."""
     found = []
     for server in servers():
         try:
@@ -86,7 +102,7 @@ def answering() -> list[tuple[Server, str]]:
 
 
 def active() -> tuple[Server, str] | None:
-    """Main while it answers, otherwise Fallback, with its version (spec 029, AC-10)."""
+    """Auto's Forge: Other while it answers, otherwise Main, with its version (spec 031, AC-3)."""
     for server in servers():
         try:
             return server, version(server)

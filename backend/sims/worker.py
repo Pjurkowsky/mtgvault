@@ -1,7 +1,7 @@
 """Plays queued runs against the Forge service (spec 024, AC-14 to AC-17, AC-22).
 
-Spec 029: each new game goes to Main while it answers, otherwise to Fallback, and a Forge
-plays up to its Games at once. Games being played are kept in memory, so after a restart
+Spec 029: a Forge plays up to its Games at once. Spec 031: Auto runs play on Other while it
+answers, otherwise on Main; Main and Other runs only on theirs. Games being played are kept in memory, so after a restart
 the unfinished ones play again."""
 
 import gzip
@@ -16,7 +16,7 @@ from django.db import DatabaseError, connection, transaction
 from django.utils import timezone
 
 from . import forge
-from .models import SimGame, SimRun
+from .models import SimGame, SimPlaying, SimRun
 
 log = logging.getLogger(__name__)
 
@@ -35,8 +35,9 @@ def seat_order(seats: int, game: int, mode: str, run_id: int, fixed: list[int] |
 
 
 def recover():
-    """Runs left Playing by a restart wait in the queue again."""
+    """Runs left Playing by a restart wait in the queue again; their games play again."""
     SimRun.objects.filter(status=SimRun.Status.PLAYING).update(status=SimRun.Status.QUEUED)
+    SimPlaying.objects.all().delete()
 
 
 def own_turns(steps: list[dict], seat: int) -> int:
@@ -93,6 +94,7 @@ def play_game(run: SimRun, seats, number: int, server: forge.Server, version: st
         'variant': variant,
         'forge_version': version,
         'forge_server': server.role,
+        'forge_url': forge.host(server.url),
         'seat_order': order,
         'winner_seat': order[winner] if status == SimGame.Status.WON and winner is not None and winner >= 0 else None,
         'turn': result.get('turn') or 0,
@@ -106,7 +108,10 @@ def play_game(run: SimRun, seats, number: int, server: forge.Server, version: st
 
 
 class Dispatcher:
-    """Starts games on the Forge answering now, up to its Games at once (spec 029, AC-10, AC-11)."""
+    """Starts games up to each Forge's Games at once (spec 029, AC-10, AC-11). Auto runs go to
+    Other while it answers, otherwise Main; Main and Other runs only to theirs (spec 031, AC-2 to AC-4)."""
+
+    ACTIVE = [SimRun.Status.QUEUED, SimRun.Status.PLAYING]
 
     def __init__(self):
         self.lock = threading.Lock()
@@ -123,21 +128,39 @@ class Dispatcher:
 
     def tick(self) -> None:
         self.finish()
-        if not SimRun.objects.filter(status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False).exists():
+        waiting = set(SimRun.objects.filter(status__in=self.ACTIVE, cancel_requested=False).values_list('forge', flat=True))
+        if not waiting:
             return
-        found = forge.active()
-        if found is None:
-            return
-        server, version = found
-        while self.busy(server.role) < server.slots:
-            claimed = self.claim(server.role)
-            if claimed is None:
-                return
-            threading.Thread(target=self.play, args=(*claimed, server, version), daemon=True).start()
+        # The Forge each choice plays on now, with its version.
+        up: dict[str, tuple[forge.Server, str]] = {}
+        for role in (SimRun.Forge.MAIN, SimRun.Forge.OTHER):
+            if role not in waiting:
+                continue
+            found = forge.server(role)
+            try:
+                up[role] = (found, forge.version(found)) if found else None
+            except forge.ForgeError:
+                up[role] = None
+            if up[role] is None:
+                self.fail_chosen(role, found)
+        auto = forge.active() if SimRun.Forge.AUTO in waiting else None
+        for server, version in {s.role: (s, v) for s, v in [x for x in [*up.values(), auto] if x]}.values():
+            choices = [server.role] + ([SimRun.Forge.AUTO] if auto and auto[0].role == server.role else [])
+            while self.busy(server.role) < server.slots:
+                claimed = self.claim(server, choices)
+                if claimed is None:
+                    break
+                threading.Thread(target=self.play, args=(*claimed, server, version), daemon=True).start()
 
-    def claim(self, role: str) -> tuple[int, int] | None:
+    def fail_chosen(self, role: str, server: forge.Server | None) -> None:
+        """Runs set to a Forge that doesn't answer fail, keeping their finished games (AC-4)."""
+        error = f'{forge.label(role, server.url if server else "")} is not answering.'
+        SimRun.objects.filter(status__in=self.ACTIVE, forge=role, cancel_requested=False).update(
+            status=SimRun.Status.FAILED, error=error, finished_at=timezone.now())
+
+    def claim(self, server: forge.Server, choices: list[str]) -> tuple[int, int] | None:
         """The oldest run's lowest game not played or playing; the run turns Playing."""
-        runs = (SimRun.objects.filter(status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False)
+        runs = (SimRun.objects.filter(status__in=self.ACTIVE, cancel_requested=False, forge__in=choices)
                 .order_by('created_at', 'id').values_list('id', 'games'))
         for run_id, games in runs:
             taken = set(SimGame.objects.filter(run_id=run_id).values_list('number', flat=True)) | self.in_flight(run_id)
@@ -145,16 +168,18 @@ class Dispatcher:
             if number is None:
                 continue
             with transaction.atomic():
-                run = SimRun.objects.select_for_update().filter(
-                    pk=run_id, status__in=[SimRun.Status.QUEUED, SimRun.Status.PLAYING], cancel_requested=False).first()
+                run = SimRun.objects.select_for_update().filter(pk=run_id, status__in=self.ACTIVE, cancel_requested=False).first()
                 if run is None:
                     continue
                 if run.status == SimRun.Status.QUEUED:
                     run.status = SimRun.Status.PLAYING
                     run.started_at = run.started_at or timezone.now()
                     run.save(update_fields=['status', 'started_at'])
+                # Shown live on the run's page (AC-8).
+                SimPlaying.objects.update_or_create(run_id=run_id, number=number, defaults={
+                    'role': server.role, 'url': forge.host(server.url), 'started_at': timezone.now()})
             with self.lock:
-                self.playing[(run_id, number)] = role
+                self.playing[(run_id, number)] = server.role
             return run_id, number
         return None
 
@@ -163,8 +188,14 @@ class Dispatcher:
             run = SimRun.objects.get(pk=run_id)
             play_game(run, list(run.seats.all()), number, server, version)
         except forge.ForgeUnreachable as e:
-            # Played again on whichever Forge answers (AC-12).
-            log.warning('Game %s of run %s goes back to the queue: %s', number, run_id, e)
+            if run.forge == SimRun.Forge.AUTO:
+                # Played again on whichever Forge answers (spec 029, AC-12).
+                log.warning('Game %s of run %s goes back to the queue: %s', number, run_id, e)
+            else:
+                # Its own Forge stopped answering: the run fails (spec 031, AC-4).
+                SimRun.objects.filter(pk=run_id, status__in=self.ACTIVE).update(
+                    status=SimRun.Status.FAILED, error=f'{forge.label(server.role, server.url)} is not answering.',
+                    finished_at=timezone.now())
         except forge.ForgeError as e:
             log.warning('Run %s stopped: %s', run_id, e)
             SimRun.objects.filter(pk=run_id, status=SimRun.Status.PLAYING).update(
@@ -174,6 +205,7 @@ class Dispatcher:
             SimRun.objects.filter(pk=run_id, status=SimRun.Status.PLAYING).update(
                 status=SimRun.Status.FAILED, error=str(e)[:4000], finished_at=timezone.now())
         finally:
+            SimPlaying.objects.filter(run_id=run_id, number=number).delete()
             with self.lock:
                 self.playing.pop((run_id, number), None)
             connection.close()

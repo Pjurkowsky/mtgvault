@@ -1178,9 +1178,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Staff: Main and Fallback Forge (spec 029, AC-7). */
+        /** @description Staff: Main and Other Forge (spec 029, AC-7; spec 031, AC-1). */
         get: operations["sims_forge_retrieve"];
-        /** @description Staff: Main and Fallback Forge (spec 029, AC-7). */
+        /** @description Staff: Main and Other Forge (spec 029, AC-7; spec 031, AC-1). */
         put: operations["sims_forge_update"];
         post?: never;
         delete?: never;
@@ -1369,6 +1369,23 @@ export interface paths {
         get: operations["sims_runs_games_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sims/runs/{id}/restart/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Plays a failed or cancelled run's remaining games (spec 031, AC-6). */
+        post: operations["sims_runs_restart_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2415,6 +2432,13 @@ export interface components {
          * @enum {string}
          */
         FinishEnum: "nonfoil" | "foil" | "etched";
+        /**
+         * @description * `auto` - Auto
+         *     * `main` - Main
+         *     * `other` - Other
+         * @enum {string}
+         */
+        ForgeEnum: "auto" | "main" | "other";
         /** @description Main or Fallback Forge (spec 029, AC-7). */
         ForgeServer: {
             /** @description e.g. http://192.168.1.20:8790; empty = not used */
@@ -2425,8 +2449,10 @@ export interface components {
             slots: number;
         };
         ForgeServers: {
+            /** @description This server's Forge */
             main: components["schemas"]["ForgeServer"];
-            fallback: components["schemas"]["ForgeServer"];
+            /** @description Another Forge, e.g. a faster PC */
+            other: components["schemas"]["ForgeServer"];
         };
         ForgeTest: {
             url: string;
@@ -2486,8 +2512,12 @@ export interface components {
             variant: number;
             /** @description The Forge version that played it (spec 029) */
             forge_version: string;
-            /** @description main or fallback; empty before spec 029 */
+            /** @description main or other; empty before spec 029 */
             forge_server: string;
+            /** @description Its address, e.g. 192.168.1.20:8790; empty before spec 031 */
+            forge_url: string;
+            /** @description How long it took */
+            duration_ms: number;
         };
         /** @description Spec 027, AC-19: separate runs started together, side by side. */
         Group: {
@@ -3037,6 +3067,13 @@ export interface components {
             /** @default 1 */
             quantity?: number;
         };
+        Playing: {
+            number: number;
+            role: string;
+            url: string;
+            /** Format: date-time */
+            started_at: string;
+        };
         Pod: {
             seats: components["schemas"]["SeatSpec"][];
         };
@@ -3381,6 +3418,9 @@ export interface components {
             board: number;
             events: components["schemas"]["ReplayEvent"][];
         };
+        Restart: {
+            forge: components["schemas"]["ForgeEnum"];
+        };
         /**
          * @description * `creature` - creature
          *     * `land` - land
@@ -3403,6 +3443,7 @@ export interface components {
             games: number;
             minutes: number;
             lookahead: components["schemas"]["LookaheadEnum"];
+            forge: components["schemas"]["ForgeEnum"];
             seat_mode: components["schemas"]["SeatModeEnum"];
             fixed_order: number[];
             played: number;
@@ -3413,6 +3454,12 @@ export interface components {
             started_at: string | null;
             /** Format: date-time */
             finished_at: string | null;
+            /** @description Sum of the game times (spec 031, AC-9) */
+            games_ms: number;
+            /** @description Games being played now (spec 031, AC-8) */
+            playing: components["schemas"]["Playing"][];
+            /** @description Failed or cancelled, and yours (spec 031, AC-6) */
+            can_restart: boolean;
             seats: components["schemas"]["Seat"][];
             stats: components["schemas"]["RunStats"];
             results: components["schemas"]["Game"][];
@@ -3438,6 +3485,11 @@ export interface components {
             win_rate: number | null;
             /** Format: date-time */
             created_at: string;
+            /** Format: date-time */
+            started_at: string | null;
+            /** Format: date-time */
+            finished_at: string | null;
+            games_ms: number;
             tested: components["schemas"]["RunRowSeat"];
             opponents: components["schemas"]["RunRowSeat"][];
             lists: number;
@@ -3682,6 +3734,15 @@ export interface components {
              * @default normal
              */
             lookahead?: components["schemas"]["LookaheadEnum"];
+            /**
+             * @description Where the games play (spec 031)
+             *
+             *     * `auto` - Auto
+             *     * `main` - Main
+             *     * `other` - Other
+             * @default auto
+             */
+            forge?: components["schemas"]["ForgeEnum"];
             /** @default rotate */
             seat_mode?: components["schemas"]["SeatModeEnum"];
             order?: number[];
@@ -6476,6 +6537,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Replay"];
+                };
+            };
+        };
+    };
+    sims_runs_restart_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Restart"];
+                "application/x-www-form-urlencoded": components["schemas"]["Restart"];
+                "multipart/form-data": components["schemas"]["Restart"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Run"];
                 };
             };
         };
