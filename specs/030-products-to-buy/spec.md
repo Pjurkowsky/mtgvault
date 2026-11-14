@@ -2,6 +2,7 @@
 
 Status: Done
 Depends on: 004-decks, 013-optimize-printings, 029-forge-2-0-16
+Followed by: 032-products-to-buy-fixes
 
 ## Goal
 
