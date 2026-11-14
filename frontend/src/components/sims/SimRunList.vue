@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { active, percent, statusLabel, type RunRow } from '@/lib/sims'
+import { active, percent, runTime, statusLabel, type RunRow } from '@/lib/sims'
 
 /** Runs, newest first, with All / Mine and a search (spec 025, AC-6 to AC-8). */
 const props = defineProps<{ runs: RunRow[] | null; total: number; mine: boolean; query: string }>()
@@ -63,9 +63,11 @@ const rowStatus = (run: RunRow) => (run.group ? { ...groupStatus(run.group), can
             <span class="truncate text-xs text-muted-foreground" data-testid="run-row-opponents">
               vs {{ run.opponents.map((o) => o.commanders.join(' & ') || o.label).join(', ') }}
             </span>
-            <span class="truncate text-xs text-muted-foreground sm:hidden">{{ run.user }} · {{ when(run.created_at) }}</span>
+            <span class="truncate text-xs text-muted-foreground sm:hidden">{{ run.user }} · {{ when(run.created_at) }}<template v-if="runTime(run)"> · {{ runTime(run) }}</template></span>
           </div>
-          <span class="hidden shrink-0 text-xs text-muted-foreground sm:inline">{{ run.user }} · {{ when(run.created_at) }}</span>
+          <span class="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+            {{ run.user }} · {{ when(run.created_at) }}<template v-if="runTime(run)"> · <span class="tabular-nums" data-testid="run-row-time">{{ runTime(run) }}</span></template>
+          </span>
           <div class="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
             <Badge :variant="rowStatus(run).status === 'failed' ? 'destructive' : active(rowStatus(run).status) ? 'default' : 'outline'" class="max-w-28 whitespace-normal text-center sm:max-w-none sm:whitespace-nowrap" data-testid="run-row-status">{{ statusLabel(rowStatus(run)) }}</Badge>
             <span class="text-right font-semibold tabular-nums sm:w-12" data-testid="run-row-win-rate">{{ (run.group ? groupBest(run.group) : run.win_rate) == null ? '' : percent(run.group ? groupBest(run.group) : run.win_rate) }}</span>

@@ -46,3 +46,33 @@ export function statusLabel(run: Pick<Run, 'status' | 'played' | 'games' | 'canc
   if (run.status === 'cancelled' && run.cancelled_by) return `Cancelled by ${run.cancelled_by}`
   return STATUS_LABELS[run.status]
 }
+
+/** Where a run's games play (spec 031, AC-2). */
+export type ForgeChoice = Run['forge']
+export const FORGE_CHOICES: { value: ForgeChoice; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Auto', hint: 'Other while it answers, otherwise Main' },
+  { value: 'main', label: 'Main', hint: "This server's Forge" },
+  { value: 'other', label: 'Other', hint: 'The other Forge, e.g. a faster PC' },
+]
+export const forgeLabel = (value: ForgeChoice) => FORGE_CHOICES.find((f) => f.value === value)?.label ?? value
+export const roleLabel = (role: string) => (role === 'main' ? 'Main' : role === 'other' ? 'Other' : '')
+
+/** "42s", "4m 12s" ("4m" without seconds), "1h 05m" (spec 031, AC-7, AC-9). */
+export function duration(ms: number, seconds = true): string {
+  const total = Math.max(0, Math.round(ms / 1000))
+  if (total < 60) return `${total}s`
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  if (h) return `${h}h ${String(m).padStart(2, '0')}m`
+  return seconds ? `${m}m ${total % 60}s` : `${m}m`
+}
+
+/** "Took 38m · games 1h 52m", or "Running 12m · games 25m" (spec 031, AC-9). */
+export function runTime(run: Pick<Run, 'status' | 'started_at' | 'finished_at' | 'games_ms'>, now = Date.now()): string {
+  if (!run.started_at) return ''
+  const start = Date.parse(run.started_at)
+  const games = `games ${duration(run.games_ms, false)}`
+  if (run.status === 'playing') return `Running ${duration(now - start, false)} · ${games}`
+  if (run.status === 'queued' || !run.finished_at) return ''
+  return `Took ${duration(Date.parse(run.finished_at) - start, false)} · ${games}`
+}

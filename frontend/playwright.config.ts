@@ -8,8 +8,9 @@ const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 5180)
 const FORGE_PORT = Number(process.env.E2E_FORGE_PORT ?? 8190)
 const SIMS_PORT = Number(process.env.E2E_SIMS_PORT ?? 8191)
 // Spec 029: a second fake Forge, with a key, for the Main Forge tests.
-export const MAIN_FORGE_PORT = Number(process.env.E2E_MAIN_FORGE_PORT ?? 8192)
-export const MAIN_FORGE_KEY = 'secret'
+// Spec 031: Other, a second fake Forge with a key (Main is FORGE_URL's).
+export const OTHER_FORGE_PORT = Number(process.env.E2E_OTHER_FORGE_PORT ?? 8192)
+export const OTHER_FORGE_KEY = 'secret'
 const REDIS_URL = process.env.E2E_REDIS_URL ?? 'redis://localhost:6379/1'
 export const RATES = { EUR: 4.4, USD: 4.0 }
 /** Fake camera for the scanner tests: Sol Ring on a table (built by e2e/camera.setup.ts). */
@@ -115,9 +116,9 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `uv run manage.py fake_forge --port ${MAIN_FORGE_PORT} --key ${MAIN_FORGE_KEY} --forge-version fake-main`,
+      command: `uv run manage.py fake_forge --port ${OTHER_FORGE_PORT} --key ${OTHER_FORGE_KEY} --forge-version fake-other`,
       cwd: '../backend',
-      port: MAIN_FORGE_PORT,
+      port: OTHER_FORGE_PORT,
       env: { DATABASE_URL },
       reuseExistingServer: !process.env.CI,
     },

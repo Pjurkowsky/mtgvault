@@ -6,7 +6,7 @@ import { PIPER, commanderDeck, dropEmptySeats, openRun, openSimulations, pickDec
 
 // Spec 029, AC-2 to AC-6: Forge 2.0.16's profiles and look-ahead, and which Forge played a run.
 // Main is empty while this project runs (sim-forge-servers runs after it), so games go to the
-// e2e Fallback: the fake Forge, version "fake".
+// e2e Main (spec 031: this server's Forge): the fake Forge, version "fake".
 
 /** Hover `target` and read its tooltip, then move away until it closes. */
 async function tooltip(page: Page, target: import('@playwright/test').Locator) {
@@ -81,17 +81,17 @@ test.describe('Look-ahead and Forge 2.0.16 profiles', () => {
     const run = await startRun(api, deck.id, [{ deck: piper.id }], { games: 1, lookahead: 'light' })
 
     await openRun(page, run.id)
-    // Before any game: only the look-ahead.
-    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Look-ahead Light')
+    // Before any game: only the look-ahead. Spec 031, AC-5 adds the run's Forge choice.
+    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Look-ahead Light · Auto')
     await waitForRun(api, run.id)
     await page.reload()
-    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Forge fake · Look-ahead Light')
-    expect(await tooltip(page, runCard(page).getByTestId('game-number').first())).toBe('Fallback · Forge fake')
+    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Forge fake · Look-ahead Light · Auto')
+    expect(await tooltip(page, runCard(page).getByTestId('game-number').first())).toBe('Main · Forge fake')
 
     // A run from before this spec.
     asBefore029(run.id)
     await page.reload()
-    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Forge 2.0.15 · Look-ahead Off')
+    expect(await tooltip(page, runCard(page).getByTestId('run-forge').getByRole('button'))).toBe('Forge 2.0.15 · Look-ahead Off · Auto')
     expect(await tooltip(page, runCard(page).getByTestId('game-number').first())).toBe('Forge 2.0.15')
   })
 })

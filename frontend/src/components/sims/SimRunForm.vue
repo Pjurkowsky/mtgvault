@@ -13,8 +13,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePreference } from '@/composables/usePreference'
-import { LOOKAHEAD, PROFILES, SEAT_MODES, type Lookahead, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
+import { FORGE_CHOICES, LOOKAHEAD, PROFILES, SEAT_MODES, type ForgeChoice, type Lookahead, type Opponent, type Profile, type Run, type SeatMode } from '@/lib/sims'
 import OpponentPicker from './OpponentPicker.vue'
 import SeatTile from './SeatTile.vue'
 import SimSwapStep from './SimSwapStep.vue'
@@ -36,6 +37,8 @@ const games = ref(10)
 const minutes = ref(10)
 // Spec 029, AC-3: remembered in this browser.
 const lookahead = usePreference<Lookahead>('sims.lookahead', 'normal', LOOKAHEAD.map((l) => l.value))
+// Where the games play (spec 031, AC-2).
+const forgeChoice = usePreference<ForgeChoice>('sims.forge', 'auto', FORGE_CHOICES.map((f) => f.value))
 const mode = ref<SeatMode>('rotate')
 const busy = ref(false)
 
@@ -126,7 +129,7 @@ async function start() {
   busy.value = true
   const { data, error } = await api.POST('/api/sims/runs/', {
     body: {
-      seats: specs(), games: games.value, minutes: minutes.value, lookahead: lookahead.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}), ...compareBody(),
+      seats: specs(), games: games.value, minutes: minutes.value, lookahead: lookahead.value, forge: forgeChoice.value, seat_mode: mode.value, ...(mode.value === 'fixed' ? { order: order() } : {}), ...compareBody(),
     },
   })
   busy.value = false
@@ -209,6 +212,21 @@ async function start() {
           <SelectTrigger id="sim-lookahead" class="w-32" aria-label="Look-ahead"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem v-for="l in LOOKAHEAD" :key="l.value" :value="l.value">{{ l.label }}</SelectItem></SelectContent>
         </Select>
+      </div>
+      <div class="grid gap-1.5">
+        <Label class="flex items-center gap-1">
+          Forge
+          <InfoTip text="Auto plays on Other while it answers, otherwise on Main. Main or Other plays only there; the run fails if it doesn't answer" />
+        </Label>
+        <ToggleGroup
+          :model-value="forgeChoice" type="single" variant="outline" aria-label="Forge" data-testid="sim-forge"
+          @update:model-value="(v) => v && (forgeChoice = v as ForgeChoice)"
+        >
+          <Tooltip v-for="f in FORGE_CHOICES" :key="f.value">
+            <TooltipTrigger as-child><ToggleGroupItem :value="f.value" class="px-3">{{ f.label }}</ToggleGroupItem></TooltipTrigger>
+            <TooltipContent>{{ f.hint }}</TooltipContent>
+          </Tooltip>
+        </ToggleGroup>
       </div>
       <Button :disabled="!valid || busy" @click="run"><PlayIcon /> Run</Button>
     </div>

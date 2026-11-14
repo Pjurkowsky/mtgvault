@@ -10,36 +10,36 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-/** Staff: Main and Fallback Forge, e.g. a faster PC and this server (spec 029, AC-7, AC-8). */
-type Role = 'main' | 'fallback'
+/** Staff: Main (this server's Forge) and Other, e.g. a faster PC (spec 029, AC-7, AC-8; spec 031, AC-1). */
+type Role = 'main' | 'other'
 type Server = Schemas['ForgeServer']
 type Result = Schemas['ForgeTestResult']
 
 const ROLES: { role: Role; label: string; hint: string }[] = [
-  { role: 'main', label: 'Main', hint: 'New games go here while it answers, e.g. a faster PC on your network' },
-  { role: 'fallback', label: 'Fallback', hint: "Used while Main doesn't answer, e.g. the Forge on this server" },
+  { role: 'main', label: 'Main', hint: "This server's own Forge. Auto runs play here while Other doesn't answer" },
+  { role: 'other', label: 'Other', hint: 'Another Forge, e.g. a faster PC on your network. Auto runs play here while it answers' },
 ]
 
 const EXAMPLE = 'http://192.168.1.20:8790'
-const servers = reactive<Record<Role, Server>>({ main: { url: '', key: '', slots: 1 }, fallback: { url: '', key: '', slots: 1 } })
+const servers = reactive<Record<Role, Server>>({ main: { url: '', key: '', slots: 1 }, other: { url: '', key: '', slots: 1 } })
 const loaded = ref(false)
 const busy = ref(false)
 const errors = ref<Record<string, string>>({})
-const results = reactive<Record<Role, Result | null>>({ main: null, fallback: null })
-const testing = reactive<Record<Role, boolean>>({ main: false, fallback: false })
+const results = reactive<Record<Role, Result | null>>({ main: null, other: null })
+const testing = reactive<Record<Role, boolean>>({ main: false, other: false })
 
 onMounted(async () => {
   const { data } = await api.GET('/api/sims/forge/')
   if (!data) return
   Object.assign(servers.main, data.main)
-  Object.assign(servers.fallback, data.fallback)
+  Object.assign(servers.other, data.other)
   loaded.value = true
 })
 
 async function save() {
   busy.value = true
   errors.value = {}
-  const { data, error } = await api.PUT('/api/sims/forge/', { body: { main: servers.main, fallback: servers.fallback } })
+  const { data, error } = await api.PUT('/api/sims/forge/', { body: { main: servers.main, other: servers.other } })
   busy.value = false
   if (error) {
     // Nested errors: {main: {url: [...]}} → "main.url".
@@ -48,7 +48,7 @@ async function save() {
     return toast.error('Could not save the Forge settings.')
   }
   Object.assign(servers.main, data.main)
-  Object.assign(servers.fallback, data.fallback)
+  Object.assign(servers.other, data.other)
   toast.success('Forge settings saved.')
 }
 
@@ -69,7 +69,7 @@ async function test(role: Role) {
     <CardHeader>
       <CardTitle class="flex items-center gap-2">
         Forge
-        <InfoTip text="Where simulations are played. Each new game goes to Main while it answers, otherwise to Fallback. Only staff see this." />
+        <InfoTip text="Where simulations are played. Auto runs play on Other while it answers, otherwise on Main. Only staff see this." />
       </CardTitle>
     </CardHeader>
     <CardContent v-if="loaded" class="grid gap-6">
