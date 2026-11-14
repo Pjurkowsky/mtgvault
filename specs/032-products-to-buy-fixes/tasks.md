@@ -2,8 +2,8 @@
 
 ## Backend
 
-- [ ] **T1 `Product.section` and `image`, `ProductCard.commander`; sync reads sealed products and commanders; fixture** (AC-1, AC-3, AC-4)
-- [ ] **T2 API: four sections ranked by cards, commanders, images, no basic lands; `scripts/check-api.sh`** (AC-1 to AC-4, AC-7)
+- [x] **T1 `Product.section` and `image`, `ProductCard.commander`; sync reads sealed products and commanders; fixture** (AC-1, AC-3, AC-4)
+- [x] **T2 API: four sections ranked by cards, commanders, images, no basic lands; `scripts/check-api.sh`** (AC-1 to AC-4, AC-7)
 
 ## Frontend
 

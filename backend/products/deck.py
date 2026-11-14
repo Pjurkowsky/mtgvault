@@ -1,4 +1,4 @@
-"""Which products hold a deck's cards (spec 030, AC-2 to AC-7)."""
+"""Which products hold a deck's cards (spec 030, AC-2 to AC-7; spec 032)."""
 
 from collections import defaultdict
 from datetime import date
@@ -27,7 +27,8 @@ def cutoff(years: int, today: date | None = None) -> date | None:
 
 
 def deck_products(deck, cards, which='missing', printing='any', since=0) -> dict:
-    counted = [c for c in cards if c.zone in COUNTED]
+    # Basic lands are in every product: never looked for (spec 032, AC-7).
+    counted = [c for c in cards if c.zone in COUNTED and not c.printing.type_line.startswith('Basic')]
     if which == 'missing':
         own = deck_ownership(deck, counted)
         counted = [c for c in counted if own[c.id]['state'] == 'missing']
@@ -49,7 +50,7 @@ def deck_products(deck, cards, which='missing', printing='any', since=0) -> dict
     decks, boosters = {}, {}
     for row in rows:
         target = decks if row.product.kind == Product.Kind.DECK else boosters
-        entry = target.setdefault(row.product_id, {'product': row.product, 'cards': {}})
+        entry = target.setdefault(row.product_id, {'product': row.product, 'cards': {}, 'commanders': []})
         oracle = oracle_of[row.printing_id]
         best = entry['cards'].get(oracle)
         # The product's own printing; in a booster the likeliest one.
@@ -57,28 +58,43 @@ def deck_products(deck, cards, which='missing', printing='any', since=0) -> dict
             entry['cards'][oracle] = row
 
     _booster_chances(boosters, oracle_of)
+    for e in boosters.values():
+        # A card a pack can never hold (weight 0) doesn't count.
+        e['cards'] = {o: r for o, r in e['cards'].items() if e['card_chance'][o] > 0}
+    _commanders(decks)
 
     def card(row, chance=None):
         return {'printing': row.printing, 'copies': row.copies, 'chance': chance}
 
-    deck_list = sorted(
-        ({'product': e['product'], 'count': len(e['cards']),
-          'cards': sorted((card(r) for r in e['cards'].values()), key=lambda x: x['printing'].name)}
-         for e in decks.values()),
-        key=lambda e: (-e['count'], -(e['product'].released_at or date.min).toordinal(), e['product'].name))
-    booster_list = sorted(
-        ({'product': e['product'], 'count': len(e['cards']), 'chance': e['chance'],
-          'cards': sorted((card(r, e['card_chance'][o]) for o, r in e['cards'].items()), key=lambda x: (-x['chance'], x['printing'].name))}
-         for e in boosters.values() if e['chance'] > 0),
-        key=lambda e: (-e['chance'], -(e['product'].released_at or date.min).toordinal(), e['product'].name))
+    entries = [
+        {'product': e['product'], 'count': len(e['cards']), 'commanders': e['commanders'],
+         'cards': sorted((card(r) for r in e['cards'].values()), key=lambda x: x['printing'].name)}
+        for e in decks.values()
+    ] + [
+        {'product': e['product'], 'count': len(e['cards']), 'commanders': [],
+         'cards': sorted((card(r, e['card_chance'][o]) for o, r in e['cards'].items()), key=lambda x: (-x['chance'], x['printing'].name))}
+        for e in boosters.values() if e['cards']
+    ]
+    # Most cards first, then the newer product (spec 032, AC-2).
+    entries.sort(key=lambda e: (-e['count'], -(e['product'].released_at or date.min).toordinal(), e['product'].name))
+    sections = {s.value: [] for s in Product.Section}
+    for e in entries:
+        sections[e['product'].section].append(e)
 
-    found = {o for e in [*decks.values(), *boosters.values()] for o in e['cards']}
+    found = {o for e in entries for o in (oracle_of[c['printing'].id] for c in e['cards'])}
     none = sorted((c.printing for o, c in wanted.items() if o not in found), key=lambda p: p.name)
-    return {'decks': deck_list, 'boosters': booster_list, 'none': none, 'cards': len(wanted)}
+    return {'sections': sections, 'none': none, 'cards': len(wanted)}
+
+
+def _commanders(decks: dict) -> None:
+    """Each deck's commanders (spec 032, AC-3), whether or not the deck needs them."""
+    rows = ProductCard.objects.filter(product_id__in=list(decks), commander=True).select_related('printing__set').order_by('printing__name')
+    for row in rows:
+        decks[row.product_id]['commanders'].append(row.printing)
 
 
 def _booster_chances(boosters: dict, oracle_of: dict) -> None:
-    """Each booster's chance per pack for all the wanted cards, and for each card alone."""
+    """Each wanted card's chance per pack in each booster."""
     if not boosters:
         return
     ids = list(boosters)
@@ -94,9 +110,4 @@ def _booster_chances(boosters: dict, oracle_of: dict) -> None:
         weights[product_id][oracle_of[printing_id]][sheet] += weight
     for product_id, entry in boosters.items():
         by_card = weights[product_id]
-        together = defaultdict(int)
-        for per_sheet in by_card.values():
-            for sheet, w in per_sheet.items():
-                together[sheet] += w
-        entry['chance'] = pack_chance(layouts[product_id], sheets[product_id], together)
         entry['card_chance'] = {o: pack_chance(layouts[product_id], sheets[product_id], by_card.get(o, {})) for o in entry['cards']}

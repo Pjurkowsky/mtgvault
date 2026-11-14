@@ -5218,16 +5218,18 @@ components:
         count:
           type: integer
           description: How many of the deck's cards it holds
-        chance:
-          type: number
-          format: double
-          description: 'Boosters: chance a pack holds at least one of them'
+        commanders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Printing'
+          description: 'Decks: the product''s commanders (spec 032, AC-3)'
         cards:
           type: array
           items:
             $ref: '#/components/schemas/ProductCard'
       required:
       - cards
+      - commanders
       - count
       - product
     DeckProducts:
@@ -5239,24 +5241,17 @@ components:
         cards:
           type: integer
           description: Cards looked for
-        decks:
-          type: array
-          items:
-            $ref: '#/components/schemas/DeckProduct'
-        boosters:
-          type: array
-          items:
-            $ref: '#/components/schemas/DeckProduct'
+        sections:
+          $ref: '#/components/schemas/ProductSections'
         none:
           type: array
           items:
             $ref: '#/components/schemas/Printing'
           description: Cards no listed product holds
       required:
-      - boosters
       - cards
-      - decks
       - none
+      - sections
       - synced
     DeckSalt:
       type: object
@@ -7313,6 +7308,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ProductKindEnum'
           readOnly: true
+        section:
+          allOf:
+          - $ref: '#/components/schemas/SectionEnum'
+          readOnly: true
         name:
           type: string
           readOnly: true
@@ -7331,12 +7330,19 @@ components:
           type: string
           readOnly: true
           description: MTGJSON's deck type, e.g. Commander Deck
+        image:
+          type: string
+          format: uri
+          readOnly: true
+          description: TCGplayer's product photo (spec 032, AC-4)
       required:
       - code
       - deck_type
+      - image
       - kind
       - name
       - released_at
+      - section
       - set_code
       - set_name
     ProductCard:
@@ -7368,6 +7374,10 @@ components:
           allOf:
           - $ref: '#/components/schemas/ProductKindEnum'
           readOnly: true
+        section:
+          allOf:
+          - $ref: '#/components/schemas/SectionEnum'
+          readOnly: true
         name:
           type: string
           readOnly: true
@@ -7386,6 +7396,11 @@ components:
           type: string
           readOnly: true
           description: MTGJSON's deck type, e.g. Commander Deck
+        image:
+          type: string
+          format: uri
+          readOnly: true
+          description: TCGplayer's product photo (spec 032, AC-4)
         count:
           type: integer
           description: Printings it can hold
@@ -7393,9 +7408,11 @@ components:
       - code
       - count
       - deck_type
+      - image
       - kind
       - name
       - released_at
+      - section
       - set_code
       - set_name
     ProductItem:
@@ -7492,6 +7509,31 @@ components:
       description: |-
         * `deck` - Deck
         * `booster` - Booster
+    ProductSections:
+      type: object
+      description: The dialog's tabs (spec 032, AC-1), each most cards first.
+      properties:
+        precons:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+        boosters:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+        other_decks:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+        other_boosters:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeckProduct'
+      required:
+      - boosters
+      - other_boosters
+      - other_decks
+      - precons
     ProfileEnum:
       enum:
       - Default
@@ -8601,6 +8643,18 @@ components:
       - index
       - went_first
       - wins
+    SectionEnum:
+      enum:
+      - precons
+      - boosters
+      - other_decks
+      - other_boosters
+      type: string
+      description: |-
+        * `precons` - Precons
+        * `boosters` - Boosters
+        * `other_decks` - Other decks
+        * `other_boosters` - Other boosters
     Selection:
       type: object
       description: Either explicit ids, or every row matching a filter minus exclusions

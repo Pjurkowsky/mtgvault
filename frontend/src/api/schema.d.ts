@@ -2260,11 +2260,8 @@ export interface components {
             product: components["schemas"]["Product"];
             /** @description How many of the deck's cards it holds */
             count: number;
-            /**
-             * Format: double
-             * @description Boosters: chance a pack holds at least one of them
-             */
-            chance?: number;
+            /** @description Decks: the product's commanders (spec 032, AC-3) */
+            commanders: components["schemas"]["Printing"][];
             cards: components["schemas"]["ProductCard"][];
         };
         DeckProducts: {
@@ -2272,8 +2269,7 @@ export interface components {
             synced: boolean;
             /** @description Cards looked for */
             cards: number;
-            decks: components["schemas"]["DeckProduct"][];
-            boosters: components["schemas"]["DeckProduct"][];
+            sections: components["schemas"]["ProductSections"];
             /** @description Cards no listed product holds */
             none: components["schemas"]["Printing"][];
         };
@@ -3171,6 +3167,7 @@ export interface components {
             /** @description e.g. blb-play, blc-animated-army */
             readonly code: string;
             readonly kind: components["schemas"]["ProductKindEnum"];
+            readonly section: components["schemas"]["SectionEnum"];
             readonly name: string;
             readonly set_code: string;
             readonly set_name: string;
@@ -3178,6 +3175,11 @@ export interface components {
             readonly released_at: string | null;
             /** @description MTGJSON's deck type, e.g. Commander Deck */
             readonly deck_type: string;
+            /**
+             * Format: uri
+             * @description TCGplayer's product photo (spec 032, AC-4)
+             */
+            readonly image: string;
         };
         ProductCard: {
             printing: components["schemas"]["Printing"];
@@ -3193,6 +3195,7 @@ export interface components {
             /** @description e.g. blb-play, blc-animated-army */
             readonly code: string;
             readonly kind: components["schemas"]["ProductKindEnum"];
+            readonly section: components["schemas"]["SectionEnum"];
             readonly name: string;
             readonly set_code: string;
             readonly set_name: string;
@@ -3200,6 +3203,11 @@ export interface components {
             readonly released_at: string | null;
             /** @description MTGJSON's deck type, e.g. Commander Deck */
             readonly deck_type: string;
+            /**
+             * Format: uri
+             * @description TCGplayer's product photo (spec 032, AC-4)
+             */
+            readonly image: string;
             /** @description Printings it can hold */
             count: number;
         };
@@ -3243,6 +3251,13 @@ export interface components {
          * @enum {string}
          */
         ProductKindEnum: "deck" | "booster";
+        /** @description The dialog's tabs (spec 032, AC-1), each most cards first. */
+        ProductSections: {
+            precons: components["schemas"]["DeckProduct"][];
+            boosters: components["schemas"]["DeckProduct"][];
+            other_decks: components["schemas"]["DeckProduct"][];
+            other_boosters: components["schemas"]["DeckProduct"][];
+        };
         /**
          * @description * `Default` - Default
          *     * `Cautious` - Cautious
@@ -3665,6 +3680,14 @@ export interface components {
             avg_win_turn: number | null;
             went_first: number;
         };
+        /**
+         * @description * `precons` - Precons
+         *     * `boosters` - Boosters
+         *     * `other_decks` - Other decks
+         *     * `other_boosters` - Other boosters
+         * @enum {string}
+         */
+        SectionEnum: "precons" | "boosters" | "other_decks" | "other_boosters";
         /** @description Either explicit ids, or every row matching a filter minus exclusions (AC-39). */
         Selection: {
             ids?: number[];

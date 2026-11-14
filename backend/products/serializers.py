@@ -12,7 +12,7 @@ from .models import Product
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['code', 'kind', 'name', 'set_code', 'set_name', 'released_at', 'deck_type']
+        fields = ['code', 'kind', 'section', 'name', 'set_code', 'set_name', 'released_at', 'deck_type', 'image']
         read_only_fields = fields
 
 
@@ -25,15 +25,22 @@ class ProductCardSerializer(serializers.Serializer):
 class DeckProductSerializer(serializers.Serializer):
     product = ProductSerializer()
     count = serializers.IntegerField(help_text="How many of the deck's cards it holds")
-    chance = serializers.FloatField(required=False, help_text='Boosters: chance a pack holds at least one of them')
+    commanders = PrintingSerializer(many=True, help_text="Decks: the product's commanders (spec 032, AC-3)")
     cards = ProductCardSerializer(many=True)
+
+
+class ProductSectionsSerializer(serializers.Serializer):
+    """The dialog's tabs (spec 032, AC-1), each most cards first."""
+    precons = DeckProductSerializer(many=True)
+    boosters = DeckProductSerializer(many=True)
+    other_decks = DeckProductSerializer(many=True)
+    other_boosters = DeckProductSerializer(many=True)
 
 
 class DeckProductsSerializer(serializers.Serializer):
     synced = serializers.BooleanField(help_text='False until the first product sync (spec 030, AC-12)')
     cards = serializers.IntegerField(help_text='Cards looked for')
-    decks = DeckProductSerializer(many=True)
-    boosters = DeckProductSerializer(many=True)
+    sections = ProductSectionsSerializer()
     none = PrintingSerializer(many=True, help_text='Cards no listed product holds')
 
 

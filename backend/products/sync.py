@@ -35,6 +35,11 @@ BATCH_SIZE = 5000
 # Deck types only played online (AC-7), besides those naming Arena or MTGO.
 DIGITAL_DECKS = {'Historic Brawl Precon Deck', 'Shandalar Enemy Deck', 'Duel Of The Planeswalkers Deck'}
 DECK_ZONES = ('commander', 'mainBoard', 'sideBoard')
+# Regular booster packs (spec 032, AC-1); a sealed pack of fewer cards is an Other booster.
+REGULAR_BOOSTERS = {'play', 'draft', 'set', 'collector', 'default'}
+REGULAR_MIN_CARDS = 14
+PRECON = 'Commander Deck'
+IMAGE_URL = 'https://tcgplayer-cdn.tcgplayer.com/product/{}_200w.jpg'
 
 
 def is_digital(*names: str) -> bool:
@@ -88,6 +93,30 @@ class _Codes:
         return code
 
 
+def _image(sealed: dict) -> str:
+    tcgplayer = (sealed.get('identifiers') or {}).get('tcgplayerProductId')
+    return IMAGE_URL.format(tcgplayer) if tcgplayer else ''
+
+
+def _packs(data: dict) -> dict:
+    """{booster key: sealed booster pack} for a set, preferring a pack with a photo."""
+    packs = {}
+    for sealed in data.get('sealedProduct') or ():
+        if sealed.get('category') != 'booster_pack':
+            continue
+        for pack in (sealed.get('contents') or {}).get('pack') or ():
+            key = pack.get('code')
+            if key and (key not in packs or (not _image(packs[key]) and _image(sealed))):
+                packs[key] = sealed
+    return packs
+
+
+def booster_section(key: str, pack: dict | None) -> str:
+    cards = (pack or {}).get('cardCount')
+    regular = key in REGULAR_BOOSTERS and not (cards and cards < REGULAR_MIN_CARDS)
+    return Product.Section.BOOSTERS if regular else Product.Section.OTHER_BOOSTERS
+
+
 def _date(value):
     try:
         return date.fromisoformat(value) if value else None
@@ -98,10 +127,14 @@ def _date(value):
 def _read(printings_file: str, decks_file: str):
     """Products as plain dicts, with their cards mapped to our printings."""
     known = {str(i) for i in Printing.objects.values_list('id', flat=True)}
-    # Pass 1: every MTGJSON card's Scryfall id (sheets may use other sets' cards) and set names.
-    scryfall, set_names = {}, {}
+    # Pass 1: every MTGJSON card's Scryfall id (sheets may use other sets' cards), set names
+    # and the photos of sealed products, for decks to find by uuid.
+    scryfall, set_names, photos = {}, {}, {}
     for code, data in _sets(printings_file):
         set_names[code] = data.get('name') or code
+        for sealed in data.get('sealedProduct') or ():
+            if image := _image(sealed):
+                photos[sealed.get('uuid')] = image
         for card in data.get('cards') or ():
             sid = (card.get('identifiers') or {}).get('scryfallId')
             if sid in known:
@@ -113,6 +146,7 @@ def _read(printings_file: str, decks_file: str):
     for code, data in _sets(printings_file):
         if data.get('isOnlineOnly'):
             continue
+        packs = _packs(data)
         for key, config in (data.get('booster') or {}).items():
             kind = '' if key == 'default' else f" {key.replace('-', ' ').title()}"
             name = config.get('name') or f'{set_names[code]}{kind} Booster'
@@ -133,18 +167,21 @@ def _read(printings_file: str, decks_file: str):
                 'kind': Product.Kind.BOOSTER, 'code': codes(code, key), 'name': name, 'set_code': code.lower(),
                 'set_name': set_names[code], 'released_at': _date(data.get('releaseDate')),
                 'sheets': sheets, 'layouts': layouts,
+                'section': booster_section(key, packs.get(key)), 'image': _image(packs.get(key) or {}),
             })
 
     # Fixed decks.
     for deck in _decks(decks_file):
         if is_digital(deck.get('type') or '') or deck.get('type') in DIGITAL_DECKS:
             continue
-        copies = defaultdict(int)
+        copies, commanders = defaultdict(int), set()
         for zone in DECK_ZONES:
             for card in deck.get(zone) or ():
                 sid = (card.get('identifiers') or {}).get('scryfallId')
                 if sid in known:
                     copies[sid] += int(card.get('count') or 1)
+                    if zone == 'commander':
+                        commanders.add(sid)
         if not copies:
             continue
         set_code = deck.get('code') or ''
@@ -152,6 +189,9 @@ def _read(printings_file: str, decks_file: str):
             'kind': Product.Kind.DECK, 'code': codes(set_code, deck['name']), 'name': deck['name'],
             'set_code': set_code.lower(), 'set_name': set_names.get(set_code, set_code),
             'released_at': _date(deck.get('releaseDate')), 'deck_type': deck.get('type') or '', 'copies': copies,
+            'commanders': commanders,
+            'section': Product.Section.PRECONS if deck.get('type') == PRECON else Product.Section.OTHER_DECKS,
+            'image': next((photos[u] for u in deck.get('sealedProductUuids') or () if u in photos), ''),
         })
     return products
 
@@ -161,13 +201,14 @@ def _store(products: list[dict]) -> int:
     rows = [Product(
         code=p['code'], kind=p['kind'], name=p['name'][:300], set_code=p['set_code'][:10], set_name=p['set_name'][:200],
         released_at=p['released_at'], deck_type=p.get('deck_type', '')[:60],
-        total_weight=sum(w for w, _ in p.get('layouts', ())),
+        total_weight=sum(w for w, _ in p.get('layouts', ())), section=p['section'], image=p['image'],
     ) for p in products]
     Product.objects.bulk_create(rows, batch_size=BATCH_SIZE)
     cards, sheet_rows, layouts = [], [], []
     for row, p in zip(rows, products):
         if p['kind'] == Product.Kind.DECK:
-            cards += [ProductCard(product=row, printing_id=sid, copies=n) for sid, n in p['copies'].items()]
+            cards += [ProductCard(product=row, printing_id=sid, copies=n, commander=sid in p['commanders'])
+                      for sid, n in p['copies'].items()]
             continue
         layouts += [BoosterLayout(product=row, weight=w, slots=s) for w, s in p['layouts']]
         sheet_info = {name: (s['total'], s['fixed']) for name, s in p['sheets'].items()}

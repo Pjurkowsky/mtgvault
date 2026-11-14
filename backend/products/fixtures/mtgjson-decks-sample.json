@@ -32,7 +32,10 @@
      }
     }
    ],
-   "sideBoard": []
+   "sideBoard": [],
+   "sealedProductUuids": [
+    "92eb7d6f-e3b9-54b5-bbb7-6176a0d8beb1"
+   ]
   },
   {
    "name": "Lorehold Legacies",
@@ -47,16 +50,34 @@
      "identifiers": {
       "scryfallId": "4cbc6901-6a4a-4d0a-83ea-7eefa3b35021"
      }
+    },
+    {
+     "name": "Forest",
+     "count": 10,
+     "identifiers": {
+      "scryfallId": "3279314f-d639-4489-b2ab-3621bb3ca64b"
+     }
     }
    ],
-   "sideBoard": []
+   "sideBoard": [],
+   "sealedProductUuids": [
+    "e44401f9-ab22-57f0-9754-af638f585c9a"
+   ]
   },
   {
    "name": "Multiverse Reforged",
    "code": "FRC",
    "type": "Commander Deck",
    "releaseDate": "2026-10-02",
-   "commander": [],
+   "commander": [
+    {
+     "name": "The Prismatic Piper",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "c78c2713-39e7-4a6e-a132-027099a89665"
+     }
+    }
+   ],
    "mainBoard": [
     {
      "name": "Swords to Plowshares",
@@ -73,7 +94,10 @@
      }
     }
    ],
-   "sideBoard": []
+   "sideBoard": [],
+   "sealedProductUuids": [
+    "785749c7-4383-5e25-b194-80df2c259505"
+   ]
   },
   {
    "name": "Murders at Karlov Manor Redemption",
@@ -124,14 +148,25 @@
      }
     }
    ],
-   "sideBoard": []
+   "sideBoard": [],
+   "sealedProductUuids": [
+    "fc42f932-5d38-56f2-b7ab-95e4ac8c8c3b"
+   ]
   },
   {
    "name": "Reign of Dragons",
    "code": "FDC",
    "type": "Commander Deck",
    "releaseDate": "2026-10-02",
-   "commander": [],
+   "commander": [
+    {
+     "name": "Krenko, Mob Boss",
+     "count": 1,
+     "identifiers": {
+      "scryfallId": "824b2d73-2151-4e5e-9f05-8f63e2bdcaa9"
+     }
+    }
+   ],
    "mainBoard": [
     {
      "name": "Lightning Bolt",
@@ -141,7 +176,10 @@
      }
     }
    ],
-   "sideBoard": []
+   "sideBoard": [],
+   "sealedProductUuids": [
+    "aafde380-75e8-5568-b34e-8047884db4a3"
+   ]
   },
   {
    "name": "Scarlet",
