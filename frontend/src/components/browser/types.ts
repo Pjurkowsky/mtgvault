@@ -11,6 +11,8 @@ export type BrowserRow = Schemas['PublicItem'] & Partial<Omit<Schemas['Item'], k
   want?: WantRow | Schemas['PublicWant']
   /** Opened from this binder pocket: edit and delete touch only its copy (spec 018). */
   pocket?: number
+  /** A product's page (spec 030): chance per pack (boosters) and copies you own (signed in). */
+  product?: { chance: number | null; owned: number | null }
 }
 
 export type BrowserSource =
@@ -20,6 +22,8 @@ export type BrowserSource =
   | { kind: 'wants' }
   /** Someone's public want list (spec 010, AC-18). */
   | { kind: 'public-wants'; username: string }
+  /** Every card a product can hold (spec 030, AC-9). */
+  | { kind: 'product'; code: string; booster: boolean }
 
 /** A want entry as a browser row: Any finish shows as non-foil only where a finish must be given. */
 export function wantRow(want: WantRow | Schemas['PublicWant']): BrowserRow {

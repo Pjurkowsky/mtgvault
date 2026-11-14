@@ -34,8 +34,7 @@
 
 | Test file | ACs |
 |---|---|
-| `e2e/products-to-buy.spec.ts` | AC-1 to AC-7, AC-12 |
-| `e2e/product-page.spec.ts` | AC-8 to AC-11 |
+| `e2e/products.spec.ts` | AC-1 to AC-12 (one serial file: AC-12 changes server-wide sync state) |
 
 ## Order of work
 

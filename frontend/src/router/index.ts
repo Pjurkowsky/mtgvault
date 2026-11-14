@@ -39,6 +39,7 @@ export const router = createRouter({
     { path: '/u/:username/locations/:id', name: 'public-location', component: () => import('@/pages/PublicLocationPage.vue') },
     { path: '/u/:username/wants', name: 'public-wants', component: () => import('@/pages/WantsPage.vue') },
     { path: '/u/:username/decks/:id(\\d+)', name: 'public-deck', component: () => import('@/pages/DeckPage.vue') },
+    { path: '/products/:code', name: 'product', component: () => import('@/pages/ProductPage.vue') },
     { path: '/settings', name: 'settings', component: () => import('@/pages/SettingsPage.vue'), meta: { requiresAuth: true } },
     { path: '/u/:username', name: 'profile', component: () => import('@/pages/ProfilePage.vue') },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/NotFoundPage.vue') },

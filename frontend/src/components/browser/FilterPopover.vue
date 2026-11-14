@@ -17,6 +17,9 @@ const props = defineProps<{
   /** The want list (spec 010, AC-8): no condition; `decks` adds a Deck filter. */
   wants?: boolean
   decks?: { id: number; name: string }[]
+  /** A product's page (spec 030): no condition; `owned` adds an Owned filter (AC-11). */
+  product?: boolean
+  owned?: boolean
 }>()
 const emit = defineEmits<{ update: [patch: Record<string, string | string[] | undefined>]; clear: [] }>()
 
@@ -62,7 +65,7 @@ watch(setQuery, (q) => {
     <ColorToggles :selected="filter.color ?? []" @change="(v) => emit('update', { color: v })" />
     <Separator />
     <CheckGroup
-      v-for="group in GROUPS.filter((g) => !wants || g.key !== 'condition')" :key="group.key" :label="group.label" :options="group.options"
+      v-for="group in GROUPS.filter((g) => !(wants || product) || g.key !== 'condition')" :key="group.key" :label="group.label" :options="group.options"
       :selected="filter[group.key] ?? []" @change="(v) => emit('update', { [group.key]: v })"
     />
     <Separator />
@@ -86,6 +89,20 @@ watch(setQuery, (q) => {
           <SelectContent>
             <SelectItem value="all">All decks</SelectItem>
             <SelectItem v-for="d in decks" :key="d.id" :value="String(d.id)">{{ d.name }}</SelectItem>
+          </SelectContent>
+        </Select>
+      </section>
+    </template>
+    <template v-if="owned">
+      <Separator />
+      <section class="grid gap-2">
+        <Label>Owned</Label>
+        <Select :model-value="filter.owned ?? 'all'" @update:model-value="(v) => emit('update', { owned: v === 'all' ? undefined : String(v) })">
+          <SelectTrigger aria-label="Owned" class="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any</SelectItem>
+            <SelectItem value="owned">Owned</SelectItem>
+            <SelectItem value="not_owned">Not owned</SelectItem>
           </SelectContent>
         </Select>
       </section>

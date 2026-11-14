@@ -9,7 +9,8 @@ import { cn } from '@/lib/utils'
 defineProps<{
   image: string | null | undefined
   name: string
-  quantity: number
+  /** Hidden when null: a booster's cards (spec 030). */
+  quantity: number | null
   label: string
   selected?: boolean
   /** Large image for the fullscreen button. */
@@ -38,7 +39,7 @@ const emit = defineEmits<{ click: [event: MouseEvent] }>()
       :class="cn('aspect-[488/680] w-full bg-muted object-cover transition', selected && 'scale-[0.94] rounded-[4.75%/3.5%]')"
     />
     <span class="absolute top-2 left-2 flex gap-1">
-      <span class="rounded-md bg-background/90 px-1.5 text-sm font-semibold shadow" data-testid="card-quantity">×{{ quantity }}</span>
+      <span v-if="quantity !== null" class="rounded-md bg-background/90 px-1.5 text-sm font-semibold shadow" data-testid="card-quantity">×{{ quantity }}</span>
       <slot name="badges" />
     </span>
     <span

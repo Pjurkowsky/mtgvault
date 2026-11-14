@@ -4,6 +4,7 @@ import Price from '@/components/Price.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { CONDITIONS, FINISHES, LANGUAGES, labelOf } from '@/lib/cards'
+import { chanceLabel } from '@/lib/products'
 import CardMenu, { type MenuItem } from './CardMenu.vue'
 import type { BrowserRow } from './types'
 
@@ -21,6 +22,8 @@ const props = defineProps<{
   selectAllState?: boolean | 'indeterminate'
   /** Want list columns: Printing, Finish and Deck instead of set, condition and language (spec 010, AC-8). */
   wants?: boolean
+  /** A product's page (spec 030): Chance (boosters) and Owned (signed in) instead of condition and language. */
+  product?: { chance: boolean; owned: boolean }
 }>()
 const emit = defineEmits<{
   click: [row: BrowserRow, index: number, event: MouseEvent]
@@ -57,8 +60,14 @@ const deckLabel = (row: BrowserRow) => (row.want && 'deck_name' in row.want ? ro
             <TableHead>Set</TableHead>
             <TableHead>#</TableHead>
             <TableHead>Finish</TableHead>
-            <TableHead>Condition</TableHead>
-            <TableHead>Language</TableHead>
+            <template v-if="product">
+              <TableHead v-if="product.chance" class="text-right">Chance</TableHead>
+              <TableHead v-if="product.owned" class="text-right">Owned</TableHead>
+            </template>
+            <template v-else>
+              <TableHead>Condition</TableHead>
+              <TableHead>Language</TableHead>
+            </template>
           </template>
           <TableHead class="text-right">Qty</TableHead>
           <TableHead class="text-right">Price</TableHead>
@@ -99,8 +108,14 @@ const deckLabel = (row: BrowserRow) => (row.want && 'deck_name' in row.want ? ro
               <TableCell :title="row.printing.set_name" class="uppercase">{{ row.printing.set_code }}</TableCell>
               <TableCell>{{ row.printing.collector_number }}</TableCell>
               <TableCell>{{ labelOf(FINISHES, row.finish) }}</TableCell>
-              <TableCell>{{ labelOf(CONDITIONS, row.condition) }}</TableCell>
-              <TableCell>{{ labelOf(LANGUAGES, row.language) }}</TableCell>
+              <template v-if="product">
+                <TableCell v-if="product.chance" class="text-right tabular-nums" data-testid="card-chance">{{ chanceLabel(row.product?.chance ?? 0) }}</TableCell>
+                <TableCell v-if="product.owned" class="text-right tabular-nums" data-testid="card-owned">{{ row.product?.owned ?? 0 }}</TableCell>
+              </template>
+              <template v-else>
+                <TableCell>{{ labelOf(CONDITIONS, row.condition) }}</TableCell>
+                <TableCell>{{ labelOf(LANGUAGES, row.language) }}</TableCell>
+              </template>
             </template>
             <TableCell class="text-right">{{ row.quantity }}</TableCell>
             <TableCell class="text-right whitespace-nowrap"><Price :value="row.unit_price" :values="row.unit_prices" :currency="currency" /></TableCell>

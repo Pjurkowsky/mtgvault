@@ -69,8 +69,8 @@ to browse every card it can have, filtered like a collection.
   the newer product.
 - AC-4, AC-10: the chance uses MTGJSON's pack layouts and slot weights. Packs
   never repeat a card within a slot, which the chance ignores (it slightly
-  understates it). Prerelease and promo packs count as boosters; Jumpstart packs
-  count as decks.
+  understates it). Prerelease and promo packs count as boosters. Each Jumpstart
+  theme is a deck; a set's Jumpstart Booster (a random theme) is a booster.
 - AC-5: a card shows once even if the product has more printings of it; in a
   booster the chance is for any of them.
 - AC-9: a printing is priced and filtered by finish as non-foil when it has a
@@ -78,5 +78,6 @@ to browse every card it can have, filtered like a collection.
 - AC-7: products whose MTGJSON name or type mentions Arena or MTGO, digital-only
   deck types (Historic Brawl precons, Shandalar, Duels of the Planeswalkers) and
   sets that are online only.
+- AC-10: a booster's cards show no ×1 badge, since a pack holds one of each.
 - AC-12: the sync runs Sunday mornings; staff can run it by hand
   (`manage.py sync_products`). A failed sync keeps last week's data.

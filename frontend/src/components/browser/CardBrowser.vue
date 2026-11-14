@@ -47,6 +47,7 @@ import { useInfiniteItems, type Page } from '@/composables/useInfiniteItems'
 import { usePreference } from '@/composables/usePreference'
 import { useSelection, type Selection } from '@/composables/useSelection'
 import { SORTS } from '@/lib/cards'
+import { useAuthStore } from '@/stores/auth'
 import type { Money } from '@/lib/money'
 import BulkDialog, { type BulkAction } from './BulkDialog.vue'
 import CardGrid from './CardGrid.vue'
@@ -83,6 +84,11 @@ const route = useRoute()
 // The want list (spec 010): its own rows, menu and dialogs; no selection, scanning or import.
 const isWants = computed(() => props.source.kind === 'wants' || props.source.kind === 'public-wants')
 const editable = computed(() => (props.source.kind === 'own' || props.source.kind === 'wants') && !props.readonly)
+// A product's cards (spec 030, AC-9 to AC-11): read only, chance and owned on each card.
+const isProduct = computed(() => props.source.kind === 'product')
+const auth = useAuthStore()
+const sorts = computed(() => props.source.kind !== 'product' ? SORTS
+  : [...SORTS.filter((s) => s.value !== 'added' && s.value !== 'quantity'), ...(props.source.booster ? [{ value: 'chance', label: 'Chance' }] : [])])
 const selectable = computed(() => editable.value && !isWants.value)
 // The cart (spec 003): scanned cards waiting to be moved into the collection.
 const isCart = computed(() => props.location === 'cart')
@@ -167,6 +173,12 @@ async function fetchPage(offset: number, limit: number): Promise<BrowserPage | u
       ? await api.GET('/api/wants/', { params: { query: pageQuery } })
       : await api.GET('/api/users/{username}/wants/', { params: { path: { username: props.source.username }, query: pageQuery } })
     return data && { ...data, results: data.results.map(wantRow) }
+  }
+  if (props.source.kind === 'product') {
+    const { data } = await api.GET('/api/products/{code}/cards/', {
+      params: { path: { code: props.source.code }, query: pageQuery as never },
+    })
+    return data && { ...data, results: data.results.map((r) => ({ ...r, product: { chance: r.chance, owned: r.owned } }) as BrowserRow) }
   }
   const { username, locationId } = props.source
   return (await api.GET('/api/users/{username}/locations/{id}/items/', {
@@ -432,12 +444,13 @@ const exportName = computed(() =>
       </div>
       <FilterPopover
         :filter="filter" :active-count="activeFilterCount" :currency="currency" :disabled="inBinder" :wants="isWants" :decks="decks"
+        :product="isProduct" :owned="isProduct && auth.isLoggedIn"
         @update="update" @clear="clearFilters"
       />
       <Select :model-value="filter.sort" :disabled="inBinder" @update:model-value="(v) => update({ sort: String(v) })">
         <SelectTrigger class="w-32" aria-label="Sort by"><SelectValue /></SelectTrigger>
         <SelectContent>
-          <SelectItem v-for="s in SORTS" :key="s.value" :value="s.value">{{ s.label }}</SelectItem>
+          <SelectItem v-for="s in sorts" :key="s.value" :value="s.value">{{ s.label }}</SelectItem>
         </SelectContent>
       </Select>
       <IconButton
@@ -464,7 +477,7 @@ const exportName = computed(() =>
               Public
             </DropdownMenuCheckboxItem>
             <DropdownMenuItem v-if="canAdd && !isWants" @select="importOpen = true"><UploadIcon /> Import</DropdownMenuItem>
-            <DropdownMenuItem v-if="!isWants" @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
+            <DropdownMenuItem v-if="!isWants && !isProduct" @select="openExport(false)"><DownloadIcon /> Export</DropdownMenuItem>
             <template v-if="locationMenu">
               <DropdownMenuSeparator />
               <DropdownMenuItem class="text-destructive" @select="emit('delete-location')"><Trash2Icon class="text-destructive" /> Delete</DropdownMenuItem>
@@ -498,6 +511,7 @@ const exportName = computed(() =>
       v-else-if="rows.length"
       :rows="rows" :currency="currency" :editable="editable" :selectable="selectable" :menu="menuItems" :selecting="selecting" :is-selected="selection.isSelected"
       :show-location="source.kind === 'own' && !location" :select-all-state="selectAllState" :wants="isWants"
+      :product="source.kind === 'product' ? { chance: source.booster, owned: auth.isLoggedIn } : undefined"
       @click="onCardClick" @check="check" @open="openDetail" @edit="onEdit" @delete="onDelete" @deck="openAddToDeck" @collect="collect"
       @select-all="toggleSelectAll"
     />
@@ -535,7 +549,7 @@ const exportName = computed(() =>
     </div>
 
     <CardDetailDialog
-      v-model:open="detailOpen" :row="isWants ? null : detailRow" :oracle-id="detailRow?.printing.oracle_id" :printing-id="detailRow?.printing.id"
+      v-model:open="detailOpen" :row="isWants || isProduct ? null : detailRow" :oracle-id="detailRow?.printing.oracle_id" :printing-id="detailRow?.printing.id"
       :currency="currency" :readonly="!editable"
       @changed="refresh" @edit="openEdit" @delete="deleteRow" @add="addFromDetail"
     >

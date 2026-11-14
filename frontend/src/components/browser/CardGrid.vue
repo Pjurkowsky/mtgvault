@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { CheckIcon } from '@lucide/vue'
 import Price from '@/components/Price.vue'
 import { Checkbox } from '@/components/ui/checkbox'
+import { chanceLabel } from '@/lib/products'
 import { cn } from '@/lib/utils'
 import CardMenu, { type MenuItem } from './CardMenu.vue'
 import CardTile from './CardTile.vue'
@@ -38,11 +40,17 @@ const canSelect = () => props.selectable ?? props.editable
     <li v-for="(row, index) in rows" :key="row.id" class="group relative">
       <CardMenu :editable="editable" :items="menu" @open="emit('open', row)" @edit="emit('edit', row)" @delete="emit('delete', row)" @deck="emit('deck', row)" @collect="emit('collect', row)">
         <CardTile
-          :image="row.printing.image_normal || row.printing.image_small" :name="row.printing.name" :quantity="row.quantity"
+          :image="row.printing.image_normal || row.printing.image_small" :name="row.printing.name" :quantity="row.product?.chance != null ? null : row.quantity"
           :label="`${row.printing.name}, ${row.quantity}×`" :selected="selected(row)" @click="emit('click', row, index, $event)"
         >
           <template #badges>
             <span v-if="row.finish !== 'nonfoil'" class="rounded-md bg-background/90 px-1.5 text-xs leading-5 capitalize shadow">{{ row.finish }}</span>
+            <!-- A product's page (spec 030, AC-10, AC-11) -->
+            <span v-if="row.product?.chance != null" class="rounded-md bg-background/90 px-1.5 text-xs leading-5 tabular-nums shadow" data-testid="card-chance">{{ chanceLabel(row.product.chance) }}</span>
+            <span
+              v-if="row.product?.owned" class="flex items-center gap-0.5 rounded-md bg-emerald-600/90 px-1.5 text-xs leading-5 text-white shadow"
+              :title="`You own ${row.product.owned}`" data-testid="card-owned"
+            ><CheckIcon class="size-3" /> {{ row.product.owned }}</span>
           </template>
           <template #price><Price :value="row.unit_price" :values="row.unit_prices" :currency="currency" /></template>
         </CardTile>

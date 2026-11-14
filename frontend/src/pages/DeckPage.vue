@@ -3,7 +3,7 @@ import { computed, provide, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeftIcon, BadgePercentIcon, BoxIcon, CameraIcon, CircleAlertIcon, CircleCheckIcon, CopyIcon, DownloadIcon, EllipsisIcon, GitBranchIcon,
-  GitForkIcon, GlobeIcon, HeartIcon, PackagePlusIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon, UploadIcon,
+  GitForkIcon, GlobeIcon, HeartIcon, PackagePlusIcon, PackageSearchIcon, PencilIcon, PlusIcon, RotateCcwIcon, Trash2Icon, UploadIcon,
 } from '@lucide/vue'
 import { toast } from 'vue-sonner'
 import { api, type Schemas } from '@/api/client'
@@ -21,6 +21,7 @@ import DeckText from '@/components/decks/DeckText.vue'
 import DeckToolbar, { type DeckOption, type Layout } from '@/components/decks/DeckToolbar.vue'
 import DeckTokens from '@/components/decks/DeckTokens.vue'
 import OptimizeDialog from '@/components/decks/OptimizeDialog.vue'
+import ProductsDialog from '@/components/decks/ProductsDialog.vue'
 import ProposeSwapDialog from '@/components/decks/ProposeSwapDialog.vue'
 import ScanTargetDialog from '@/components/decks/ScanTargetDialog.vue'
 import DeckStats from '@/components/decks/DeckStats.vue'
@@ -290,6 +291,7 @@ provide(WANT_MISSING, (card) => void wantMissing(card))
 
 // Cheapest printings for the cards the deck lacks (spec 013).
 const optimizeOpen = ref(false)
+const productsOpen = ref(false)
 const optimizeChanges = ref<Schemas['OptimizeChange'][]>([])
 async function optimize() {
   const { data } = await api.GET('/api/decks/{id}/optimize/', { params: { path: { id: id.value }, query: onBranch(deck.value!) } })
@@ -334,6 +336,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
               <DropdownMenuItem @select="missingOpen = true"><DownloadIcon /> Export missing</DropdownMenuItem>
               <DropdownMenuItem @select="wantMissing()"><HeartIcon /> Add missing to want list</DropdownMenuItem>
               <DropdownMenuItem @select="optimize()"><BadgePercentIcon /> Optimize printings</DropdownMenuItem>
+              <DropdownMenuItem @select="productsOpen = true"><PackageSearchIcon /> Products to buy</DropdownMenuItem>
               <DropdownMenuItem @select="editOpen = true"><PencilIcon /> Edit</DropdownMenuItem>
               <DropdownMenuItem v-if="!deck.location && onMain" @select="boxOpen = true"><PackagePlusIcon /> Create deck box</DropdownMenuItem>
               <DropdownMenuItem @select="fork()"><CopyIcon /> Fork</DropdownMenuItem>
@@ -342,7 +345,18 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Button v-else-if="canFork" variant="outline" class="ml-auto" data-testid="fork" @click="fork()"><GitForkIcon /> Fork</Button>
+        <!-- Visitors and saved versions: Products to buy, and Fork (spec 030, AC-1). -->
+        <div v-else class="ml-auto flex gap-2">
+          <Button v-if="canFork" variant="outline" data-testid="fork" @click="fork()"><GitForkIcon /> Fork</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <IconButton label="More"><EllipsisIcon /></IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem @select="productsOpen = true"><PackageSearchIcon /> Products to buy</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground" data-testid="deck-header">
         <template v-if="!onMain && !deck.version">
@@ -478,6 +492,7 @@ const sizeOff = computed(() => !!counts.value?.target && counts.value.size !== c
     <CategoryDialog v-if="editable" v-model:open="categoriesOpen" :deck="deck" :card="openCard" @changed="changed" />
     <DeckCardDetail v-model:open="cardOpen" :deck="deck" :card="openCard" :preview="outside" :readonly="!editable" @changed="changed" />
     <DeckVersionsPanel ref="panel" :deck="deck" :username="username" :editable="isOwner" @changed="changed" @reload="load" />
+    <ProductsDialog v-model:open="productsOpen" :deck="deck" :username="username" />
     <template v-if="editable">
       <DeckAddDialog v-model:open="addOpen" :deck="deck" @changed="changed" />
       <ScanTargetDialog
