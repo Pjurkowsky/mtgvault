@@ -38,7 +38,10 @@ const size = usePreference<CardSize>('replay.zone-size', 'md', CARD_SIZES)
             :class="cn('block w-full cursor-zoom-in rounded-[4.75%/3.5%]', fresh?.has(c.id) && 'ring-3 ring-amber-500 ring-offset-2 ring-offset-background')"
             @click="showFullscreen(images[c.name]?.image_normal, c.name)"
           >
-            <img v-if="images[c.name]?.image_small" :src="images[c.name]!.image_small" :alt="c.name" loading="lazy" class="w-full rounded-[4.75%/3.5%] bg-muted" />
+            <img
+              v-if="images[c.name]?.image_normal || images[c.name]?.image_small" :src="images[c.name]!.image_normal || images[c.name]!.image_small"
+              :alt="c.name" loading="lazy" class="w-full rounded-[4.75%/3.5%] bg-muted"
+            />
             <span v-else class="flex aspect-[63/88] w-full items-center rounded-[4.75%/3.5%] border bg-muted p-1 text-center text-xs leading-tight">{{ c.name }}</span>
           </button>
         </li>

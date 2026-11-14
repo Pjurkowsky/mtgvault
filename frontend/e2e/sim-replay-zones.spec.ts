@@ -27,7 +27,8 @@ test.describe('Replay zones', () => {
     await krenko.getByTestId('player-hand').click()
     const hand = page.getByTestId('zone-hand-list')
     expect(await names(hand)).toEqual(['Giant Growth', 'Forest', 'Temur Sabertooth', 'Temur Sabertooth', 'Llanowar Elves', 'Forest', 'Temur Sabertooth'])
-    await expect(hand.getByRole('img', { name: 'Forest' }).first()).toHaveAttribute('src', /scryfall/)
+    // The normal size image, so medium and large cards stay sharp (the small one is 146 px wide).
+    await expect(hand.getByRole('img', { name: 'Forest' }).first()).toHaveAttribute('src', /scryfall.*\/normal\//)
     // AC-4: a card in a zone, full screen; Escape closes only the preview.
     await hand.getByRole('button', { name: 'Giant Growth' }).click()
     await expect(page.getByTestId('fullscreen')).toHaveAccessibleName('Giant Growth')
