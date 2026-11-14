@@ -1,6 +1,6 @@
 # Spec 031: Pick the Forge, see where and how long games played
 
-Status: Draft
+Status: Done
 Depends on: 024-pod-simulation, 025-simulations-page, 029-forge-2-0-16
 
 ## Goal

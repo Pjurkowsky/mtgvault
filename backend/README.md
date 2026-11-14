@@ -20,6 +20,7 @@ docker compose -f ../docker-compose.dev.yml up -d db redis
 uv sync
 uv run manage.py migrate
 uv run manage.py sync_cards        # card catalog, tags, combos + rates (about 1 min)
+uv run manage.py sync_products     # MTGJSON precons and boosters (about 1 min, needs the cards)
 uv run manage.py createsuperuser
 uv run manage.py runserver    # http://localhost:8000
 ```
@@ -67,6 +68,8 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/decks/import/preview/`, `POST /api/decks/<id>/import/`, `GET .../export/` | bearer | Decklists with zone headings; export takes `printings`, `categories` and `tokens` |
 | `GET /api/decks/<id>/combos/`, `GET /api/users/<username>/decks/<id>/combos/` | bearer / public | Combos in the deck and infinite or win combos it could build; missing cards say if you own them (owner only) (spec 022) |
 | `GET /api/decks/<id>/insights/`, `GET /api/users/<username>/decks/<id>/insights/` | bearer / public | Fetches missing salt scores; returns the deck salt and the commander's EDHREC themes (spec 022) |
+| `GET /api/decks/<id>/products/`, `GET /api/users/<username>/decks/<id>/products/` | bearer / public | Products to buy: fixed decks and boosters holding the deck's cards (`cards` missing/all, `printing` any/chosen, `since` 0-4 years), cards in none (spec 030) |
+| `GET /api/products/<code>/`, `GET .../items/` | public | A product, and every card it can have as a card browser page with collection filters, `owned`, chance per pack and `sort=chance` (spec 030) |
 | `GET /api/decks/<id>/missing/`, `POST .../missing/export/` | bearer | Missing cards as a card browser page / text; export takes `printings` and `other_decks` |
 | `GET /api/users/<username>/decks/[<id>/]` | public | Public decks, without other locations or deck names; the box links to its public page |
 | `GET/POST /api/wants/`, `GET/PATCH/DELETE /api/wants/<id>/` | bearer | Want list as a card browser page (filters as items, `deck` = linked deck) / add (merges) / edit / delete |
@@ -92,11 +95,12 @@ uv run manage.py runserver    # http://localhost:8000
 | `POST /api/scanner/scans/` | bearer | Log recognized art into the cart, or a `target`: a location, or a decklist only |
 | `POST /api/scanner/scans/<id>/undo/` | bearer | Remove one copy from a row the scanner logged |
 | `GET /api/sims/status/` | public | Whether Forge is reachable, and its version |
-| `GET, PUT /api/sims/forge/` | staff | Main and Fallback Forge: address, key, games at once (spec 029) |
+| `GET, PUT /api/sims/forge/` | staff | Main and Other Forge: address, key, games at once (specs 029, 031) |
 | `POST /api/sims/forge/test/` | staff | Ask a Forge for its version with a typed address and key |
 | `GET, POST /api/sims/runs/` | auth | Runs the user can see (`mine`, `q`, `offset`; 20 a page); start a run, seat 0 the tested deck |
 | `GET, DELETE /api/sims/runs/{id}/` | auth / runner | One run; delete it |
 | `POST /api/sims/runs/{id}/cancel/` | runner or staff | Cancel a queued or playing run |
+| `POST /api/sims/runs/{id}/restart/` | runner or staff | Queue a failed or cancelled run again with `forge` (auto, main, other); plays the games left (spec 031) |
 | `GET /api/sims/runs/{id}/games/{n}/` | auth | A game's replay: turns, boards, card images, log |
 | `GET /api/sims/queue/` | auth | Queued and playing runs; "Private deck" for runs the user can't see |
 | `POST /api/sims/queue/cancel/` | staff | Cancel every queued and playing run |
@@ -125,7 +129,7 @@ cookies come from it, and `X-Forwarded-Proto` marks https requests.
 - `manage.py backup` writes a `pg_dump -Fc` to `BACKUP_DIR` and keeps
   `BACKUP_KEEP`; with `BACKUP_DIR` set, beat runs it at 03:00 UTC.
 - `manage.py first_run` queues the card sync and scanner bundle on an empty
-  catalog; `manage.py wait_for_services` waits for Postgres and Redis.
+  catalog, and the product sync (after the cards) until one has succeeded; `manage.py wait_for_services` waits for Postgres and Redis.
 - `/api/health/` returns 503 when the database is unreachable.
 
 ## API contract
@@ -267,6 +271,22 @@ the date; deck cards in the API carry `swap_dates` and `added_at`.
 - Printings carry `produced_mana` (Scryfall's, WUBRGC only) for the deck
   stats' mana sources.
 
+## Products to buy (spec 030)
+
+App `products`. `manage.py sync_products` streams MTGJSON's `AllPrintings.json.xz`
+(each set's booster configs) and `AllDeckFiles.tar.xz` (precons, Secret Lair
+drops, Jumpstart themes) and replaces every `Product`, `ProductCard`,
+`BoosterSheet`, `SheetCard` and `BoosterLayout` in one transaction (about 30 s,
+under 250 MB). Celery beat runs it Sundays at 06:00 UTC as a `SyncRun` of kind
+products; a failed sync keeps the last data. Arena, MTGO and online-only
+products are skipped. Cards match printings by Scryfall id.
+
+- `products/chance.py`: the chance one booster holds at least one of the wanted
+  printings, from the layouts' weights and each slot sheet's card weights.
+- `products/deck.py`: a deck's products for the Products to buy dialog.
+- Tests sync the `products/fixtures/` samples (`mtgjson-printings-sample.json`,
+  `mtgjson-decks-sample.json`), passed as `--printings-file` and `--decks-file`.
+
 ## Want list
 
 The `wants` app keeps `WantItem`s: a card (`oracle_id`), a quantity, a
@@ -285,20 +305,21 @@ of the collection. Every write goes through `wants/services.py`:
 `collection.filters.apply_filters(..., finish_field='price_finish',
 collection=False)` filters and sorts entries; Any finish is priced as non-foil.
 
-## Pod simulation (specs 024, 025, 027, 029)
+## Pod simulation (specs 024, 025, 027, 029, 031)
 
 App `sims`. A tested Commander deck plays AI games against 1 to 5 opponents in
 [Forge](https://github.com/Card-Forge/forge), which runs as its own service
 (`docker/forge`: Forge's release, our runner `MtgvaultSim.java` compiled against
-it, and `server.py`, an HTTP API on port 8790). Spec 029: two Forges,
-`ForgeServer` Main and Fallback (address, key, `slots` = games at once), set by
-staff in Settings; Fallback starts as `FORGE_URL`. With neither set the feature
+it, and `server.py`, an HTTP API on port 8790). Two Forges (specs 029, 031):
+`ForgeServer` Main (this server, starts as `FORGE_URL`) and Other (another PC),
+each with address, key and `slots` = games at once, set by staff in Settings.
+Migration `0005_main_and_other` renamed the old Main to Other and Fallback to Main. With neither set the feature
 is hidden. A container started with `FORGE_KEY` wants it as `X-Forge-Key` on
 every request (401 otherwise).
 
 - `sims/forge.py` talks to Forge: `/health`, `/cards` (names Forge supports,
   cached 24 h in Redis), `/precons`, `POST /games`, `GET`/`DELETE /games/{id}`.
-  `active()` is Main while its `/health` answers, otherwise Fallback.
+  `active()` is Other while its `/health` answers, otherwise Main.
   `ForgeUnreachable` (connection errors, 5xx, a wrong key) is apart from other
   `ForgeError`s.
 - Opponents: the user's decks, other users' public decks, or the shared pool
@@ -311,13 +332,19 @@ every request (401 otherwise).
   run's. Each game polls its Forge each second (`SIMS_POLL_SECONDS`). Games in
   flight live in memory: a game whose Forge stops answering, or one cut by a
   restart, plays again. A run is Done when every game is in. Each game records
-  `forge_version` and `forge_server` (main, fallback); each run its `lookahead`
+  `forge_version`, `forge_server` (main, other) and `forge_url`; each run its `lookahead`
   (off, light, normal, max), which the runner turns into Forge's
   `AI_FLAT_MONTE_CARLO` flags. Runs before spec 029 are `off` on 2.0.15. Each game keeps its replay
   as gzipped JSON; `sims/replay.py` turns it into turns, boards and card images.
   Since spec 026 each board also holds every hand and library (top card first)
   and, during combat, what each attacker attacks and each blocker blocks;
   older games have `hand_cards` and `library_cards` null.
+- Spec 031: `SimRun.forge` is auto, main or other. Auto uses `active()` and
+  replays a game whose Forge stops answering; a run on Main or Other plays only
+  there and fails ("Other (host) is not answering.") when it doesn't answer,
+  keeping finished games. `services.restart_run` queues a failed or cancelled
+  run again. `SimPlaying` rows hold the games playing now (role, address,
+  start), shown live on the run; `games_ms` sums the games' `duration_ms`.
 - Seat order per game: Rotate, Random (seeded by run and game) or Fixed.
 - Who sees a run (`services.visible_runs`): every logged-in user, except runs
   whose tested deck is private (owner only); staff see all. `SimRun.deck` is

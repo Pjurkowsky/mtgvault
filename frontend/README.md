@@ -63,11 +63,12 @@ src/
   composables/useBinderDrag.ts  pointer drag and drop, long press, edge page turn
   lib/binder.ts           slot numbers, spreads, page widths, pagination, scan order
   lib/scanTarget.ts       where a deck's scans go, remembered per deck
-  components/sims/        simulations (specs 024, 025, 027, 029): SimQueue (admin cancel), SimRunForm
+  components/sims/        simulations (specs 024, 025, 027, 029, 031): SimQueue (admin cancel), SimRunForm
                           (seats with the tested deck, a list per deck seat, Compare versions,
-                          AI profiles, seat order, Look-ahead), OpponentPicker
+                          AI profiles, seat order, Look-ahead, Forge Auto / Main / Other), OpponentPicker
                           (pool, my decks, public), SimSwapStep (unsupported cards), SimRunList
-                          (All / Mine, search), SimRunCard (stats, games, Forge tooltips); replay pieces
+                          (All / Mine, search, run time), SimRunCard (stats, games with Forge and time,
+                          games playing now, run time, Restart); replay pieces
                           (spec 026): ReplayPlayer (rows, zones), ReplayCard, ReplayZoneDialog,
                           ReplayArrows (combat), ReplaySidebar (events, settings), ReplayEvents
   pages/SimulationsPage.vue  /simulations: queue, run form, runs
@@ -85,7 +86,12 @@ src/
                           ported from manavault (MPL-2.0, see the root README)
   components/scanner/     result bar, guess strip, scanner settings sheet
   components/settings/    staff sections: Scanner model (source, installed version, Sync now);
-                          Forge (spec 029: Main and Fallback address, key, games at once, Test)
+                          Forge (specs 029, 031: Main and Other address, key, games at once, Test)
+  components/decks/ProductsDialog.vue  Products to buy (spec 030): fixed decks and boosters
+                          holding the deck's cards, chance per pack, cards in none
+  pages/ProductPage.vue   /products/:code: every card a product can have, in CardBrowser with
+                          a `product` source (chance per pack, Owned filter)
+  lib/products.ts         Products to buy choices and chance labels
   components/wants/       want list (spec 010): add and edit dialog, the entry in the card dialog;
                           the page is CardBrowser with a `wants` source (pages/WantsPage.vue)
   components/ui/  shadcn-vue components (add more with the shadcn MCP or CLI)

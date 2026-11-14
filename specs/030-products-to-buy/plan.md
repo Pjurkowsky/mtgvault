@@ -22,6 +22,7 @@
 | `backend/products/management/commands/sync_products.py` | sync command |
 | `backend/products/fixtures/` | cut MTGJSON sample (a booster set and two decks covering fixture printings) |
 | `backend/config/settings.py`, `urls.py` | app, beat job, routes |
+| `backend/core/management/commands/first_run.py` | queue the product sync on start until one succeeds |
 | `backend/decks/views.py`, `urls.py` | `products/` on a deck |
 | `backend/cards/models.py` | `SyncRun.Kind.PRODUCTS` |
 | `frontend/src/components/decks/ProductsDialog.vue` | dialog |

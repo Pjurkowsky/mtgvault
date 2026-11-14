@@ -81,6 +81,9 @@ test.describe('Optimize printings', () => {
     const deck = await api.deck('Shown', 'casual', { is_public: true, text: 'Deck\n4 Lightning Bolt (SLD) 2579' })
     await page.goto(`/u/${user.username}/decks/${deck.id}`)
     await expect(page.getByRole('heading', { name: 'Shown' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'More' })).toHaveCount(0)
+    // Spec 030, AC-1: visitors have a menu with Products to buy, but no Optimize printings.
+    await page.getByRole('button', { name: 'More' }).click()
+    await expect(page.getByRole('menuitem', { name: 'Products to buy' })).toBeVisible()
+    await expect(page.getByRole('menuitem', { name: /Optimize printings/ })).toHaveCount(0)
   })
 })

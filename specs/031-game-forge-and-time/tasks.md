@@ -14,4 +14,4 @@
 ## Tests and finish
 
 - [x] **T6 e2e tests for AC-1 to AC-9, older Forge tests updated; screenshots at desktop and phone width** (AC-1 to AC-9)
-- [ ] **T7 Full suite (2 workers), `scripts/check-api.sh`, READMEs (Forge on another PC uses Other), spec status**
+- [x] **T7 Full suite (2 workers), `scripts/check-api.sh`, READMEs (Forge on another PC uses Other), spec status**

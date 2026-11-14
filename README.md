@@ -84,8 +84,8 @@ a Forge, or while none answers, Simulations is hidden.
 
 #### Forge on another PC
 
-A faster PC on the same network can play the games. The server's own Forge
-stays as the fallback while that PC is off.
+A faster PC on the same network can play the games. In Settings it is **Other**;
+the server's own Forge (`FORGE_URL`) is **Main**.
 
 1. On the PC, install Docker (Docker Desktop on Windows or macOS), then start
    Forge with a password of your choice:
@@ -100,15 +100,18 @@ stays as the fallback while that PC is off.
    then remove and start the container again.
 2. Find the PC's address on your network (`ipconfig` on Windows, `ip addr` on
    Linux), e.g. `192.168.1.20`, and allow incoming TCP port 8790 in its firewall.
-3. In MTG Vault, as an admin, open **Settings → Forge**. Under **Main** enter
+3. In MTG Vault, as an admin, open **Settings → Forge**. Under **Other** enter
    `http://192.168.1.20:8790`, the same key, and **Games at once** (each game
    needs a CPU core and `FORGE_MEMORY` of memory). Press **Test**: it shows
    the Forge version. Then **Save**.
 
-Each new game goes to Main while it answers, otherwise to **Fallback** (the
-server's `FORGE_URL`). A game whose Forge stops answering plays again on the
-other one. Keep both on the same image version. Each run's page shows which
-Forge played each game.
+The run form's **Forge** picks where a run plays. **Auto** plays each game on
+Other while it answers, otherwise on Main, and a game whose Forge stops
+answering plays again on the other one. **Main** or **Other** plays only there;
+if that Forge doesn't answer the run fails, and **Restart** plays what is left,
+on the Forge you pick again. Keep both on the same image version. Each run's
+page shows where each game played and how long it took, including games still
+playing, and the run's total time.
 
 Each game has a replay: every player's battlefield, hand, library, graveyard and
 exile, arrows for attacks and blocks, and the turn's events in a sidebar. Step
@@ -278,7 +281,8 @@ browser recognition pipeline and its published models, trained in
 keep that license and name their source files; the rest of MTG Vault is not
 affected. Card data, images and card tags come from [Scryfall](https://scryfall.com),
 EDHREC data (salt scores, commander themes) from [EDHREC](https://edhrec.com),
-combos from [Commander Spellbook](https://commanderspellbook.com). Pod simulation
+combos from [Commander Spellbook](https://commanderspellbook.com), sealed products
+(precons and booster contents) from [MTGJSON](https://mtgjson.com). Pod simulation
 runs [Forge](https://github.com/Card-Forge/forge) (GPL-3.0) unchanged in its own
 image, `docker/forge`, with a small runner compiled against it. Mana symbols in
 `frontend/src/assets/mana/` are Scryfall's card symbol images.

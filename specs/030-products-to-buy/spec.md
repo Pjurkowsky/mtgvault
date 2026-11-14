@@ -1,6 +1,6 @@
 # Spec 030: Products to buy
 
-Status: Draft
+Status: Done
 Depends on: 004-decks, 013-optimize-printings, 029-forge-2-0-16
 
 ## Goal
@@ -80,4 +80,6 @@ to browse every card it can have, filtered like a collection.
   sets that are online only.
 - AC-10: a booster's cards show no ×1 badge, since a pack holds one of each.
 - AC-12: the sync runs Sunday mornings; staff can run it by hand
-  (`manage.py sync_products`). A failed sync keeps last week's data.
+  (`manage.py sync_products`). A failed sync keeps last week's data. Until one
+  has succeeded, each start of the server queues it (after the card sync on a
+  new server), so an upgraded server has products without waiting for Sunday.

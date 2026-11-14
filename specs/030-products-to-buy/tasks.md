@@ -14,4 +14,4 @@
 ## Tests and finish
 
 - [x] **T6 e2e tests for AC-1 to AC-12; screenshots at desktop and phone width** (AC-1 to AC-12)
-- [ ] **T7 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**
+- [x] **T7 Full suite (2 workers), `scripts/check-api.sh`, READMEs, spec status**
